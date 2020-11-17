@@ -1,0 +1,4 @@
+include ':visualizer2'
+include ':visualizer'
+include ':app'
+rootProject.name = "MusicTest"

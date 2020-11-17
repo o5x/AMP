@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.MusicControllerActivity"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/background"
+    >
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:translationZ="-1dp"
+            tools:layout_editor_absoluteX="-116dp"
+            tools:layout_editor_absoluteY="-80dp" />
+
+        <io.github.jeffshee.visualizer.views.VisualizerView
+            android:id="@+id/visual"
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            app:layout_constraintBottom_toTopOf="@+id/textViewTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/back" />
+
+        <ImageButton
+            android:id="@+id/back"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="51dp"
+            android:layout_height="57dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="50dp"
+            android:adjustViewBounds="true"
+            android:onClick="backClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_back"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/list"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="50dp"
+            android:layout_marginEnd="20dp"
+            android:adjustViewBounds="true"
+            android:onClick="showlistClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_list"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginEnd="40dp"
+            android:layout_marginBottom="30dp"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            android:text="Long title that does not fit the whole weigth"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toTopOf="@+id/positionBar"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewArtist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="By Arrol"
+            android:textColor="@color/white"
+            app:layout_constraintStart_toStartOf="@+id/textViewTitle"
+            app:layout_constraintTop_toBottomOf="@+id/textViewTitle" />
+
+        <SeekBar
+            android:id="@+id/positionBar"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="30dp"
+            app:layout_constraintBottom_toTopOf="@+id/playBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/elapsedTimeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0:0"
+            android:textColor="#FFFFFF"
+            app:layout_constraintStart_toStartOf="@+id/textViewTitle"
+            app:layout_constraintTop_toBottomOf="@+id/positionBar" />
+
+        <TextView
+            android:id="@+id/remainingTimeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3:14"
+            android:textColor="#FFFFFF"
+            app:layout_constraintEnd_toEndOf="@+id/textViewTitle"
+            app:layout_constraintTop_toBottomOf="@+id/positionBar" />
+
+        <Button
+            android:id="@+id/playBtn"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/ic_play"
+            android:onClick="playBtnClick"
+            app:layout_constraintBottom_toTopOf="@+id/favBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ImageButton
+            android:id="@+id/nextBtn"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginStart="5dp"
+            android:adjustViewBounds="true"
+            android:onClick="nextBtnClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_next"
+            app:layout_constraintBottom_toBottomOf="@+id/playBtn"
+            app:layout_constraintStart_toEndOf="@+id/playBtn"
+            app:layout_constraintTop_toTopOf="@+id/playBtn" />
+
+        <ImageButton
+            android:id="@+id/prevBtn"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:layout_marginEnd="5dp"
+            android:adjustViewBounds="true"
+            android:onClick="prevBtnClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_prev"
+            app:layout_constraintBottom_toBottomOf="@+id/playBtn"
+            app:layout_constraintEnd_toStartOf="@+id/playBtn"
+            app:layout_constraintTop_toTopOf="@+id/playBtn" />
+
+        <ImageButton
+            android:id="@+id/favBtn"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginBottom="25dp"
+            android:adjustViewBounds="true"
+            android:onClick="favouriteClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_addfavourite"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.33"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ImageButton
+            android:id="@+id/addPlaylist"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:adjustViewBounds="true"
+            android:onClick="playlistClick"
+            android:scaleType="fitCenter"
+
+            android:src="@drawable/ic_addplaylist"
+            app:layout_constraintBottom_toBottomOf="@+id/favBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.67"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/favBtn" />
+
+        <ImageButton
+            android:id="@+id/buttonShuffle"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+
+            android:adjustViewBounds="true"
+            android:onClick="shuffleClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_shuffle"
+
+            app:layout_constraintBottom_toBottomOf="@+id/prevBtn"
+            app:layout_constraintEnd_toStartOf="@+id/prevBtn"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/prevBtn" />
+
+        <ImageButton
+            android:id="@+id/buttonRepeat"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:adjustViewBounds="true"
+            android:onClick="repeatClick"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_repeat"
+            app:layout_constraintBottom_toBottomOf="@+id/nextBtn"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/nextBtn"
+            app:layout_constraintTop_toTopOf="@+id/nextBtn" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>
