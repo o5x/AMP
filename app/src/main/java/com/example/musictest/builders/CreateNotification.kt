@@ -29,7 +29,7 @@ object CreateNotification {
         nMgr.cancel(1)
     }
 
-    fun createNotification(context: Context, track: Music, playbutton: Int, pos: Int, size: Int) {
+    fun createNotification(context: Context, track: Music, playbutton: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManagerCompat = NotificationManagerCompat.from(context)
             //val mediaSessionCompat = MediaSessionCompat(context, "tag")
@@ -75,7 +75,7 @@ object CreateNotification {
             //create notification
             notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setProgress(100,50,true)
-                .setSmallIcon(R.drawable.ic_app_icon)
+                .setSmallIcon(R.drawable.appiconrot)
                 .setContentTitle(track.title)
                 .setContentText(track.artist)
                 .setLargeIcon(bmp)

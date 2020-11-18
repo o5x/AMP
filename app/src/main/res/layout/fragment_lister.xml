@@ -16,8 +16,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
             android:text="List"
-            android:textColor="@color/white"
-            android:textSize="30sp"/>
+            android:textColor="@color/white" />
 
         <ScrollView
             android:layout_width="match_parent"

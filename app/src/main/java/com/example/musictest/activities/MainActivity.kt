@@ -23,7 +23,6 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import com.example.musictest.MusicController
 import com.example.musictest.R
-import com.example.musictest.activities.MusicControllerActivity
 import com.example.musictest.builders.CreateNotification
 import com.example.musictest.fragments.CollectionFragment
 import com.example.musictest.fragments.HomeFragment
@@ -34,7 +33,6 @@ import java.io.File
 
 // global MusicController
 var musicController = MusicController();
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,12 +54,30 @@ class MainActivity : AppCompatActivity() {
 
     var currentfragment : Fragment? = null
 
+    companion object{
+        fun isMusicFile(f : File) : Boolean{ // TODO modify filter
+            return f.isFile
+                    && (f.name.endsWith(".flac")
+                    || f.name.endsWith(".mp3")
+                    || f.name.endsWith(".wav")
+                    || f.name.endsWith(".3gp")
+                    || f.name.endsWith(".mp4")
+                    || f.name.endsWith(".m4a")
+                    || f.name.endsWith(".aac")
+                    || f.name.endsWith(".amr")
+                    || f.name.endsWith(".ota")
+                    || f.name.endsWith(".mid")
+                    || f.name.endsWith(".ogg")
+                    || f.name.endsWith(".mkv"))
+        }
+    }
+
     private fun musicReader(root: File) : ArrayList<File>{
         val fileList: ArrayList<File> = ArrayList()
         val listAllFiles = root.listFiles()
         if (listAllFiles != null && listAllFiles.isNotEmpty()) {
             for (currentFile in listAllFiles) {
-                if (currentFile.name.endsWith(".flac") || currentFile.name.endsWith(".mp3")) { // TODO modify filter
+                if (isMusicFile(currentFile)) {
                     fileList.add(currentFile.absoluteFile)
                 }
             }
@@ -106,7 +122,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // init context
-        musicController.init(this);
+        //musicController.init(this);
+        musicController.init(this)
 
         // check intent filter
         var fileList: ArrayList<File> = ArrayList()
@@ -135,12 +152,13 @@ class MainActivity : AppCompatActivity() {
         else
         {*/
             val gpath: String = Environment.getExternalStorageDirectory().absolutePath
-            val spath = "MusicTest"
+            val spath = "Music/MusicTest"
             val fullpath = File(gpath + File.separator + spath)
             Log.w("fileread", "" + fullpath)
             fileList = musicReader(fullpath)
 
-            musicController.setMusics(fileList);
+        //musicController.setMusics(fileList);
+        musicController.setMusicsTest(fileList);
        // }
 
         title = findViewById(R.id.Apptitle)
@@ -173,7 +191,7 @@ class MainActivity : AppCompatActivity() {
 
     fun updateInterface()
     {
-        if (musicController.player.isPlaying)
+        /*if (musicController.player.isPlaying)
             playBtn2.setBackgroundResource(R.drawable.ic_pause)
         else
             playBtn2.setBackgroundResource(R.drawable.ic_play)
@@ -196,20 +214,49 @@ class MainActivity : AppCompatActivity() {
             if(musicController.isPlaying())
             {
                 CreateNotification.createNotification(
-                    this, musicController.musics.get(musicController.currentMusic),
-                    R.drawable.ic_pause, musicController.currentMusic, musicController.musics.size - 1
+                        this, musicController.musics.get(musicController.currentMusic),
+                        R.drawable.ic_pause, musicController.currentMusic, musicController.musics.size - 1
                 )
             }
             else
             {
                 CreateNotification.createNotification(
-                    this, musicController.musics.get(musicController.currentMusic),
-                    R.drawable.ic_play, musicController.currentMusic, musicController.musics.size - 1
+                        this, musicController.musics.get(musicController.currentMusic),
+                        R.drawable.ic_play, musicController.currentMusic, musicController.musics.size - 1
                 )
             }
+        }*/
+
+        if (musicController.isPlaying)
+            playBtn2.setBackgroundResource(R.drawable.ic_pause)
+        else
+            playBtn2.setBackgroundResource(R.drawable.ic_play)
+
+        if (musicController.currentMusic.image == null)
+            imageView_cover.setImageResource(R.drawable.music)
+        else
+            imageView_cover.setImageBitmap(musicController.currentMusic.image)
+
+        textView_title.text = musicController.currentMusic.title
+        textView_artist.text = musicController.currentMusic.artist
+
+        if(musicController.isQueuePlaying)
+        {
+            if(musicController.isPlaying)
+            {
+                CreateNotification.createNotification(this,
+                        musicController.currentMusic,R.drawable.ic_pause)
+            }
+            else
+            {
+                CreateNotification.createNotification(this,
+                        musicController.currentMusic,R.drawable.ic_play)
+            }
         }
-
-
+        else
+        {
+            CreateNotification.cancelNotification(this)
+        }
     }
 
     var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -218,7 +265,7 @@ class MainActivity : AppCompatActivity() {
             val action = intent.extras!!.getString("actionname")
             when (action) {
                 CreateNotification.ACTION_PREVIOUS -> musicController.prev()
-                CreateNotification.ACTION_PLAY -> musicController.toggle()
+                CreateNotification.ACTION_PLAY -> musicController.togglePlay()
                 CreateNotification.ACTION_NEXT -> musicController.next()
             }
         }
@@ -253,9 +300,9 @@ class MainActivity : AppCompatActivity() {
 
     // Interface buttons handlers
 
-    fun replaceFragment(newfragment: Fragment)
+    fun replaceFragment(newfragment: Fragment, force : Boolean = false)
     {
-        if(currentfragment == null || currentfragment!!.javaClass != newfragment.javaClass)
+        if(force || currentfragment == null || currentfragment!!.javaClass != newfragment.javaClass)
         {
             supportFragmentManager.commit {
                 replace(R.id.fragment, newfragment)
@@ -268,7 +315,7 @@ class MainActivity : AppCompatActivity() {
 
     fun playBtnClick(v: View)
     {
-        musicController.toggle()
+        musicController.togglePlay()
     }
 
     fun openMusicController(v: View) {

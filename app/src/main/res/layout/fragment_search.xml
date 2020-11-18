@@ -27,11 +27,12 @@
             android:hint="Songs, artist, albums .."
             android:inputType="textPersonName" />
 
-        <fragment
-            android:id="@+id/fragment2"
-            android:name="com.example.musictest.fragments.ListerFragment"
+        <LinearLayout
+            android:id="@+id/searchResultLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"></LinearLayout>
 
     </LinearLayout>
 

@@ -1,14 +1,14 @@
 package com.example.musictest.fragments
 
 import android.os.Bundle
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
-
-
+import com.example.musictest.activities.musicController
 
 class HomeFragment : Fragment() {
 
@@ -49,7 +49,20 @@ class HomeFragment : Fragment() {
 
         for(item in tabFav)
         {
-            ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id++ == 0)
+            if(id == 0)
+                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0).setClickCallback {
+                    (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(musicController.favourites))
+                }
+            else if(id == 1)
+                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0).setClickCallback {
+                    (activity as MainActivity).replaceFragment(ListerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music"))
+                }
+            else
+            {
+                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0)
+            }
+            id++
+
         }
 
         // FILL Recent

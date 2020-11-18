@@ -23,6 +23,8 @@ class ItemSquare : Fragment() {
     lateinit var desc : TextView
     lateinit var img : ImageView
 
+    var callback : () -> Unit = {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -56,7 +58,16 @@ class ItemSquare : Fragment() {
             v.layoutParams = param
         }
 
-        return v;
+        v.setOnClickListener {
+            callback()
+        }
+
+        return v
+    }
+
+    fun setClickCallback(f : () -> Unit)
+    {
+        callback = f
     }
 
     fun dpToPx(dp: Float): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics).toInt()
@@ -64,7 +75,7 @@ class ItemSquare : Fragment() {
 
     companion object{
 
-        fun addItem(fm : FragmentManager?, layout_id:Int, name:String, description: String, img_id : Int, first: Boolean)
+        fun addItem(fm : FragmentManager?, layout_id:Int, name:String, description: String, img_id : Int, first: Boolean) : ItemSquare
         {
             val ft = fm!!.beginTransaction()
             val fragOne: Fragment = ItemSquare()
@@ -77,6 +88,8 @@ class ItemSquare : Fragment() {
             fragOne.arguments = arguments
             ft.add(layout_id, fragOne)
             ft.commit()
+
+            return fragOne as ItemSquare
         }
 
     }

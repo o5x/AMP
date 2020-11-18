@@ -19,7 +19,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.musictest.Image_music
 import com.example.musictest.R
 import com.example.musictest.Repeat
-import com.example.musictest.activities.musicController
 import io.github.jeffshee.visualizer.painters.fft.FftCLine
 import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.*
@@ -124,7 +123,7 @@ class MusicControllerActivity : AppCompatActivity() {
             }*/
         })*/
 
-        mPager.setCurrentItem(musicController.currentMusic, false)
+        mPager.setCurrentItem(musicController.queueMusicId, false)
 
         // Thread
         Thread(Runnable(fun() {
@@ -146,7 +145,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     // Build carousel
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount(): Int = musicController.musics.size
+        override fun getItemCount(): Int = musicController.queue.size
         override fun createFragment(position: Int): Fragment = Image_music.newInstance(
             position
         )
@@ -162,8 +161,8 @@ class MusicControllerActivity : AppCompatActivity() {
     {
         // Update visualizer
         var bitmap = BitmapFactory.decodeResource(resources, R.drawable.music)
-        if(musicController.getCurrentMusic().image != null)
-            bitmap = musicController.getCurrentMusic().image
+        if(musicController.currentMusic.image != null)
+            bitmap = musicController.currentMusic.image
 
         visual.setup(helper, Scale(Compose(FftCLine(),
             Scale(Icon(Icon.getCircledBitmap(bitmap)), scaleX = 1.2f, scaleY = 1.2f)
@@ -171,8 +170,8 @@ class MusicControllerActivity : AppCompatActivity() {
         )
 
         // Update metadata
-        textViewTitle.text = musicController.getCurrentMusic().title
-        textViewArtist.text = musicController.getCurrentMusic().artist
+        textViewTitle.text = musicController.currentMusic.title
+        textViewArtist.text = musicController.currentMusic.artist
         val totalTime = musicController.player.duration
         positionBar.max = totalTime
         val totalTimeTime = createTimeLabel(totalTime)
@@ -183,11 +182,11 @@ class MusicControllerActivity : AppCompatActivity() {
         else playBtn.setBackgroundResource(R.drawable.ic_play)
 
         // Update shuffle
-        if(musicController.getShuffle())  shuffle.setColorFilter(R.color.th)
+        if(musicController.shuffleMode)  shuffle.setColorFilter(R.color.th)
         else shuffle.colorFilter = null
 
         // update repeat mode
-        when (musicController.repeat) {
+        when (musicController.repeatMode) {
             Repeat.None -> {
                 repeat.colorFilter = null
                 repeat.setImageResource(R.drawable.ic_repeat)
@@ -203,11 +202,12 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // Update shuffle
-        if(musicController.getShuffle())shuffle.setColorFilter(R.color.th)
+        if(musicController.shuffleMode)shuffle.setColorFilter(R.color.th)
         else shuffle.colorFilter = null
 
         // Update favourites
-        if(musicController.getCurrentMusic().isFavourite)
+
+        if(musicController.isFavourite())
         {
             favourite.setColorFilter(R.color.th)
             favourite.setImageResource(R.drawable.ic_favourite)
@@ -219,9 +219,9 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // update background cover
-        if(mPager.currentItem != musicController.currentMusic)
+        if(mPager.currentItem != musicController.queueMusicId)
         {
-            mPager.currentItem = musicController.currentMusic
+            mPager.currentItem = musicController.queueMusicId
         }
     }
 
@@ -255,7 +255,7 @@ class MusicControllerActivity : AppCompatActivity() {
     // Button click actions
 
     fun playBtnClick(v: View) {
-        musicController.toggle()
+        musicController.togglePlay()
     }
 
     fun nextBtnClick(v: View) {
@@ -268,12 +268,12 @@ class MusicControllerActivity : AppCompatActivity() {
 
     fun shuffleClick(v: View)
     {
-        musicController.shuffleToggle()
+        musicController.toggleShuffle()
     }
 
     fun repeatClick(v: View)
     {
-        musicController.repeatToggle()
+        musicController.toggleRepeat()
     }
 
     fun backClick(v: View)

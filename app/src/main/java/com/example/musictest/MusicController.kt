@@ -1,40 +1,41 @@
 package com.example.musictest
 
+import android.R.attr.bitmap
 import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
+import android.util.Log
+import kotlinx.android.synthetic.main.activity_music_controller.view.*
 import java.io.File
+
 
 enum class Repeat {
     None, All, Once
 }
 
+
 class Music
 {
-    var file: File? = null
-
-    var path : String = ""
-    var artist: String = "No Artist"
-    var title: String = "No Title"
-    var album: String = "No Album"
+    var path: String
+    var artist: String
+    var title: String
+    var album: String
+    var imageByte: ByteArray?  = null
     var image: Bitmap? = null
-    var imageByte: ByteArray? = null
-    var isFavourite : Boolean = false
-
-    constructor()
 
     constructor(f: File)
     {
-        file = f
-
         path = f.path
 
         val metaRetriever = MediaMetadataRetriever()
-        metaRetriever.setDataSource(f.path)
+        metaRetriever.setDataSource(path)
+
+        metaRetriever.hashCode()
 
         artist = if(metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) != null)
             metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).toString()
@@ -50,146 +51,243 @@ class Music
 
         imageByte = metaRetriever.embeddedPicture
 
-        image = if(imageByte != null){
+        if(imageByte != null)
+        {
             val bmp = BitmapFactory.decodeByteArray(imageByte, 0, imageByte!!.size)
-            Bitmap.createBitmap(bmp)
+            var newimage = Bitmap.createBitmap(bmp)
+
+            val IMAGE_SIZE = 200
+            val landscape: Boolean = newimage.getWidth() > newimage.getHeight()
+
+            val scale_factor: Float
+            if (landscape) scale_factor = IMAGE_SIZE.toFloat() / newimage.getHeight() else scale_factor = IMAGE_SIZE.toFloat() / newimage.getWidth()
+            val matrix = Matrix()
+            matrix.postScale(scale_factor, scale_factor)
+
+            image = if (landscape) {
+                val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
+                Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
+            } else {
+                val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
+                Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
+            }
         }
-        else null
     }
 }
 
 class MusicController : Application() {
 
-    // notification
-    lateinit var context : Context
+    private lateinit var c : Context
 
-    var nothingPlaying = true;
-
-    val musics: ArrayList<Music> = ArrayList()
-    var currentMusic : Int = -1
-
-    private var shuffle : Boolean = false
-    var repeat : Repeat = Repeat.None
-
+    // Player variables
     var player: MediaPlayer = MediaPlayer()
+        private set
 
+    var isQueuePlaying: Boolean = false
+        private set
+
+    private var currentMusicId: Int = 0
+        private set
+
+    val currentMusic: Music
+        get() = musics[currentMusicId]
+
+    var shuffleMode: Boolean = false
+        private set
+
+    var repeatMode: Repeat = Repeat.None
+        private set
+
+    var isPlaying : Boolean = false
+        get() = player.isPlaying
+        private set
+
+    // All musics array
+    val musics: ArrayList<Music> = ArrayList()
+    val musicsPaths: ArrayList<String> = ArrayList()
+
+    // Queue musics array
+    val queue: ArrayList<Int> = ArrayList()
+    var queueMusicId: Int = 0;
+
+    // Favourite musics array
+    val favourites: ArrayList<Int> = ArrayList()
+
+    // Playlist 1 music array
+    val playlist1: ArrayList<Int> = ArrayList()
+
+    // InitContext
+    fun init(context: Context)
+    {
+        c = context
+    }
+
+    // Song over callback
     private fun songOver()
     {
-        if(repeat == Repeat.Once)
+        if(repeatMode == Repeat.Once)
         {
             restartMusic()
             return
         }
-
         next()
     }
 
     private fun updateRequired()
     {
-        context.sendBroadcast(Intent("com.example.musictest.Update_Music")
+        c.sendBroadcast(Intent("com.example.musictest.Update_Music")
                 .putExtra("actionname", "update"))
     }
 
-    fun shuffleToggle()
+    fun toggleShuffle()
     {
-        shuffle = !shuffle
+        shuffleMode = !shuffleMode
         updateRequired()
     }
 
-    fun getShuffle() : Boolean
+    fun getMusicFromQueueId(queueId: Int) : Music
     {
-        return shuffle // see with get sets
+        return musics[queue[queueId]]
     }
 
-    fun getCurrentMusic() : Music
-    {
-        if(currentMusic >= 0) return musics[currentMusic]
-        return Music()
-    }
-
-    fun init(context_: Context)
-    {
-        context = context_
-    }
-
-    fun setMusics(files: ArrayList<File>)
+    fun setMusicsTest(files: ArrayList<File>)
     {
         musics.clear()
-        files.forEach{ n -> musics.add(Music(n)) }
-        prepareMusic(0)
+        queue.clear()
+        playlist1.clear()
+        favourites.clear()
+
+        var id = 0
+
+        files.forEach{ f ->
+
+            if(id % 2 == 0) playlist1.add(musics.size)
+            if(id % 3 != 0) queue.add(musics.size)
+            if(id % 2 != 0)favourites.add(musics.size)
+            musics.add(Music(f))
+            musicsPaths.add(f.path)
+
+            id++
+        }
+
+        Log.w("LoadMusics", "musics = " + musics.size.toString())
+        Log.w("LoadMusics", "queue = " + queue.size.toString())
+        Log.w("LoadMusics", "favourites = " + favourites.size.toString())
+        Log.w("LoadMusics", "playlist1 = " + playlist1.size.toString())
+
+        prepare(0)
     }
 
-   /* fun changeMusic(uri : Uri)
+    fun setQueueId(ids: ArrayList<Int>)
     {
-        player.reset()
-        player.setDataSource(context, uri)
-        player.prepare()
-        player.start()
-    }*/
+        queue.clear()
 
-    private fun prepareMusic(id: Int)
+        ids.forEach{ f ->
+            queue.add(f)
+        }
+
+        prepare(0)
+    }
+
+    fun setQueueFiles(files: ArrayList<File>)
     {
-        if(0 <= id && id < musics.size)
-        {
-            currentMusic = id
-            player.reset()
-            player.setDataSource(getCurrentMusic().path)
-            player.prepare()
-            player.setOnCompletionListener{
-                songOver()
+        queue.clear()
+
+        files.forEach{ f ->
+
+            if(f.path in musicsPaths)
+            {
+                var musicIndex = musicsPaths.indexOf(f.path)
+                queue.add(musicIndex)
             }
-            nothingPlaying = true
+            else
+            {
+                queue.add(musics.size)
+                musics.add(Music(f))
+                musicsPaths.add(f.path)
+            }
+        }
+
+        Log.w("LoadMusics", "musics = " + musics.size.toString())
+        Log.w("LoadMusics", "queue = " + queue.size.toString())
+
+        prepare(0)
+    }
+
+    private fun prepare(newQueueMusicId: Int)
+    {
+        if(0 <= newQueueMusicId && newQueueMusicId < queue.size)
+        {
+            queueMusicId = newQueueMusicId
+            var nextMusicId = queue[queueMusicId]
+            if(0 <= nextMusicId && nextMusicId < musics.size)
+            {
+                currentMusicId = nextMusicId
+                player.reset()
+                player.setDataSource(currentMusic.path)
+                player.prepare()
+                player.setOnCompletionListener{
+                    songOver()
+                }
+                isQueuePlaying = false
+            }
         }
     }
 
-    fun changeMusic(id: Int)
+    fun play(queueMusicId: Int)
     {
-        prepareMusic(id)
+        prepare(queueMusicId)
         player.start()
+        isQueuePlaying = true
         updateRequired()
-        nothingPlaying = false;
     }
 
-    fun isPlaying() : Boolean
+    fun isFavourite() : Boolean
     {
-        return player.isPlaying
+        return currentMusicId in favourites
     }
 
     fun toggleFavourite()
     {
-        musics[currentMusic].isFavourite = !musics[currentMusic].isFavourite
+        if(currentMusicId in favourites)
+        {
+            favourites.remove(Integer.valueOf(currentMusicId))
+        }
+        else
+        {
+            favourites.add(currentMusicId)
+        }
         updateRequired()
     }
 
-    fun toggle()
+    fun togglePlay()
     {
-        if(player.isPlaying) player.pause()
+        if(isPlaying) player.pause()
         else player.start()
-        nothingPlaying = false
+        isQueuePlaying = true
         updateRequired()
     }
 
     fun next()
     {
-        if(currentMusic == musics.size -1)
+        if(queueMusicId == queue.size -1)
         {
-            if(repeat == Repeat.All) return changeMusic(0)
+            if(repeatMode == Repeat.All) return play(0)
             updateRequired()
-            return prepareMusic(0)
+            return prepare(0)
         }
-
-        changeMusic(currentMusic + 1)
+        play(queueMusicId + 1)
     }
 
-    fun restartMusic()
+    private fun restartMusic()
     {
         player.seekTo(0)
         player.start()
     }
 
-    fun repeatToggle()
+    fun toggleRepeat()
     {
-        repeat = when (repeat) {
+        repeatMode = when (repeatMode) {
             Repeat.None -> Repeat.All
             Repeat.All -> Repeat.Once
             Repeat.Once -> Repeat.None
@@ -203,12 +301,12 @@ class MusicController : Application() {
 
         //if(player.currentPosition > 4000) return restartMusic()
 
-        if(currentMusic == 0)
+        if(queueMusicId == 0)
         {
-            if(repeat == Repeat.All) return changeMusic(musics.size -1)
+            if(repeatMode == Repeat.All) return play(queue.size - 1)
             return restartMusic()
         }
 
-        changeMusic(currentMusic - 1)
+        play(queueMusicId - 1)
     }
 }

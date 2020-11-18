@@ -9,7 +9,13 @@ import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
+import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.musicController
+import java.io.File
+
+enum class ItemMode {
+    None, ItemMusicId, ItemFiles
+}
 
 class ItemMusicFragment : Fragment() {
 
@@ -17,29 +23,28 @@ class ItemMusicFragment : Fragment() {
     private var musicId: Int? = null
     //private var fct: () -> Unit = {}
 
+    private var clickCallback : () -> Unit = {}
+    private var selectCallback : () -> Unit = {}
+
+    private var file : File? = null
+
     lateinit var name : TextView
     lateinit var desc : TextView
     lateinit var img : ImageView
     lateinit var ckeckbox : CheckBox
     lateinit var ItemMainLayout : LinearLayout
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            first = it.getBoolean("first")
-            musicId = it.getInt("musicId")
-            //fct = it.getSerializable("callback") as () -> Unit
-        }
-    }
+    var mode : ItemMode = ItemMode.None
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        var v =  inflater.inflate(R.layout.fragment_item_music, container, false)
 
-        var music = musicController.musics[musicId!!]
+        // (ItemMainLayout.parent as LinearLayout).orientation // do depend on orientation
+
+        var v =  inflater.inflate(R.layout.fragment_item_music, container, false)
 
         img = v.findViewById(R.id.imageView_item)
         name = v.findViewById(R.id.textView_Name)
@@ -47,29 +52,53 @@ class ItemMusicFragment : Fragment() {
         ckeckbox = v.findViewById(R.id.itemCheckBox)
         ItemMainLayout = v.findViewById(R.id.ItemMainLayout)
 
-        ckeckbox.setOnCheckedChangeListener { buttonView, isChecked ->
-            //Toast.makeText(v.context,isChecked.toString(),Toast.LENGTH_SHORT).show()
-            //fct()
-        }
-
-        name.text = music.title
-        desc.text = music.artist
-        img.setImageResource(R.drawable.music)
-
-        if(music.image != null)
-        {
-            img.setImageBitmap(music.image)
-        }
-
-        if(first!!)
-        {
+        /*if (first!!) {
             val param = v.layoutParams as ViewGroup.MarginLayoutParams
             param.setMargins(0, dpToPx(5F), 0, 0)
             v.layoutParams = param
+        }*/
+
+        if(mode == ItemMode.ItemMusicId) {
+            var music = musicController.musics[musicId!!]
+
+            name.text = music.title
+            desc.text = music.artist
+            img.setImageResource(R.drawable.music)
+
+            if (music.image != null) img.setImageBitmap(music.image)
+        }
+        else  if(mode == ItemMode.ItemFiles) {
+
+            name.text = file!!.name
+
+            if(file!!.isDirectory)
+            {
+                desc.text = "directory"
+                img.setImageResource(R.drawable.folder)
+
+
+            }
+            if(file!!.isFile)
+            {
+                desc.text = "File"
+                img.setImageResource(R.drawable.folder)
+
+                if(MainActivity.isMusicFile(file!!))
+                {
+                    desc.text = "Music"
+                    img.setImageResource(R.drawable.music)
+                }
+            }
         }
 
-        ItemMainLayout.setOnClickListener{
-            musicController.changeMusic(musicId!!)
+        // Setup callbacks
+
+        ckeckbox.setOnCheckedChangeListener { buttonView, isChecked ->
+            selectCallback()
+        }
+
+        ItemMainLayout.setOnClickListener {
+            clickCallback()
         }
 
         return v;
@@ -81,51 +110,50 @@ class ItemMusicFragment : Fragment() {
         resources.displayMetrics
     ).toInt()
 
+
+    fun initMusicId(id: Int, f: Boolean) : ItemMusicFragment{
+
+        first = f
+        musicId = id
+        mode = ItemMode.ItemMusicId
+
+        return this
+    }
+
+    fun initFileId(f : File) : ItemMusicFragment{
+
+        file = f
+        mode = ItemMode.ItemFiles
+
+        return this
+    }
+
+    fun addClickCallback(f : () -> Unit) : ItemMusicFragment
+    {
+       clickCallback = f
+        return this
+    }
+
+    fun addSelectCallback(f : () -> Unit) : ItemMusicFragment
+    {
+        selectCallback = f
+        return this
+    }
+
     companion object{
 
         fun addItem(
-            fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int,
-            id: Int,
-            first: Boolean
-        )
+                fm: androidx.fragment.app.FragmentManager?,
+                layout_id: Int
+        ) : ItemMusicFragment
         {
             val fragOne: Fragment = ItemMusicFragment()
-            val arguments = Bundle()
-
-            arguments.putInt("musicId", id)
-            arguments.putBoolean("first", first)
-            //arguments.putSerializable("callback", {} as Serializable)
-
-            fragOne.arguments = arguments
-
             val tr = fm!!.beginTransaction()
             tr.add(layout_id, fragOne)
             tr.commitAllowingStateLoss()
             tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-        }
 
-        fun addItem2(
-            fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int,
-            id: Int,
-            first: Boolean,
-            fct: () -> Unit
-        )
-        {
-            val fragOne: Fragment = ItemMusicFragment()
-            val arguments = Bundle()
-
-            arguments.putInt("musicId", id)
-            arguments.putBoolean("first", first)
-            //arguments.putSerializable("callback", fct as Serializable)
-
-            fragOne.arguments = arguments
-
-            val tr = fm!!.beginTransaction()
-            tr.add(layout_id, fragOne)
-            tr.commitAllowingStateLoss()
-            tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+            return fragOne as ItemMusicFragment
         }
     }
 

@@ -18,7 +18,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-
         android:theme="@style/MusicTest.TransparentTheme">
         <activity android:name=".activities.QueueActivity"></activity>
         <activity android:name=".activities.MusicControllerActivity"></activity>

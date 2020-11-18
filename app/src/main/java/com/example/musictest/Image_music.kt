@@ -1,8 +1,6 @@
 package com.example.musictest
 
-
 import android.graphics.Bitmap
-
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -33,7 +31,7 @@ class Image_music : Fragment() {
         var v = inflater.inflate(R.layout.fragment_image_music, container, false)
         var imageMusic = v.findViewById<ImageView>(R.id.imageMusic);
 
-        val bmp = musicController.musics[param1!!].image
+        val bmp = musicController.getMusicFromQueueId(param1!!).image//musics[musicController2.queue[param1!!]].image
 
         if(bmp != null) {
             val blurredBmp = BlurBuilder.blur(v.context, Bitmap.createBitmap(bmp))

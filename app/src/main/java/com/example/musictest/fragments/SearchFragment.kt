@@ -1,7 +1,5 @@
 package com.example.musictest.fragments
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
 import com.example.musictest.activities.musicController
@@ -17,13 +16,20 @@ import com.example.musictest.activities.musicController
 class SearchFragment : Fragment() {
 
     lateinit var search : EditText;
-    lateinit var tab: ArrayList<Int>
-    var selection: ArrayList<Int> = ArrayList()
-    lateinit var listerLayout : LinearLayout
-    lateinit var playlistBtn : Button
-    lateinit var queueButton : Button
-    lateinit var listerTitle : TextView
-    lateinit var listerOptions : LinearLayout
+
+    fun addListItem(
+            fm: androidx.fragment.app.FragmentManager?,
+            layout_id: Int
+    ) : ListerFragment
+    {
+        val fragOne: Fragment = ListerFragment()
+        val tr = fm!!.beginTransaction()
+        tr.add(layout_id, fragOne)
+        tr.commitAllowingStateLoss()
+        tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+
+        return fragOne as ListerFragment
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -31,81 +37,23 @@ class SearchFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
 
-        var v = inflater.inflate(R.layout.fragment_search, container, false)
+        val v = inflater.inflate(R.layout.fragment_search, container, false)
 
         search = v.findViewById(R.id.editTextSearch);
-        listerLayout = v.findViewById(R.id.listerLayout);
-
-        tab = ArrayList()
 
         val fm = fragmentManager
 
-        fun oncheckboxchanged(): () -> Unit = {
-
-            selection.clear()
-
-            var sel = 0
-
-            val childCount: Int = listerLayout.getChildCount()
-            for (i in 0 until childCount) {
-                val v: View = listerLayout.getChildAt(i)
-                if(v.findViewById<CheckBox>(R.id.itemCheckBox).isChecked)
-                {
-                    sel ++
-                    selection.add(i)
-                }
-            }
-
-            if(sel == 0)
-            {
-                playlistBtn.isEnabled = false
-                queueButton.isEnabled = false
-                listerOptions.animate()
-                    .alpha(0f)
-                    .setDuration(100)
-                    .setListener(object : AnimatorListenerAdapter() {
-                        override fun onAnimationEnd(animation: Animator) {
-                            listerOptions.visibility = View.GONE
-                        }
-                    })
-            }
-            else
-            {
-                listerOptions.visibility = View.VISIBLE
-                playlistBtn.isEnabled = true
-                queueButton.isEnabled = true
-                listerOptions.animate()
-                    .alpha(1f)
-                    .setDuration(100)
-                    .setListener(null)
-            }
-        }
-
-        queueButton = v.findViewById(R.id.listerButtonQueue)
-        playlistBtn = v.findViewById(R.id.listerButtonPlaylist)
-        listerOptions = v.findViewById(R.id.listerOptions)
-        listerTitle = v.findViewById(R.id.listerTitle)
-
-        playlistBtn.isEnabled = false
-        queueButton.isEnabled = false
-        listerOptions.visibility = View.GONE
-        listerTitle.visibility = View.GONE
-
-        playlistBtn.setOnClickListener{
-
-            Toast.makeText(v.context, selection.size.toString()+ " songs added to playlist", Toast.LENGTH_SHORT).show()
-        }
-
-        queueButton.setOnClickListener{
-            Toast.makeText(v.context, selection.size.toString()+ " songs added to queue", Toast.LENGTH_SHORT).show()
-        }
-
         var id = 0
 
-        for(mid in musicController.musics)
+        var tab = ArrayList<Int>()
+
+        for(i in musicController.musics)
         {
-            ItemMusicFragment.addItem2(fm, R.id.listerLayout, id, id++ == 0, oncheckboxchanged())
+            tab.add(id++)
         }
+
+        // init with all ids
+        addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
 
         search.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -116,19 +64,21 @@ class SearchFragment : Fragment() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
 
-                var newtab: ArrayList<Int> = ArrayList()
+                val newtab: ArrayList<Int> = ArrayList()
 
-                var id = 0
+                id = 0
 
                 if (search.text.toString().length != 0) {
-                    for (music in musicController.musics) {
-                        if (music.title.toString().toLowerCase().contains(
+
+                    for (m in musicController.musics) {
+                        var music = musicController.musics[id]
+                        if (music.title.toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
-                            || music.artist.toString().toLowerCase().contains(
+                            || music.artist.toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
-                            || music.album.toString().toLowerCase().contains(
+                            || music.album.toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
                             || music.path.toLowerCase().contains(
@@ -142,14 +92,12 @@ class SearchFragment : Fragment() {
                     }
                 }
 
-                id = 0
-
                 if (tab.hashCode() != newtab.hashCode()) {
-                    v.findViewById<LinearLayout>(R.id.listerLayout).removeAllViews();
+                    v.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews();
                     tab = newtab
-                    for (mid in tab) {
-                        ItemMusicFragment.addItem(fm, R.id.listerLayout, mid, id++ == 0)
-                    }
+
+                    if(tab.size > 0)
+                        addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
                 }
             }
         })
