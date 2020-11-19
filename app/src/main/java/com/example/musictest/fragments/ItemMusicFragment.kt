@@ -21,7 +21,6 @@ class ItemMusicFragment : Fragment() {
 
     private var first: Boolean? = null
     private var id: Int? = null
-    //private var fct: () -> Unit = {}
 
     private var clickCallback: () -> Unit = {}
     private var selectCallback: () -> Unit = {}
@@ -77,13 +76,13 @@ class ItemMusicFragment : Fragment() {
             }
         }
         else if (mode == ItemMode.ItemMusicId) {
-            var music = musicController.musics[id!!]
+            /*var music = musicController.musics[id!!]
 
             name.text = music.title
             desc.text = music.artist
             img.setImageResource(R.drawable.music)
 
-            if (music.image != null) img.setImageBitmap(music.imageMini)
+            if (music.image != null) img.setImageBitmap(music.imageMini)*/
         } else if (mode == ItemMode.ItemFiles) {
 
             name.text = file!!.name
@@ -233,6 +232,5 @@ class ItemMusicFragment : Fragment() {
             return fragOne as ItemMusicFragment
         }
     }
-
 }
 

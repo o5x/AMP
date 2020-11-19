@@ -125,6 +125,41 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    fun scanMusics()
+    {
+        createNotificationChannel(CHANNEL_ID, "Music Scan")
+
+        // Setup notification progress
+        mNotifyManager = NotificationManagerCompat.from(this)
+        mBuilder = NotificationCompat.Builder(this, this.CHANNEL_ID)
+        mBuilder.setContentTitle("Music Scan")
+                .setContentText("Scan starting")
+                .setSmallIcon(R.drawable.appicon)
+                .setNotificationSilent()
+
+        Thread {
+            Log.w("fileScan", "thread ${Thread.currentThread()} started ")
+            val gpath: String = Environment.getExternalStorageDirectory().absolutePath
+            val spath2 = "Music"
+            val fullpath2 = File(gpath + File.separator + spath2)
+            recursiveMusicScan(fullpath2)
+            Log.w("fileScan", scanfilesCount.toString() + "musics found")
+
+            mBuilder.setContentTitle("Music Scan Complete")
+                    .setContentText("$scanfilesCount musics found") // Removes the progress bar
+                    .setProgress(0, 0, false)
+
+            mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
+            //Thread.sleep(5000)
+
+            musicController.save()
+
+            mNotifyManager.cancel(CHANNEL_NID)
+
+        }.start()
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -200,30 +235,23 @@ class MainActivity : AppCompatActivity() {
 
        // }
 
-        createNotificationChannel(CHANNEL_ID, "Music Scan")
+        /*if(true)
+        {
+            Thread{
+                if(!musicController.restore())
+                {
+                    scanMusics()
+                }
+            }.start()
+        }
+        else
+        {*/
+            scanMusics()
+        //}
 
-        // Setup notification progress
-        mNotifyManager = NotificationManagerCompat.from(this)
-        mBuilder = NotificationCompat.Builder(this, this.CHANNEL_ID)
-        mBuilder.setContentTitle("Music Scan")
-                .setContentText("Scan starting")
-                .setSmallIcon(R.drawable.appiconrot)
-                .setNotificationSilent()
 
-        Thread {
-            Log.w("fileScan", "thread ${Thread.currentThread()} started ")
-            val gpath: String = Environment.getExternalStorageDirectory().absolutePath
-            val spath2 = "Music"
-            val fullpath2 = File(gpath + File.separator + spath2)
-            recursiveMusicScan(fullpath2)
-            Log.w("fileScan", scanfilesCount.toString() + "musics found")
 
-            mBuilder.setContentTitle("Music Scan Complete")
-                    .setContentText("$scanfilesCount musics found") // Removes the progress bar
-                    .setProgress(0, 0, false)
 
-            mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
-        }.start()
 
         title = findViewById(R.id.Apptitle)
         button_back = findViewById(R.id.imageButtonBack)
@@ -325,6 +353,7 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationManager!!.cancelAll()
         }
+
         unregisterReceiver(broadcastReceiver)
     }
 

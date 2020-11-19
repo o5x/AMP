@@ -2,26 +2,22 @@ package com.example.musictest.fragments
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.app.AlertDialog
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.musictest.R
-import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.musicController
-import kotlinx.android.synthetic.main.fragment_item_music.view.*
-import java.io.File
+
+import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 
 
-enum class ListerMode {
-    None, ListMusics, ListMusicId, ListFiles, ListPlaylists
-}
+data class MusicItem(val id: Int, var selected : Boolean = false, var callbackCheckBox: () -> Unit = {}, var clickCallback: () -> Unit = {})
 
-class ListerFragment : Fragment()  {
+class ListerRecyclerFragment : Fragment()  {
 
     var title : String = ""
     //var listMusic : ArrayList<Music> = ArrayList()
@@ -30,12 +26,12 @@ class ListerFragment : Fragment()  {
     var mode : ListerMode = ListerMode.None
 
     lateinit var tab: ArrayList<Int>
-    var selection: ArrayList<Int> = ArrayList()
-    lateinit var listerLayout : LinearLayout
+
+    /*lateinit var listerLayout : LinearLayout
     lateinit var playlistBtn : Button
     lateinit var queueButton : Button
     lateinit var listerTitle : TextView
-    lateinit var listerOptions : LinearLayout
+    lateinit var listerOptions : LinearLayout*/
 
     /*fun initMusicList(list: ArrayList<Music>) : Fragment
     {
@@ -44,33 +40,129 @@ class ListerFragment : Fragment()  {
         return this
     }*/
 
-    fun initMusicIdList(list: ArrayList<Int>) : ListerFragment
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        retainInstance = true
+    }
+
+    fun initMusicIdList(list: ArrayList<Int>) : ListerRecyclerFragment
     {
         mode = ListerMode.ListMusicId
         listMusicId = list
         return this
     }
 
-    fun setTitle(title: String) : ListerFragment
+    fun setTitle(title: String) : ListerRecyclerFragment
     {
         this.title = title
 
         return this
     }
 
-    fun initFile(path: String) : ListerFragment
-    {
-        mode = ListerMode.ListFiles
-        folderPath = path
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        return this
-    }
 
-    fun initPlaylist() : ListerFragment
-    {
-        mode = ListerMode.ListPlaylists
+        listerButtonPlaylist.isEnabled = false
+        listerButtonQueue.isEnabled = false
 
-        return this
+        listerOptions.visibility = View.GONE
+
+        if(title.isNotEmpty()) listerTitle.text = "$title (${listMusicId.size})"
+        else listerTitle.visibility = View.GONE
+
+        list_recycler_view.apply {
+            layoutManager = LinearLayoutManager(activity)
+
+            val list : ArrayList<MusicItem> = ArrayList()
+
+            for(i in 0 until listMusicId.size)
+            {
+                val mi = MusicItem(listMusicId[i])
+                mi.clickCallback = {
+                    musicController.setQueueId(listMusicId)
+                    musicController.play(i)
+                }
+                list.add(mi);
+            }
+
+            var nicCageMovies = list.toTypedArray()
+
+            adapter = ListAdapter(nicCageMovies)
+
+
+            fun callbackCheckBox() {
+                var oneselected = false
+                for(i in 0 until nicCageMovies.size)
+                {
+                    if(nicCageMovies[i].selected)
+                    {
+                        oneselected = true
+                        break
+                    }
+                }
+                if(oneselected)
+                {
+                    (adapter as ListAdapter).selectMode(layoutManager!!, View.VISIBLE)
+                    listerOptions.visibility = View.VISIBLE
+                    listerButtonPlaylist.isEnabled = true
+                    listerButtonQueue.isEnabled = true
+                    listerOptions.animate()
+                            .alpha(1f)
+                            .setDuration(100)
+                            .setListener(null)
+                }
+                else
+                {
+                    (adapter as ListAdapter).selectMode(layoutManager!!, View.GONE)
+
+                    listerButtonPlaylist.isEnabled = false
+                    listerButtonQueue.isEnabled = false
+                    listerOptions.animate()
+                            .alpha(0f)
+                            .setDuration(100)
+                            .setListener(object : AnimatorListenerAdapter() {
+                                override fun onAnimationEnd(animation: Animator) {
+                                    listerOptions.visibility = View.GONE
+                                }
+                            })
+                }
+            }
+
+            for(m in nicCageMovies)
+            {
+                m.callbackCheckBox = {
+                    callbackCheckBox()
+                }
+            }
+
+
+            listerButtonPlaylist.setOnClickListener{
+
+                val selection: ArrayList<Int> = ArrayList()
+
+                for(i in 0 until nicCageMovies.size)
+                {
+                    if(nicCageMovies[i].selected) selection.add(i)
+                }
+                musicController.addToPlaylistDialog(musicController.c,selection)
+            }
+
+            listerButtonQueue.setOnClickListener{
+
+                val selection: ArrayList<Int> = ArrayList()
+
+                for(i in 0 until nicCageMovies.size)
+                {
+                    if(nicCageMovies[i].selected) selection.add(i)
+                }
+
+                musicController.addToQueue(selection, true)
+                Toast.makeText(context, selection.size.toString() + " songs added to queue", Toast.LENGTH_SHORT).show()
+            }
+
+
+        }
     }
 
     override fun onCreateView(
@@ -78,84 +170,12 @@ class ListerFragment : Fragment()  {
             savedInstanceState: Bundle?,
     ): View? {
         // Inflate the layout for this fragment
-        val v = inflater.inflate(R.layout.fragment_lister, container, false)
+        return inflater.inflate(R.layout.fragment_lister_recycler, container, false)
 
-        listerLayout = v.findViewById(R.id.listerLayout);
+  /*
 
-        tab = ArrayList()
 
-        val fm = fragmentManager
-
-        fun longClickCallback(id : Int) {
-            //Toast.makeText(v.context, "enabled", Toast.LENGTH_SHORT).show()
-            val childCount: Int = listerLayout.getChildCount()
-            for (i in 0 until childCount) {
-                val v: View = listerLayout.getChildAt(i)
-                v.itemCheckBox.isEnabled = true
-                if (i == id) {
-                    v.itemCheckBox.isChecked = true
-                }
-            }
-        }
-
-        fun onCheckboxChanged(id : Int) {
-
-            selection.clear()
-
-            var sel = 0
-
-            val childCount: Int = listerLayout.getChildCount()
-            for (i in 0 until childCount) {
-                val v: View = listerLayout.getChildAt(i)
-                if(v.findViewById<CheckBox>(R.id.itemCheckBox).isChecked)
-                {
-                    sel ++
-                    selection.add(i)
-                }
-            }
-
-            // if none selected
-            if(sel == 0)
-            {
-                /*for (i in 0 until childCount) {
-                    val v: View = listerLayout.getChildAt(i)
-                    v.itemCheckBox.isEnabled = false
-                }*/
-
-                playlistBtn.isEnabled = false
-                queueButton.isEnabled = false
-                listerOptions.animate()
-                        .alpha(0f)
-                        .setDuration(100)
-                        .setListener(object : AnimatorListenerAdapter() {
-                            override fun onAnimationEnd(animation: Animator) {
-                                listerOptions.visibility = View.GONE
-                            }
-                        })
-
-                for (i in 0 until childCount) {
-                    val v: View = listerLayout.getChildAt(i)
-                    v.itemCheckBox.visibility = View.GONE
-                }
-            }
-            else
-            {
-                listerOptions.visibility = View.VISIBLE
-                playlistBtn.isEnabled = true
-                queueButton.isEnabled = true
-                listerOptions.animate()
-                        .alpha(1f)
-                        .setDuration(100)
-                        .setListener(null)
-
-                for (i in 0 until childCount) {
-                    val v: View = listerLayout.getChildAt(i)
-                    v.itemCheckBox.visibility = View.VISIBLE
-                }
-            }
-        }
-
-        queueButton = v.findViewById(R.id.listerButtonQueue)
+        /*queueButton = v.findViewById(R.id.listerButtonQueue)
         playlistBtn = v.findViewById(R.id.listerButtonPlaylist)
         listerOptions = v.findViewById(R.id.listerOptions)
         listerTitle = v.findViewById(R.id.listerTitle)
@@ -163,9 +183,9 @@ class ListerFragment : Fragment()  {
         playlistBtn.isEnabled = false
         queueButton.isEnabled = false
         listerOptions.visibility = View.GONE
-        listerTitle.visibility = View.GONE
+        listerTitle.visibility = View.GONE*/
 
-        playlistBtn.setOnClickListener{
+        /*playlistBtn.setOnClickListener{
             musicController.addToPlaylistDialog(musicController.c,selection, {
                 // uncheck selection
                 val childCount: Int = listerLayout.getChildCount()
@@ -179,9 +199,9 @@ class ListerFragment : Fragment()  {
         queueButton.setOnClickListener{
             musicController.addToQueue(selection, true)
             Toast.makeText(v.context, selection.size.toString() + " songs added to queue", Toast.LENGTH_SHORT).show()
-        }
+        }*/
 
-        when(mode){
+        /*when(mode){
             ListerMode.ListPlaylists -> {
 
                 //listerTitle.visibility = View.VISIBLE
@@ -222,6 +242,7 @@ class ListerFragment : Fragment()  {
                             selectMode = true
                             break
                         }
+
                     }
 
                     if (selectMode) {
@@ -280,17 +301,15 @@ class ListerFragment : Fragment()  {
             else ->{
                 //Toast.makeText(context, "ListerMode None !", Toast.LENGTH_SHORT).show()
             }
-        }
+        }*/
 
-        if(title.isNotEmpty())
+        /*if(title.isNotEmpty())
         {
             listerTitle.visibility = View.VISIBLE
             listerTitle.text = title
-        }
+        }*/
 
-
-
-        return v
+        return v*/
     }
 
 

@@ -46,11 +46,11 @@ class HomeFragment : Fragment() {
         val tabFav_i = arrayOf(R.drawable.liked, R.drawable.all, R.drawable.folder, R.drawable.most)
         val tabFav_d = arrayOf(musicController.playlist[0].musics.size.toString() + " songs",musicController.musics.size.toString() + " songs", "", "")
         val tabFav_c = arrayOf(
-                { (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(musicController.playlist[0].musics).setTitle("Liked (" + tabFav_d[0] + ")")) },
+                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(musicController.playlist[0].musics).setTitle("Liked")) },
                 {
                     val allMusicsIds = ArrayList<Int>()
                     for (i in 0 until musicController.musics.size) { allMusicsIds.add(i) }
-                    (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(allMusicsIds).setTitle("All (" + tabFav_d[1] + ")"))
+                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(allMusicsIds).setTitle("All"))
                 },{  (activity as MainActivity).replaceFragment(ListerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music")) },
                 {})
 

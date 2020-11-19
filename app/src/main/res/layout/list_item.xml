@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:focusable="true"
-    android:clickable="true"
-    android:background="?android:attr/selectableItemBackground"
-    tools:context=".fragments.ItemMusicFragment">
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingTop="8dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
-        android:id="@+id/ItemMainLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:background="#333333"
+        android:layout_height="match_parent"
         android:orientation="horizontal">
 
         <CheckBox
-            android:id="@+id/itemCheckBox"
+            android:id="@+id/list_checkBox"
             android:layout_width="50dp"
             android:layout_height="match_parent"
             android:button="@null"
@@ -26,32 +26,33 @@
             android:paddingStart="8dp" />
 
         <ImageView
-            android:id="@+id/imageView_item"
+            android:id="@+id/list_image"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginRight="10dp" />
+            tools:srcCompat="@drawable/music" />
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textView_Name"
-                android:layout_width="match_parent"
+                android:id="@+id/list_title"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="Name"
-                android:textSize="16sp"
+                android:layout_gravity="left"
+                android:paddingLeft="16dp"
+                android:text="Title"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textView_desc"
-                android:layout_width="match_parent"
+                android:id="@+id/list_description"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:paddingLeft="16dp"
                 android:text="description" />
         </LinearLayout>
-
     </LinearLayout>
 
-</FrameLayout>
+</LinearLayout>

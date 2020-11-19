@@ -20,15 +20,15 @@ class SearchFragment : Fragment() {
     fun addListItem(
             fm: androidx.fragment.app.FragmentManager?,
             layout_id: Int
-    ) : ListerFragment
+    ) : ListerRecyclerFragment
     {
-        val fragOne: Fragment = ListerFragment()
+        val fragOne: Fragment = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
         tr.add(layout_id, fragOne)
         tr.commitAllowingStateLoss()
         tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
 
-        return fragOne as ListerFragment
+        return fragOne as ListerRecyclerFragment
     }
 
     override fun onCreateView(
@@ -53,6 +53,7 @@ class SearchFragment : Fragment() {
         }
 
         // init with all ids
+
         addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
 
         search.addTextChangedListener(object : TextWatcher {

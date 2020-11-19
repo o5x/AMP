@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -11,12 +12,16 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.util.Log
 import android.widget.Toast
+import androidx.preference.PreferenceManager
+import com.example.musictest.builders.ObjectSerializer
 import java.io.File
-import java.lang.Exception
+import java.io.IOException
 
 enum class Repeat {
     None, All, Once
 }
+
+val metaRetriever = MediaMetadataRetriever()
 
 class Music(f: File) {
 
@@ -28,16 +33,16 @@ class Music(f: File) {
     var album: String = "Unknown Album"
     var imageByte: ByteArray?  = null
     var image: Bitmap? = null
-    var imageMini: Bitmap? = null
     var valid: Boolean = false
+// TODO postinint lazy
+    /*var image2 by Lazy<Bitmap>{
+
+    }// post init*/
 
     init {
-
         try {
-
-            val metaRetriever = MediaMetadataRetriever()
             metaRetriever.setDataSource(path)
-            metaRetriever.hashCode()
+            //metaRetriever.hashCode()
             artist = if (metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) != null)
                 metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST).toString()
             else "Unknown Artist"
@@ -47,6 +52,7 @@ class Music(f: File) {
             title = if (metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) != null)
                 metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE).toString()
             else f.nameWithoutExtension
+
             imageByte = metaRetriever.embeddedPicture
             if (imageByte != null) {
                 val bmp = BitmapFactory.decodeByteArray(imageByte, 0, imageByte!!.size)
@@ -67,28 +73,11 @@ class Music(f: File) {
                     val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
                     Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
                 }
-
-
-                val IMAGE_SIZE2 = 100
-                val scale_factor2: Float
-                if (landscape) scale_factor2 = IMAGE_SIZE2.toFloat() / newimage.getHeight() else scale_factor2 = IMAGE_SIZE2.toFloat() / newimage.getWidth()
-                val matrix2 = Matrix()
-                matrix2.postScale(scale_factor2, scale_factor2)
-
-                imageMini = if (landscape) {
-                    val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
-                    Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix2, true)
-                } else {
-                    val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
-                    Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix2, true)
-                }
-
-
-
             }
+
             valid = true
         }
-        catch (exception :Exception)
+        catch (exception: Exception)
         {
             Log.w("fileScan", "Invalid Music = " + f.path)
         }
@@ -109,7 +98,7 @@ class Playlist(var name: String) {
         ids.forEach{ id -> add(id) }
     }
 
-    fun remove(id : Int)
+    fun remove(id: Int)
     {
         if(musics.indexOf(id) != -1) musics.remove(id)
     }
@@ -119,11 +108,11 @@ class Playlist(var name: String) {
         ids.forEach{ id -> remove(id) }
     }
 
-    fun contains(id : Int) : Boolean{
+    fun contains(id: Int) : Boolean{
         return id in musics
     }
 
-    fun toggle(id : Int) {
+    fun toggle(id: Int) {
         if(contains(id)) remove(id)
         else add(id)
     }
@@ -162,8 +151,8 @@ class MusicController : Application() {
     var playingFrom = "queue"
 
     // All musics array
-    val musics: ArrayList<Music> = ArrayList()
-    val musicsPaths: ArrayList<String> = ArrayList()
+    var musics: ArrayList<Music> = ArrayList()
+    var musicsPaths: ArrayList<String> = ArrayList()
 
     // Queue musics array
     val queue: ArrayList<Int> = ArrayList()
@@ -254,7 +243,7 @@ class MusicController : Application() {
         prepare(0)
     }
 
-    fun addToQueue(selection : ArrayList<Int>, duplicates : Boolean = false)
+    fun addToQueue(selection: ArrayList<Int>, duplicates: Boolean = false)
     {
         if(duplicates)
         {
@@ -370,7 +359,7 @@ class MusicController : Application() {
             return prepare(0)
         }
         play(queueMusicId + 1)
-        Log.w("Next", "after = " + queueMusicId+ " = " + currentMusicId)
+        Log.w("Next", "after = " + queueMusicId + " = " + currentMusicId)
     }
 
     private fun restartMusic()
@@ -405,7 +394,7 @@ class MusicController : Application() {
         play(queueMusicId - 1)
     }
 
-    fun addToPlaylistDialog(context : Context,selection : ArrayList<Int>, onSuccess : () -> Unit = {}, onCancel : () -> Unit = {})
+    fun addToPlaylistDialog(context: Context, selection: ArrayList<Int>, onSuccess: () -> Unit = {}, onCancel: () -> Unit = {})
     {
         var playlistNames : ArrayList<String> = ArrayList()
 
@@ -428,7 +417,7 @@ class MusicController : Application() {
                     Toast.LENGTH_LONG).show()
 
             else Toast.makeText(context,
-                    selection.size.toString() +" songs added to " + li2[i],
+                    selection.size.toString() + " songs added to " + li2[i],
                     Toast.LENGTH_LONG).show()
 
             playlist[i].add(selection)
@@ -437,15 +426,51 @@ class MusicController : Application() {
 
             onSuccess()
         }
-        // Set the neutral/cancel button click listener
-        mBuilder.setNeutralButton("Cancel") { dialog, which ->
-            // Do something when click the neutral button
 
+        mBuilder.setNeutralButton("Cancel") { dialog, which ->
             dialog.cancel()
             onCancel()
         }
 
         val mDialog = mBuilder.create()
         mDialog.show()
+    }
+
+    fun save()
+    {
+        // save the task list to preference
+        val prefs = PreferenceManager.getDefaultSharedPreferences(c);
+        val editor: SharedPreferences.Editor = prefs.edit()
+        try {
+            editor.putString("musics", ObjectSerializer.serialize(musicsPaths))
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        editor.commit() // do it in background
+    }
+
+    fun restore() : Boolean
+    {
+        //musics.clear()
+        try {
+            val prefs = PreferenceManager.getDefaultSharedPreferences(c);
+            val new_musics = ObjectSerializer.deserialize(prefs.getString("musics", ObjectSerializer.serialize(ArrayList<String>()))) as ArrayList<String>
+            if(new_musics.isNotEmpty())
+            {
+                musics.clear()
+                for(p in new_musics)
+                {
+                    val m = Music(File(p))
+                    if(m.valid) musics.add(m)
+                    else musicsPaths.remove(p)
+                }
+            }
+            return true
+        } catch (e: IOException) {
+            //e.printStackTrace()
+        } catch (e: ClassNotFoundException) {
+            //e.printStackTrace()
+        }
+        return false
     }
 }
