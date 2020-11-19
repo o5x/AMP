@@ -19,14 +19,17 @@
         android:src="@drawable/music" />
 
     <View
+        android:id="@+id/leftshadow"
         android:layout_width="5dp"
         android:layout_height="match_parent"
         android:layout_gravity="left"
-        android:background="@drawable/imageborderfilterleft"/>
+        android:background="@drawable/imageborderfilterleft" />
+
     <View
+        android:id="@+id/rightshadow"
         android:layout_width="5dp"
         android:layout_height="match_parent"
         android:layout_gravity="right"
-        android:background="@drawable/imageborderfilterright"/>
+        android:background="@drawable/imageborderfilterright" />
 
 </FrameLayout>

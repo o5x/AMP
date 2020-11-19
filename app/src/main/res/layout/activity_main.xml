@@ -8,7 +8,7 @@
     android:fitsSystemWindows="true"
     android:gravity="center"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".activities.MainActivity">
 
 
     <LinearLayout
@@ -113,7 +113,7 @@
     <LinearLayout
         android:id="@+id/linearLayout2"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="55dp"
         android:background="#111111"
         android:orientation="horizontal">
 
@@ -122,8 +122,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="HomeClick"
             android:backgroundTint="#111111"
+            android:onClick="HomeClick"
             app:srcCompat="@drawable/ic_home" />
 
         <ImageButton
@@ -131,8 +131,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="SearchClick"
             android:backgroundTint="#111111"
+            android:onClick="SearchClick"
             app:srcCompat="@drawable/ic_search" />
 
         <ImageButton
@@ -140,8 +140,8 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:onClick="ColectionClick"
             android:backgroundTint="#111111"
+            android:onClick="ColectionClick"
             app:srcCompat="@drawable/ic_collection" />
     </LinearLayout>
 

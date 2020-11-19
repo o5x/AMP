@@ -81,6 +81,7 @@ object CreateNotification {
                 .setLargeIcon(bmp)
                 .setOnlyAlertOnce(true) //show notification for only first time
                 .setShowWhen(false)
+                    .setNotificationSilent()
                 .addAction(R.drawable.ic_prev, "Previous", pendingIntentPrevious)
                 .addAction(playbutton, "Play", pendingIntentPlay)
                 .addAction(R.drawable.ic_next, "Next", pendingIntentNext)
@@ -89,7 +90,8 @@ object CreateNotification {
                     .setMediaSession(token)
                 )
                 .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build()
 
             notificationManagerCompat.notify(1, notification)

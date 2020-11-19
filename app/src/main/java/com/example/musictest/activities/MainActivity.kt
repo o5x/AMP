@@ -1,9 +1,13 @@
 package com.example.musictest.activities
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
@@ -17,6 +21,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
@@ -28,17 +34,26 @@ import com.example.musictest.fragments.CollectionFragment
 import com.example.musictest.fragments.HomeFragment
 import com.example.musictest.fragments.SearchFragment
 import com.example.musictest.fragments.SettingsFragment
-import com.example.musictest.services.*
+import com.example.musictest.services.OnClearFromRecentService
 import java.io.File
+
 
 // global MusicController
 var musicController = MusicController();
 
 class MainActivity : AppCompatActivity() {
 
+    val CHANNEL_ID = "channel2"
+    val CHANNEL_NID = 2
+
     lateinit var playBtn2 : Button
 
     lateinit var notificationManager: NotificationManager
+    var scanfilesCount = 0
+
+
+    lateinit var mBuilder : NotificationCompat.Builder
+    lateinit var mNotifyManager : NotificationManagerCompat
 
     lateinit var imageView_cover : ImageView
     lateinit var textView_title  : TextView
@@ -55,7 +70,7 @@ class MainActivity : AppCompatActivity() {
     var currentfragment : Fragment? = null
 
     companion object{
-        fun isMusicFile(f : File) : Boolean{ // TODO modify filter
+        fun isMusicFile(f: File) : Boolean{ // TODO modify filter
             return f.isFile
                     && (f.name.endsWith(".flac")
                     || f.name.endsWith(".mp3")
@@ -72,6 +87,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun musicReader(root: File) : ArrayList<File>{
         val fileList: ArrayList<File> = ArrayList()
         val listAllFiles = root.listFiles()
@@ -81,10 +97,33 @@ class MainActivity : AppCompatActivity() {
                     fileList.add(currentFile.absoluteFile)
                 }
             }
-            fileList.sortedWith(compareBy{ it.name })
+            fileList.sortedWith(compareBy { it.name })
         }
         return fileList;
     }
+
+    fun recursiveMusicScan(path: File)
+    {
+        Log.w("fileScan", "scanning " + path.path)
+
+        val listAllFiles = path.listFiles()
+        if (listAllFiles != null && listAllFiles.isNotEmpty()) {
+            for (currentFile in listAllFiles) {
+                if(currentFile.isDirectory)
+                {
+                    recursiveMusicScan(currentFile)
+                }
+                if (isMusicFile(currentFile)) {
+                    if(musicController.addMusic(currentFile)) scanfilesCount ++
+                }
+            }
+        }
+        mBuilder.setContentText("$scanfilesCount musics found") // Removes the progress bar
+                .setProgress(0, 0, true)
+
+        mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,8 +131,8 @@ class MainActivity : AppCompatActivity() {
 
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
         val result = audioManager.requestAudioFocus(
-            null,
-            AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
+                null,
+                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
         )
         if (result != AudioManager.AUDIOFOCUS_GAIN) {
             return  //Failed to gain audio focus
@@ -104,9 +143,9 @@ class MainActivity : AppCompatActivity() {
             != PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf<String>(Manifest.permission.READ_EXTERNAL_STORAGE),
-                0
+                    this,
+                    arrayOf<String>(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    0
             );
         }
 
@@ -115,9 +154,9 @@ class MainActivity : AppCompatActivity() {
             != PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf<String>(Manifest.permission.RECORD_AUDIO),
-                0
+                    this,
+                    arrayOf<String>(Manifest.permission.RECORD_AUDIO),
+                    0
             );
         }
 
@@ -126,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         musicController.init(this)
 
         // check intent filter
-        var fileList: ArrayList<File> = ArrayList()
+
         /*if (intent.action!!.compareTo(Intent.ACTION_VIEW) == 0) {
 
             if (intent.scheme!!.compareTo(ContentResolver.SCHEME_CONTENT) == 0) {
@@ -151,15 +190,40 @@ class MainActivity : AppCompatActivity() {
         }
         else
         {*/
-            val gpath: String = Environment.getExternalStorageDirectory().absolutePath
-            val spath = "Music/MusicTest"
-            val fullpath = File(gpath + File.separator + spath)
-            Log.w("fileread", "" + fullpath)
-            fileList = musicReader(fullpath)
+        val gpath: String = Environment.getExternalStorageDirectory().absolutePath
+        val spath = "Music/MusicTest"
+        val fullpath = File(gpath + File.separator + spath)
+        Log.w("fileread", "" + fullpath)
+        var fileList = musicReader(fullpath)
 
-        //musicController.setMusics(fileList);
         musicController.setMusicsTest(fileList);
+
        // }
+
+        createNotificationChannel(CHANNEL_ID, "Music Scan")
+
+        // Setup notification progress
+        mNotifyManager = NotificationManagerCompat.from(this)
+        mBuilder = NotificationCompat.Builder(this, this.CHANNEL_ID)
+        mBuilder.setContentTitle("Music Scan")
+                .setContentText("Scan starting")
+                .setSmallIcon(R.drawable.appiconrot)
+                .setNotificationSilent()
+
+        Thread {
+            Log.w("fileScan", "thread ${Thread.currentThread()} started ")
+            val gpath: String = Environment.getExternalStorageDirectory().absolutePath
+            val spath2 = "Music"
+            val fullpath2 = File(gpath + File.separator + spath2)
+            recursiveMusicScan(fullpath2)
+            Log.w("fileScan", scanfilesCount.toString() + "musics found")
+
+            mBuilder.setContentTitle("Music Scan Complete")
+                    .setContentText("$scanfilesCount musics found") // Removes the progress bar
+                    .setProgress(0, 0, false)
+
+            mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
+        }.start()
 
         title = findViewById(R.id.Apptitle)
         button_back = findViewById(R.id.imageButtonBack)
@@ -175,7 +239,7 @@ class MainActivity : AppCompatActivity() {
 
         // Notification controller
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createChannel()
+            createNotificationChannel(CreateNotification.CHANNEL_ID, "Playback")
             registerReceiver(broadcastReceiver, IntentFilter("com.example.musictest.Control_Music"))
             startService(Intent(baseContext, OnClearFromRecentService::class.java))
         }
@@ -191,42 +255,6 @@ class MainActivity : AppCompatActivity() {
 
     fun updateInterface()
     {
-        /*if (musicController.player.isPlaying)
-            playBtn2.setBackgroundResource(R.drawable.ic_pause)
-        else
-            playBtn2.setBackgroundResource(R.drawable.ic_play)
-
-        if (musicController.getCurrentMusic().image == null)
-            imageView_cover.setImageResource(R.drawable.music)
-        else
-            imageView_cover.setImageBitmap(musicController.getCurrentMusic().image)
-
-        textView_title.text = musicController.getCurrentMusic().title
-        textView_artist.text = musicController.getCurrentMusic().artist
-
-        if(musicController.nothingPlaying)
-        {
-            CreateNotification.cancelNotification(this)
-        }
-        else
-        {
-
-            if(musicController.isPlaying())
-            {
-                CreateNotification.createNotification(
-                        this, musicController.musics.get(musicController.currentMusic),
-                        R.drawable.ic_pause, musicController.currentMusic, musicController.musics.size - 1
-                )
-            }
-            else
-            {
-                CreateNotification.createNotification(
-                        this, musicController.musics.get(musicController.currentMusic),
-                        R.drawable.ic_play, musicController.currentMusic, musicController.musics.size - 1
-                )
-            }
-        }*/
-
         if (musicController.isPlaying)
             playBtn2.setBackgroundResource(R.drawable.ic_pause)
         else
@@ -245,12 +273,12 @@ class MainActivity : AppCompatActivity() {
             if(musicController.isPlaying)
             {
                 CreateNotification.createNotification(this,
-                        musicController.currentMusic,R.drawable.ic_pause)
+                        musicController.currentMusic, R.drawable.ic_pause)
             }
             else
             {
                 CreateNotification.createNotification(this,
-                        musicController.currentMusic,R.drawable.ic_play)
+                        musicController.currentMusic, R.drawable.ic_play)
             }
         }
         else
@@ -277,11 +305,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createChannel() {
+    private fun createNotificationChannel(channelId : String, channelName : String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CreateNotification.CHANNEL_ID,
-                "Playback", NotificationManager.IMPORTANCE_HIGH
+                    channelId,
+                    channelName, NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager = getSystemService(NotificationManager::class.java)
             if (notificationManager != null) {
@@ -289,6 +317,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -300,7 +330,7 @@ class MainActivity : AppCompatActivity() {
 
     // Interface buttons handlers
 
-    fun replaceFragment(newfragment: Fragment, force : Boolean = false)
+    fun replaceFragment(newfragment: Fragment, force: Boolean = false)
     {
         if(force || currentfragment == null || currentfragment!!.javaClass != newfragment.javaClass)
         {

@@ -31,6 +31,9 @@ class Image_music : Fragment() {
         var v = inflater.inflate(R.layout.fragment_image_music, container, false)
         var imageMusic = v.findViewById<ImageView>(R.id.imageMusic);
 
+        var left = v.findViewById<View>(R.id.leftshadow);
+        var right = v.findViewById<View>(R.id.rightshadow);
+
         val bmp = musicController.getMusicFromQueueId(param1!!).image//musics[musicController2.queue[param1!!]].image
 
         if(bmp != null) {
@@ -40,6 +43,8 @@ class Image_music : Fragment() {
         }
         else {
             imageMusic.visibility = View.INVISIBLE
+            left.visibility = View.INVISIBLE
+            right.visibility = View.INVISIBLE
         }
 
         return v

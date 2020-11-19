@@ -1,66 +1,92 @@
 package com.example.musictest.fragments
 
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.URLUtil
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
-import java.io.File
-import java.io.FileOutputStream
-import java.net.URL
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_PARAM1 = "param1"
 private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [CollectionFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+
 class CollectionFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
-
     lateinit var imageButtonDownload : ImageButton
 
+    fun addListItem(
+            fm: androidx.fragment.app.FragmentManager?,
+            layout_id: Int,
+    ) : ListerFragment
+    {
+        val fragOne: Fragment = ListerFragment()
+        val tr = fm!!.beginTransaction()
+        tr.add(layout_id, fragOne)
+        tr.commitAllowingStateLoss()
+        tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+
+        return fragOne as ListerFragment
+    }
+
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?,
     ): View? {
 
         // Inflate the layout for this fragment
         var v = inflater.inflate(R.layout.fragment_collection, container, false)
 
         imageButtonDownload = v.findViewById(R.id.imageButtonDownload)
-
         imageButtonDownload.setOnClickListener {
-            Toast.makeText(v.context, "Downloading file", Toast.LENGTH_SHORT).show();
-            //download("http://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3", Environment.getExternalStorageDirectory() .toString() + "Music/AMP");
+            //download("https://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3");
+            download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac");
         }
+
+        // var collectionPlaylists = v.findViewById<LinearLayout>(R.id.collectionPlaylists)
+
+        val fm = fragmentManager
+
+        // init with all ids
+        addListItem(fm, R.id.collectionPlaylists).initPlaylist()
 
         return v;
     }
 
-    fun download(link: String, path: String) {
-        URL(link).openStream().use { input ->
-            FileOutputStream(File(path)).use { output ->
-                input.copyTo(output)
-            }
+    private fun download(url: String) {
+
+        if(URLUtil.isValidUrl(url))
+        {
+            Toast.makeText(context, "Downloading file", Toast.LENGTH_SHORT).show();
+            val request = DownloadManager.Request(Uri.parse(url))
+            request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
+
+            var name = URLUtil.guessFileName(url, null, null)
+            //name = "musicdl.mp3"
+            request.setDescription("Downloading...")
+
+            request.setTitle(name)
+            request.allowScanningByMediaScanner()
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_ONLY_COMPLETION)
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name)
+
+            val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            manager.enqueue(request)
+        }
+        else
+        {
+            Toast.makeText(context, "CANNOT download file", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -76,25 +102,5 @@ class CollectionFragment : Fragment() {
         (activity as MainActivity).btn_home.setColorFilter(null)
         (activity as MainActivity).btn_search.setColorFilter(null)
         (activity as MainActivity).btn_collection.setColorFilter(R.color.th)
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment CollectionFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            CollectionFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
     }
 }

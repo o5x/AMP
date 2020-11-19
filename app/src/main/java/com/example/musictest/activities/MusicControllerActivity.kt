@@ -288,7 +288,11 @@ class MusicControllerActivity : AppCompatActivity() {
 
     fun playlistClick(v: View)
     {
-        Toast.makeText(getApplicationContext(), "add Playlist to implement", Toast.LENGTH_SHORT).show()
+        val ids = ArrayList<Int>()
+        ids.add(musicController.currentMusicId)
+        musicController.addToPlaylistDialog(this , ids, onSuccess = {
+            updateInterface()
+        })
     }
 
     fun showlistClick(v: View)

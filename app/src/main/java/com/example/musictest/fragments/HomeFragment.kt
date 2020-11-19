@@ -42,37 +42,33 @@ class HomeFragment : Fragment() {
         val fm = fragmentManager
 
         // FILL FAVOURITES
-        val tabFav = arrayOf("Liked Songs","Local Files","Suggested")
-        val tabFav_d = arrayOf("","", "just for you")
-        val tabFav_i = arrayOf(R.drawable.liked, R.drawable.folder, R.drawable.suggest)
-        var id = 0
+        val tabFav = arrayOf("Liked Songs","All Songs","Local Files","Most Listened")
+        val tabFav_i = arrayOf(R.drawable.liked, R.drawable.all, R.drawable.folder, R.drawable.most)
+        val tabFav_d = arrayOf(musicController.playlist[0].musics.size.toString() + " songs",musicController.musics.size.toString() + " songs", "", "")
+        val tabFav_c = arrayOf(
+                { (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(musicController.playlist[0].musics).setTitle("Liked (" + tabFav_d[0] + ")")) },
+                {
+                    val allMusicsIds = ArrayList<Int>()
+                    for (i in 0 until musicController.musics.size) { allMusicsIds.add(i) }
+                    (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(allMusicsIds).setTitle("All (" + tabFav_d[1] + ")"))
+                },{  (activity as MainActivity).replaceFragment(ListerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music")) },
+                {})
 
-        for(item in tabFav)
+        for(i in 0 until tabFav.size)
         {
-            if(id == 0)
-                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0).setClickCallback {
-                    (activity as MainActivity).replaceFragment(ListerFragment().initMusicIdList(musicController.favourites))
-                }
-            else if(id == 1)
-                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0).setClickCallback {
-                    (activity as MainActivity).replaceFragment(ListerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music"))
-                }
-            else
-            {
-                ItemSquare.addItem(fm, R.id.layout_favourites, item, tabFav_d[id], tabFav_i[id], id == 0)
-            }
-            id++
-
+            ItemSquare.addItem(fm, R.id.layout_favourites, tabFav[i], "", tabFav_i[i], i == 0).setClickCallback { tabFav_c[i]() }
         }
 
+        var id = 0
+
         // FILL Recent
-        val tabRec = arrayOf("TRON","Relax","Most Listened songs","Sail")
-        val tabRec_d = arrayOf("Daft Punk","Playlist","","AWNLOATION")
+        val tabRec = arrayOf("TRON","Relax","Sail","Weshly Arms")
+        val tabRec_d = arrayOf("Daft Punk","Playlist","AWNLOATION","Artist")
         val tabRec_i = arrayOf(
             R.drawable.album,
             R.drawable.playlist,
-            R.drawable.most,
-            R.drawable.music
+            R.drawable.music,
+                R.drawable.artist
         )
         id = 0
 
@@ -82,9 +78,9 @@ class HomeFragment : Fragment() {
         }
 
         // FILL suggested
-        val tabSuggest = arrayOf("Weshly Arms","No place is home")
-        val tabSuggest_d = arrayOf("Artist","Weshly Arms")
-        val tabSuggest_i = arrayOf(R.drawable.artist, R.drawable.album)
+        val tabSuggest = arrayOf("Suggested","No place is home")
+        val tabSuggest_d = arrayOf("","Weshly Arms")
+        val tabSuggest_i = arrayOf(R.drawable.suggest, R.drawable.album)
         id = 0
 
         for(item in tabSuggest)

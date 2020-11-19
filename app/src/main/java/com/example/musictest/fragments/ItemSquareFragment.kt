@@ -1,5 +1,7 @@
 package com.example.musictest.fragments
 
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.TypedValue
 import androidx.fragment.app.Fragment
@@ -50,6 +52,8 @@ class ItemSquare : Fragment() {
         name.text = param1
         desc.text = param2
         img.setImageResource(param4!!)
+        //img.setColorFilter(Color.rgb(100,100,100))
+        img.setColorFilter(Color.rgb(220, 220, 220), PorterDuff.Mode.MULTIPLY);
 
         if(param5!!)
         {

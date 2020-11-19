@@ -7,7 +7,6 @@ import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
 import com.example.musictest.fragments.ListerFragment
 
-
 class QueueActivity : AppCompatActivity() {
 
     fun addListItem(

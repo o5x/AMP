@@ -21,7 +21,9 @@
             android:layout_height="match_parent"
             android:translationZ="-1dp"
             tools:layout_editor_absoluteX="-116dp"
-            tools:layout_editor_absoluteY="-80dp" />
+            tools:layout_editor_absoluteY="-80dp" >
+
+        </androidx.viewpager2.widget.ViewPager2>
 
         <io.github.jeffshee.visualizer.views.VisualizerView
             android:id="@+id/visual"
@@ -31,6 +33,29 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/back" />
+
+        <TextView
+            android:id="@+id/textView8"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="11dp"
+            android:gravity="center_horizontal"
+            android:text="PLAYING FROM PHONE"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/list"
+            app:layout_constraintStart_toEndOf="@+id/back"
+            app:layout_constraintTop_toTopOf="@+id/back" />
+
+        <TextView
+            android:id="@+id/playingFrom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="queue"
+            android:textColor="#FFFFFF"
+            app:layout_constraintEnd_toEndOf="@+id/textView8"
+            app:layout_constraintStart_toStartOf="@+id/textView8"
+            app:layout_constraintTop_toBottomOf="@+id/textView8" />
 
         <ImageButton
             android:id="@+id/back"
