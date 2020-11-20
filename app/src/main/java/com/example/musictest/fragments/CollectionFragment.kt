@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
+import com.example.musictest.activities.syncMusicController
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -29,15 +30,15 @@ class CollectionFragment : Fragment() {
     fun addListItem(
             fm: androidx.fragment.app.FragmentManager?,
             layout_id: Int,
-    ) : ListerFragment
+    ) : ListerRecyclerFragment
     {
-        val fragOne: Fragment = ListerFragment()
+        val fragOne: Fragment = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
         tr.add(layout_id, fragOne)
         tr.commitAllowingStateLoss()
         tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
 
-        return fragOne as ListerFragment
+        return fragOne as ListerRecyclerFragment
     }
 
     override fun onCreateView(
@@ -59,7 +60,7 @@ class CollectionFragment : Fragment() {
         val fm = fragmentManager
 
         // init with all ids
-        addListItem(fm, R.id.collectionPlaylists).initPlaylist()
+        addListItem(fm, R.id.collectionPlaylists).initPlaylistList(syncMusicController.getPlaylistsIds())
 
         return v;
     }

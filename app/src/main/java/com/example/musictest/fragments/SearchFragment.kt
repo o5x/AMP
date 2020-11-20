@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
-import com.example.musictest.activities.musicController
+import com.example.musictest.activities.syncMusicController
 
 class SearchFragment : Fragment() {
 
@@ -47,7 +47,7 @@ class SearchFragment : Fragment() {
 
         var tab = ArrayList<Int>()
 
-        for(i in musicController.musics)
+        for(i in syncMusicController.musics)
         {
             tab.add(id++)
         }
@@ -71,18 +71,18 @@ class SearchFragment : Fragment() {
 
                 if (search.text.toString().length != 0) {
 
-                    for (m in musicController.musics) {
-                        var music = musicController.musics[id]
-                        if (music.title.toLowerCase().contains(
+                    for (m in syncMusicController.musics) {
+                        var music = syncMusicController.musics[id]
+                        if (music.title.toString().toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
-                            || music.artist.toLowerCase().contains(
+                            || music.artist.toString().toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
-                            || music.album.toLowerCase().contains(
+                            || music.album.toString().toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
-                            || music.path.toLowerCase().contains(
+                            || music.path.toString().toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )
                         ) {

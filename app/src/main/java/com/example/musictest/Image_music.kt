@@ -9,7 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
-import com.example.musictest.activities.musicController
+import com.example.musictest.activities.syncMusicController
 import com.example.musictest.builders.BlurBuilder
 
 class Image_music : Fragment() {
@@ -34,7 +34,7 @@ class Image_music : Fragment() {
         var left = v.findViewById<View>(R.id.leftshadow);
         var right = v.findViewById<View>(R.id.rightshadow);
 
-        val bmp = musicController.getMusicFromQueueId(param1!!).image//musics[musicController2.queue[param1!!]].image
+        val bmp = syncMusicController.getMusicFromQueueId(param1!!).image//musics[musicController2.queue[param1!!]].image
 
         if(bmp != null) {
             val blurredBmp = BlurBuilder.blur(v.context, Bitmap.createBitmap(bmp))

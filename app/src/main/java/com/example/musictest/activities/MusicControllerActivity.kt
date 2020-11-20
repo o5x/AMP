@@ -51,7 +51,7 @@ class MusicControllerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_music_controller)
 
-        helper = VisualizerHelper(musicController.player.audioSessionId)
+        helper = VisualizerHelper(syncMusicController.player.audioSessionId)
 
         visual = findViewById(R.id.visual)
         visual.fps = false
@@ -94,7 +94,7 @@ class MusicControllerActivity : AppCompatActivity() {
                 }
 
                 override fun onStopTrackingTouch(p0: SeekBar?) {
-                    musicController.player.seekTo(currentSeek)
+                    syncMusicController.player.seekTo(currentSeek)
                 }
             }
         )
@@ -112,7 +112,7 @@ class MusicControllerActivity : AppCompatActivity() {
                 }
                 //Toast.makeText(applicationContext, "Scrolled", Toast.LENGTH_SHORT).show()
                 //ignoreFirst = true
-                //musicController.changeMusic(position)
+                //syncMusicController.changeMusic(position)
             }
             /*
             override fun onPageScrollStateChanged(state: Int) {
@@ -123,14 +123,14 @@ class MusicControllerActivity : AppCompatActivity() {
             }*/
         })*/
 
-        mPager.setCurrentItem(musicController.queueMusicId, false)
+        mPager.setCurrentItem(syncMusicController.currentQueueId, false)
 
         // Thread
         Thread(Runnable(fun() {
             while (true) {
                 try {
                     val msg = Message()
-                    msg.what = musicController.player.currentPosition
+                    msg.what = syncMusicController.player.currentPosition
                     handler.sendMessage(msg)
                     Thread.sleep(100)
                 } catch (e: InterruptedException) {
@@ -145,7 +145,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     // Build carousel
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount(): Int = musicController.queue.size
+        override fun getItemCount(): Int = syncMusicController.list_queue.size
         override fun createFragment(position: Int): Fragment = Image_music.newInstance(
             position
         )
@@ -161,8 +161,8 @@ class MusicControllerActivity : AppCompatActivity() {
     {
         // Update visualizer
         var bitmap = BitmapFactory.decodeResource(resources, R.drawable.music)
-        if(musicController.currentMusic.image != null)
-            bitmap = musicController.currentMusic.image
+        if(syncMusicController.currentMusic.image != null)
+            bitmap = syncMusicController.currentMusic.image
 
         visual.setup(helper, Scale(Compose(FftCLine(),
             Scale(Icon(Icon.getCircledBitmap(bitmap)), scaleX = 1.2f, scaleY = 1.2f)
@@ -170,23 +170,23 @@ class MusicControllerActivity : AppCompatActivity() {
         )
 
         // Update metadata
-        textViewTitle.text = musicController.currentMusic.title
-        textViewArtist.text = musicController.currentMusic.artist
-        val totalTime = musicController.player.duration
+        textViewTitle.text = syncMusicController.currentMusic.title
+        textViewArtist.text = syncMusicController.currentMusic.artist
+        val totalTime = syncMusicController.player.duration
         positionBar.max = totalTime
         val totalTimeTime = createTimeLabel(totalTime)
         remainingTimeLabel.text = "$totalTimeTime"
 
         // Update Play button
-        if (musicController.player.isPlaying) playBtn.setBackgroundResource(R.drawable.ic_pause)
+        if (syncMusicController.isMusicPlaying) playBtn.setBackgroundResource(R.drawable.ic_pause)
         else playBtn.setBackgroundResource(R.drawable.ic_play)
 
         // Update shuffle
-        if(musicController.shuffleMode)  shuffle.setColorFilter(R.color.th)
+        if(syncMusicController.shuffleMode)  shuffle.setColorFilter(R.color.th)
         else shuffle.colorFilter = null
 
         // update repeat mode
-        when (musicController.repeatMode) {
+        when (syncMusicController.repeatMode) {
             Repeat.None -> {
                 repeat.colorFilter = null
                 repeat.setImageResource(R.drawable.ic_repeat)
@@ -202,12 +202,12 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // Update shuffle
-        if(musicController.shuffleMode)shuffle.setColorFilter(R.color.th)
+        if(syncMusicController.shuffleMode)shuffle.setColorFilter(R.color.th)
         else shuffle.colorFilter = null
 
         // Update favourites
 
-        if(musicController.isFavourite())
+        if(syncMusicController.isCurrentMusicLiked())
         {
             favourite.setColorFilter(R.color.th)
             favourite.setImageResource(R.drawable.ic_favourite)
@@ -219,9 +219,9 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // update background cover
-        if(mPager.currentItem != musicController.queueMusicId)
+        if(mPager.currentItem != syncMusicController.currentQueueId)
         {
-            mPager.currentItem = musicController.queueMusicId
+            mPager.currentItem = syncMusicController.currentQueueId
         }
     }
 
@@ -255,25 +255,25 @@ class MusicControllerActivity : AppCompatActivity() {
     // Button click actions
 
     fun playBtnClick(v: View) {
-        musicController.togglePlay()
+        syncMusicController.togglePlay()
     }
 
     fun nextBtnClick(v: View) {
-        musicController.next()
+        syncMusicController.next()
     }
 
     fun prevBtnClick(v: View) {
-        musicController.prev()
+        syncMusicController.prev()
     }
 
     fun shuffleClick(v: View)
     {
-        musicController.toggleShuffle()
+        syncMusicController.toggleShuffle()
     }
 
     fun repeatClick(v: View)
     {
-        musicController.toggleRepeat()
+        syncMusicController.toggleRepeat()
     }
 
     fun backClick(v: View)
@@ -283,16 +283,16 @@ class MusicControllerActivity : AppCompatActivity() {
 
     fun favouriteClick(v: View)
     {
-        musicController.toggleFavourite()
+        syncMusicController.toggleCurrentMusicLiked()
     }
 
     fun playlistClick(v: View)
     {
-        val ids = ArrayList<Int>()
-        ids.add(musicController.currentMusicId)
-        musicController.addToPlaylistDialog(this , ids, onSuccess = {
+        /*val ids = ArrayList<Int>()
+        ids.add(syncMusicController.currentMusicId)
+        syncMusicController.addToPlaylistDialog(this , ids, onSuccess = {
             updateInterface()
-        })
+        })*/
     }
 
     fun showlistClick(v: View)

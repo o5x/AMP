@@ -28,6 +28,7 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import com.example.musictest.MusicController
 import com.example.musictest.R
+import com.example.musictest.SyncMusicController
 import com.example.musictest.builders.CreateNotification
 import com.example.musictest.fragments.CollectionFragment
 import com.example.musictest.fragments.HomeFragment
@@ -38,7 +39,7 @@ import java.io.File
 
 
 // global MusicController
-var musicController = MusicController();
+var syncMusicController = SyncMusicController();
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var playBtn2 : Button
 
     lateinit var notificationManager: NotificationManager
-    var scanfilesCount = 0
 
     lateinit var mBuilder : NotificationCompat.Builder
     lateinit var mNotifyManager : NotificationManagerCompat
@@ -100,29 +100,6 @@ class MainActivity : AppCompatActivity() {
         return fileList;
     }
 
-    fun recursiveMusicScan(path: File)
-    {
-        Log.w("fileScan", "scanning " + path.path)
-
-        val listAllFiles = path.listFiles()
-        if (listAllFiles != null && listAllFiles.isNotEmpty()) {
-            for (currentFile in listAllFiles) {
-                if(currentFile.isDirectory)
-                {
-                    recursiveMusicScan(currentFile)
-                }
-                if (isMusicFile(currentFile)) {
-                    if(musicController.addMusic(currentFile)) scanfilesCount ++
-                }
-            }
-        }
-        mBuilder.setContentText("$scanfilesCount musics found") // Removes the progress bar
-                .setProgress(0, 0, true)
-
-        mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
-    }
-
-
     fun scanMusics()
     {
         createNotificationChannel(CHANNEL_ID, "Music Scan")
@@ -135,16 +112,41 @@ class MainActivity : AppCompatActivity() {
                 .setSmallIcon(R.drawable.appicon)
                 .setNotificationSilent()
 
+        var scanfilesCount = 0
+        var totalScanfilesCount = 0
+
+        fun recursiveMusicScan(path: File)
+        {
+            Log.w("fileScan", "scanning " + path.path)
+
+            val listAllFiles = path.listFiles()
+            if (listAllFiles != null && listAllFiles.isNotEmpty()) {
+                for (currentFile in listAllFiles) {
+                    if(currentFile.isDirectory)
+                    {
+                        recursiveMusicScan(currentFile)
+                    }
+                    if (isMusicFile(currentFile)) {
+                        if(syncMusicController.addMusic(currentFile)) scanfilesCount ++
+                        totalScanfilesCount ++
+                    }
+                }
+            }
+            mBuilder.setContentText("$totalScanfilesCount musics found ($scanfilesCount added)") // Removes the progress bar
+                    .setProgress(0, 0, true)
+
+            mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
+        }
+
         Thread {
             Log.w("fileScan", "thread ${Thread.currentThread()} started ")
             val gpath: String = Environment.getExternalStorageDirectory().absolutePath
             val spath2 = "Music"
             val fullpath2 = File(gpath + File.separator + spath2)
             recursiveMusicScan(fullpath2)
-            Log.w("fileScan", scanfilesCount.toString() + "musics found")
 
             mBuilder.setContentTitle("Music Scan Complete")
-                    .setContentText("$scanfilesCount musics found") // Removes the progress bar
+                    .setContentText("$totalScanfilesCount musics found ($scanfilesCount added)") // Removes the progress bar
                     .setProgress(0, 0, false)
 
             mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
@@ -192,8 +194,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // init context
-        //musicController.init(this);
-        musicController.init(this)
+        syncMusicController.init(this)
+        //scanMusics()
 
         // check intent filter
 
@@ -221,17 +223,6 @@ class MainActivity : AppCompatActivity() {
         }
         else
         {*/
-        val gpath: String = Environment.getExternalStorageDirectory().absolutePath
-        val spath = "Music/MusicTest"
-        val fullpath = File(gpath + File.separator + spath)
-        Log.w("fileread", "" + fullpath)
-        var fileList = musicReader(fullpath)
-
-        musicController.setMusicsTest(fileList);
-
-        musicController.restore()
-
-        scanMusics()
 
         title = findViewById(R.id.Apptitle)
         button_back = findViewById(R.id.imageButtonBack)
@@ -263,30 +254,30 @@ class MainActivity : AppCompatActivity() {
 
     fun updateInterface()
     {
-        if (musicController.isPlaying)
+        if (syncMusicController.isMusicPlaying)
             playBtn2.setBackgroundResource(R.drawable.ic_pause)
         else
             playBtn2.setBackgroundResource(R.drawable.ic_play)
 
-        if (musicController.currentMusic.image == null)
+        if (syncMusicController.currentMusic.image == null)
             imageView_cover.setImageResource(R.drawable.music)
         else
-            imageView_cover.setImageBitmap(musicController.currentMusic.image)
+            imageView_cover.setImageBitmap(syncMusicController.currentMusic.image)
 
-        textView_title.text = musicController.currentMusic.title
-        textView_artist.text = musicController.currentMusic.artist
+        textView_title.text = syncMusicController.currentMusic.title
+        textView_artist.text = syncMusicController.currentMusic.artist
 
-        if(musicController.isQueuePlaying)
+        if(syncMusicController.isQueuePlaying)
         {
-            if(musicController.isPlaying)
+            if(syncMusicController.isMusicPlaying)
             {
                 CreateNotification.createNotification(this,
-                        musicController.currentMusic, R.drawable.ic_pause)
+                        syncMusicController.currentMusic, R.drawable.ic_pause)
             }
             else
             {
                 CreateNotification.createNotification(this,
-                        musicController.currentMusic, R.drawable.ic_play)
+                        syncMusicController.currentMusic, R.drawable.ic_play)
             }
         }
         else
@@ -300,9 +291,9 @@ class MainActivity : AppCompatActivity() {
 
             val action = intent.extras!!.getString("actionname")
             when (action) {
-                CreateNotification.ACTION_PREVIOUS -> musicController.prev()
-                CreateNotification.ACTION_PLAY -> musicController.togglePlay()
-                CreateNotification.ACTION_NEXT -> musicController.next()
+                CreateNotification.ACTION_PREVIOUS -> syncMusicController.prev()
+                CreateNotification.ACTION_PLAY -> syncMusicController.togglePlay()
+                CreateNotification.ACTION_NEXT -> syncMusicController.next()
             }
         }
     }
@@ -354,7 +345,7 @@ class MainActivity : AppCompatActivity() {
 
     fun playBtnClick(v: View)
     {
-        musicController.togglePlay()
+        syncMusicController.togglePlay()
     }
 
     fun openMusicController(v: View) {

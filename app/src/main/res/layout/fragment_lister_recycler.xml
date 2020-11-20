@@ -30,26 +30,26 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/listerButtonPlaylist"
-                android:layout_width="wrap_content"
+                android:id="@+id/listerButtonAddTo"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
                 android:background="@drawable/ripple"
                 android:drawableLeft="@drawable/ic_addplaylist"
                 android:paddingStart="10dp"
-                android:text="Add to playlist" />
+                android:text="Add To" />
 
             <Button
-                android:id="@+id/listerButtonQueue"
-                android:layout_width="wrap_content"
+                android:id="@+id/listerButtonPlay"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
                 android:background="@drawable/ripple"
-                android:drawableLeft="@drawable/ic_list"
-                android:paddingLeft="10dp"
-                android:text="Add to queue" />
+                android:drawableLeft="@drawable/ic_playarrow"
+                android:paddingStart="10dp"
+                android:text="Play selection" />
 
         </LinearLayout>
 

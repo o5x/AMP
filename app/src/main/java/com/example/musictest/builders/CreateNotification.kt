@@ -13,10 +13,9 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat.getSystemService
-import com.example.musictest.Music
 import com.example.musictest.R
-import com.example.musictest.activities.musicController
+import com.example.musictest.SyncMusic
+import com.example.musictest.activities.syncMusicController
 import com.example.musictest.services.NotificationActionService
 
 
@@ -35,7 +34,7 @@ object CreateNotification {
         nMgr.cancel(1)
     }
 
-    fun createNotification(context: Context, track: Music, playbutton: Int) {
+    fun createNotification(context: Context, track: SyncMusic, playbutton: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManagerCompat = NotificationManagerCompat.from(context)
             //val mediaSessionCompat = MediaSessionCompat(context, "tag")
@@ -48,7 +47,7 @@ object CreateNotification {
                     .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.album)
                     .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.title)
                         .putString( MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, "android.resource")
-                        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, musicController.player.duration.toLong())
+                        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, syncMusicController.player.duration.toLong())
                     .build()
             )
 

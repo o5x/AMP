@@ -5,22 +5,22 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
-import com.example.musictest.fragments.ListerFragment
+import com.example.musictest.fragments.ListerRecyclerFragment
 
 class QueueActivity : AppCompatActivity() {
 
     fun addListItem(
             fm: androidx.fragment.app.FragmentManager?,
             layout_id: Int
-    ) : ListerFragment
+    ) : ListerRecyclerFragment
     {
-        val fragOne: Fragment = ListerFragment()
+        val fragOne: Fragment = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
         tr.add(layout_id, fragOne)
         tr.commitAllowingStateLoss()
         tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
 
-        return fragOne as ListerFragment
+        return fragOne as ListerRecyclerFragment
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +29,6 @@ class QueueActivity : AppCompatActivity() {
 
         // listerLayout
         var fm = supportFragmentManager
-        addListItem(fm, R.id.listerLayout).initMusicIdList(musicController.queue)
+        addListItem(fm, R.id.listerLayout).initMusicIdList(syncMusicController.list_queue)
     }
 }
