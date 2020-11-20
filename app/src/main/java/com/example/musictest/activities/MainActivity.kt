@@ -1,7 +1,6 @@
 package com.example.musictest.activities
 
 import android.Manifest
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
@@ -43,14 +42,13 @@ var musicController = MusicController();
 
 class MainActivity : AppCompatActivity() {
 
-    val CHANNEL_ID = "channel2"
-    val CHANNEL_NID = 2
+    private val CHANNEL_ID = "channel2"
+    private val CHANNEL_NID = 2
 
     lateinit var playBtn2 : Button
 
     lateinit var notificationManager: NotificationManager
     var scanfilesCount = 0
-
 
     lateinit var mBuilder : NotificationCompat.Builder
     lateinit var mNotifyManager : NotificationManagerCompat
@@ -152,8 +150,6 @@ class MainActivity : AppCompatActivity() {
             mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
             //Thread.sleep(5000)
 
-            musicController.save()
-
             mNotifyManager.cancel(CHANNEL_NID)
 
         }.start()
@@ -233,25 +229,9 @@ class MainActivity : AppCompatActivity() {
 
         musicController.setMusicsTest(fileList);
 
-       // }
+        musicController.restore()
 
-        /*if(true)
-        {
-            Thread{
-                if(!musicController.restore())
-                {
-                    scanMusics()
-                }
-            }.start()
-        }
-        else
-        {*/
-            scanMusics()
-        //}
-
-
-
-
+        scanMusics()
 
         title = findViewById(R.id.Apptitle)
         button_back = findViewById(R.id.imageButtonBack)
@@ -333,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createNotificationChannel(channelId : String, channelName : String) {
+    private fun createNotificationChannel(channelId: String, channelName: String) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                     channelId,

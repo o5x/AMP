@@ -9,7 +9,6 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.musicController
-import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 
 class ListAdapter(private val list: Array<MusicItem>)
     : RecyclerView.Adapter<MovieViewHolder>() {
@@ -22,7 +21,7 @@ class ListAdapter(private val list: Array<MusicItem>)
     }
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
-        holder.bind(list, position , checkBoxVisibility)
+        holder.bind(list, position, checkBoxVisibility)
     }
 
     fun selectMode(layoutManager: RecyclerView.LayoutManager, visibility: Int)
@@ -65,6 +64,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
     fun bind(list: Array<MusicItem>, position: Int, visibility: Int) {
 
+
+
         val music = musicController.musics[list[position].id]
 
         mTitleView?.text = music.title
@@ -73,8 +74,11 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         mCheckBox?.visibility = visibility
         mCheckBox?.isChecked = list[position].selected
 
-        if(music.image != null)mImageView?.setImageBitmap(music.image)
-        else mImageView?.setImageResource(R.drawable.music)
+
+        //if(music.imageAfter != null)mImageView?.setImageBitmap(music.imageAfter)
+        //else mImageView?.setImageResource(R.drawable.music)
+        mImageView?.setImageResource(R.drawable.music)
+
 
         itemView.setOnClickListener {
             if(mCheckBox?.visibility == View.VISIBLE)

@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -12,10 +11,8 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.util.Log
 import android.widget.Toast
-import androidx.preference.PreferenceManager
-import com.example.musictest.builders.ObjectSerializer
+import com.example.musictest.databases.MusicDB
 import java.io.File
-import java.io.IOException
 
 enum class Repeat {
     None, All, Once
@@ -23,24 +20,72 @@ enum class Repeat {
 
 val metaRetriever = MediaMetadataRetriever()
 
-class Music(f: File) {
+class Music {
 
     // TODO initialize image only when required ?
 
-    var path: String = f.path
+
+
+
+    var path: String = ""
     var artist: String = "Unknown Artist"
     var title: String = "Unknown Title"
     var album: String = "Unknown Album"
-    var imageByte: ByteArray?  = null
+    var imageByte: ByteArray? = null
     var image: Bitmap? = null
+
+
+    private fun initImage() : Bitmap?
+    {
+        metaRetriever.setDataSource(path)
+
+        imageByte = metaRetriever.embeddedPicture
+        if (imageByte != null) {
+            val bmp = BitmapFactory.decodeByteArray(imageByte, 0, imageByte!!.size)
+            val newimage = Bitmap.createBitmap(bmp)
+
+            val IMAGE_SIZE = 400
+            val landscape: Boolean = newimage.getWidth() > newimage.getHeight()
+
+            val scale_factor: Float
+            if (landscape) scale_factor = IMAGE_SIZE.toFloat() / newimage.getHeight() else scale_factor = IMAGE_SIZE.toFloat() / newimage.getWidth()
+            val matrix = Matrix()
+            matrix.postScale(scale_factor, scale_factor)
+
+            return if (landscape) {
+                val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
+                Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
+            } else {
+                val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
+                Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
+            }
+        }
+        return null
+    }
+
+    val imageAfter: Bitmap? by lazy {
+        initImage() as Bitmap?
+    }
+
     var valid: Boolean = false
+    var initialized = false
 // TODO postinint lazy
     /*var image2 by Lazy<Bitmap>{
 
     }// post init*/
+    constructor(path_:String, title_:String, artist_:String, album_:String)
+    {
+        path = path_
+        title = title_
+        artist = artist_
+        album = album_
+    }
 
-    init {
+    constructor(f: File) {
         try {
+
+            path = f.path
+
             metaRetriever.setDataSource(path)
             //metaRetriever.hashCode()
             artist = if (metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST) != null)
@@ -75,6 +120,7 @@ class Music(f: File) {
                 }
             }
 
+            initialized = true
             valid = true
         }
         catch (exception: Exception)
@@ -173,7 +219,7 @@ class MusicController : Application() {
     var lastTime : Long = 0
     private fun filterInput() : Boolean
     {
-        var currenttime = System.currentTimeMillis()
+        val currenttime = System.currentTimeMillis()
 
         if(currenttime - lastTime > 100)
         {
@@ -284,10 +330,17 @@ class MusicController : Application() {
     {
         if(f.path !in musicsPaths)
         {
+
             val newMusic = Music(f)
             if(newMusic.valid)
             {
                 musics.add(newMusic)
+
+                val musicDB = MusicDB(c)
+                musicDB.open()
+                musicDB.addMusic(newMusic)
+                musicDB.close()
+
                 musicsPaths.add(f.path)
                 return true
             }
@@ -383,7 +436,7 @@ class MusicController : Application() {
         if(filterInput()) return
         // TODO manage shuffle
 
-        //if(player.currentPosition > 4000) return restartMusic()
+        if(player.currentPosition > 4000) return restartMusic()
 
         if(queueMusicId == 0)
         {
@@ -396,14 +449,14 @@ class MusicController : Application() {
 
     fun addToPlaylistDialog(context: Context, selection: ArrayList<Int>, onSuccess: () -> Unit = {}, onCancel: () -> Unit = {})
     {
-        var playlistNames : ArrayList<String> = ArrayList()
+        val playlistNames : ArrayList<String> = ArrayList()
 
         for (p in playlist)
         {
             playlistNames.add(p.name)
         }
 
-        var li2 = playlistNames.toTypedArray()
+        val li2 = playlistNames.toTypedArray()
 
         val mBuilder = AlertDialog.Builder(context)
 
@@ -436,41 +489,22 @@ class MusicController : Application() {
         mDialog.show()
     }
 
-    fun save()
-    {
-        // save the task list to preference
-        val prefs = PreferenceManager.getDefaultSharedPreferences(c);
-        val editor: SharedPreferences.Editor = prefs.edit()
-        try {
-            editor.putString("musics", ObjectSerializer.serialize(musicsPaths))
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        editor.commit() // do it in background
-    }
-
     fun restore() : Boolean
     {
-        //musics.clear()
-        try {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(c);
-            val new_musics = ObjectSerializer.deserialize(prefs.getString("musics", ObjectSerializer.serialize(ArrayList<String>()))) as ArrayList<String>
-            if(new_musics.isNotEmpty())
-            {
-                musics.clear()
-                for(p in new_musics)
-                {
-                    val m = Music(File(p))
-                    if(m.valid) musics.add(m)
-                    else musicsPaths.remove(p)
-                }
-            }
-            return true
-        } catch (e: IOException) {
-            //e.printStackTrace()
-        } catch (e: ClassNotFoundException) {
-            //e.printStackTrace()
+        val musicDB = MusicDB(c)
+        musicDB.open()
+
+        val list = musicDB.getMusicsIdFromList(0)
+
+        Log.w("DBmusic", "${list.size} musics to restore ")
+
+        for(i in list)
+        {
+            musics.add(musicDB.getMusic(i)!!)
         }
-        return false
+
+        musicDB.close()
+
+        return true
     }
 }
