@@ -47,14 +47,14 @@ class SearchFragment : Fragment() {
 
         var tab = ArrayList<Int>()
 
-        for(i in syncMusicController.musics)
+        /*for(i in syncMusicController.musics)
         {
             tab.add(id++)
-        }
+        }*/
 
         // init with all ids
 
-        addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
+        //addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
 
         search.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -71,8 +71,8 @@ class SearchFragment : Fragment() {
 
                 if (search.text.toString().length != 0) {
 
-                    for (m in syncMusicController.musics) {
-                        var music = syncMusicController.musics[id]
+                    for (m in syncMusicController.list_all) {
+                        val music = syncMusicController.getMusic(id)
                         if (music.title.toString().toLowerCase().contains(
                                 search.text.toString().toLowerCase()
                             )

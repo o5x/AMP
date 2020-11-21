@@ -32,7 +32,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     private var currentSeek: Int = 0
 
-    //var ignoreFirst : Boolean = true
+    var ignoreFirst : Boolean = true
 
     private lateinit var positionBar: SeekBar
     private lateinit var elapsedTimeLabel: TextView
@@ -103,25 +103,18 @@ class MusicControllerActivity : AppCompatActivity() {
         val pagerAdapter = ScreenSlidePagerAdapter(this)
         mPager.adapter = pagerAdapter
 
-        mPager.isUserInputEnabled = false
-        /*mPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+        //mPager.isUserInputEnabled = false
+        mPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (ignoreFirst) {
+                    ignoreFirst = false
                     return
                 }
-                //Toast.makeText(applicationContext, "Scrolled", Toast.LENGTH_SHORT).show()
-                //ignoreFirst = true
-                //syncMusicController.changeMusic(position)
+                Toast.makeText(applicationContext, "scrolled by user", Toast.LENGTH_SHORT).show()
+                syncMusicController.play(position)
             }
-            /*
-            override fun onPageScrollStateChanged(state: Int) {
-                super.onPageScrollStateChanged(state)
-
-                //ignoreFirst = mPager.isFakeDragging()
-
-            }*/
-        })*/
+        })
 
         mPager.setCurrentItem(syncMusicController.currentQueueId, false)
 
@@ -221,6 +214,7 @@ class MusicControllerActivity : AppCompatActivity() {
         // update background cover
         if(mPager.currentItem != syncMusicController.currentQueueId)
         {
+            ignoreFirst = true
             mPager.currentItem = syncMusicController.currentQueueId
         }
     }
@@ -288,11 +282,12 @@ class MusicControllerActivity : AppCompatActivity() {
 
     fun playlistClick(v: View)
     {
-        /*val ids = ArrayList<Int>()
+        if(syncMusicController.currentMusicId < 0) return
+        val ids = ArrayList<Int>()
         ids.add(syncMusicController.currentMusicId)
         syncMusicController.addToPlaylistDialog(this , ids, onSuccess = {
             updateInterface()
-        })*/
+        })
     }
 
     fun showlistClick(v: View)

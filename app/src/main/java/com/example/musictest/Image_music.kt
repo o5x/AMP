@@ -34,7 +34,7 @@ class Image_music : Fragment() {
         var left = v.findViewById<View>(R.id.leftshadow);
         var right = v.findViewById<View>(R.id.rightshadow);
 
-        val bmp = syncMusicController.getMusicFromQueueId(param1!!).image//musics[musicController2.queue[param1!!]].image
+        val bmp = syncMusicController.getMusicFromQueueId(param1!!).image
 
         if(bmp != null) {
             val blurredBmp = BlurBuilder.blur(v.context, Bitmap.createBitmap(bmp))

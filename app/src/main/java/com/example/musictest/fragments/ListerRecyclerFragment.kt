@@ -155,8 +155,8 @@ class ListerRecyclerFragment : Fragment()  {
 
                     lra.clickCallback = {
                         (activity as MainActivity).replaceFragment(
-                                ListerRecyclerFragment().initMusicIdList(syncMusicController.lists[listIds[it]].list)
-                                        .setTitle(syncMusicController.lists[listIds[it]].name))
+                                ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(listIds[it]).list)
+                                        .setTitle(syncMusicController.getList(listIds[it]).name))
                     }
 
                 }

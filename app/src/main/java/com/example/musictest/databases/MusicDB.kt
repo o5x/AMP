@@ -12,8 +12,9 @@ import com.example.musictest.databases.DBMusicHelper.Companion.DB_NAME
 
 // //data/data/com.example.musictest/databases/musics.db
 
+
 enum class ListType {
-     System, Album, Artist, User
+    None, SystemR, SystemRW, Album, Artist, User
 }
 
 class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -114,6 +115,16 @@ class MusicDB(private val context: Context) {
     private lateinit var dbHelper: DBMusicHelper
     private lateinit var database: SQLiteDatabase
 
+    companion object{
+        const val ID_MUSIC_ALL = 1
+        const val ID_MUSIC_QUEUE = 2
+        const val ID_MUSIC_QUEUE_SHUFFLED = 3
+        const val ID_MUSIC_LIKED = 4
+        const val ID_MUSIC_MOST = 5
+        const val ID_MUSIC_SUGGEST = 6
+        const val ID_MUSIC_DOWNLOAD = 7
+    }
+
     @Throws(SQLException::class)
     fun open(): MusicDB {
 
@@ -125,12 +136,13 @@ class MusicDB(private val context: Context) {
         // Initialize db with default playlists when created
         if(dbHelper.wasCreatedNow)
         {
-            addList("all", ListType.System)
-            addList("queue", ListType.System)
-            addList("liked", ListType.System)
-            addList("most", ListType.System)
-            addList("suggest", ListType.System)
-            addList("download", ListType.System)
+            addList("all", ListType.SystemR)
+            addList("queue", ListType.SystemRW)
+            addList("originalQueue", ListType.SystemR)
+            addList("liked", ListType.SystemRW)
+            addList("most", ListType.SystemR)
+            addList("suggest", ListType.SystemR)
+            addList("download", ListType.SystemR)
         }
         return this
     }
@@ -141,20 +153,34 @@ class MusicDB(private val context: Context) {
 
     //////////////////////////////////////// LIST FUNCTIONS Music Controller Start functions
 
-    fun getAllMusics() : ArrayList<SyncMusic>
+    fun getAllMusicMaps() : HashMap<Int,SyncMusic>
     {
-        val list = ArrayList<SyncMusic>()
+        val list = HashMap<Int,SyncMusic>()
         val columns = arrayOf(DBMusicHelper.MUSIC_ID,DBMusicHelper.MUSIC_ISVALID, DBMusicHelper.MUSIC_PATH, DBMusicHelper.MUSIC_TITLE,DBMusicHelper.MUSIC_ARTIST,DBMusicHelper.MUSIC_ALBUM)
 
         val cursor = database.query(DBMusicHelper.MUSIC_TABLE, columns, null, null, null, null, null)
         cursor.moveToFirst()
         for (i in 0 until cursor.count)
         {
-            list.add(SyncMusic(cursor))
+            list[cursor.getInt(0)] = SyncMusic(cursor)
             cursor.moveToNext()
         }
         cursor.close()
         return list
+    }
+
+    fun  getAllListMaps() : HashMap<Int,SyncList>
+    {
+        val listsIds = getLists()
+
+        val lists = HashMap<Int,SyncList>()
+
+        for(listId in listsIds)
+        {
+            lists[listId] = getListFromId(listId)!!
+        }
+
+        return lists
     }
 
     fun getLists() : ArrayList<Int>
@@ -165,7 +191,7 @@ class MusicDB(private val context: Context) {
         cursor.moveToFirst()
         for (i in 0 until cursor.count)
         {
-            list.add(cursor.getInt(0) - 1)
+            list.add(cursor.getInt(0))
             cursor.moveToNext()
         }
         cursor.close()
@@ -175,19 +201,21 @@ class MusicDB(private val context: Context) {
     fun getListFromId(list_id: Int) : SyncList?
     {
         val listName: String = getListNameFromId(list_id) ?: return null
+        val listType: ListType = getListTypeFromId(list_id) ?: return null
 
         val columns = arrayOf(DBMusicHelper.LINK_MUSIC_ID)
-        val where = "${DBMusicHelper.LINK_LIST_ID} = ${list_id+1}"
+        val where = "${DBMusicHelper.LINK_LIST_ID} = ${list_id}"
         val cursor = database.query(DBMusicHelper.LINK_TABLE, columns, where, null, null, null, null)
         cursor.moveToFirst()
+        //Log.d("MusicDB", "getListFromId($list_id) = name $listName size ${cursor.count}")
         if(cursor.count > 0)
         {
-            val list = SyncList(listName, cursor)
+            val list = SyncList(listName, cursor, listType)
             cursor.close()
             return list
         }
         cursor.close()
-        return SyncList(listName)
+        return SyncList(listName, listType)
     }
 
     //////////////////////////////////////// LIST FUNCTIONS music scan add
@@ -207,11 +235,36 @@ class MusicDB(private val context: Context) {
             contentValue.put(DBMusicHelper.MUSIC_ARTIST, music.artist)
             contentValue.put(DBMusicHelper.MUSIC_ALBUM, music.album)
             val id = database.insertOrThrow(DBMusicHelper.MUSIC_TABLE, null, contentValue)
-            addMusicIdToListId(0, id.toInt() - 1)
+            addMusicIdToListId(id.toInt(), ID_MUSIC_ALL)
             return true
         }
         cursor.close()
         return false
+    }
+
+    fun addMusicEx(music : SyncMusic) : Int
+    {
+        val where = "${DBMusicHelper.MUSIC_PATH} = \"${music.path}\""
+        val cursor = database.query(DBMusicHelper.MUSIC_TABLE, null, where, null, null, null, null)
+        var id = 0;
+        if(cursor.count == 0)
+        {
+            cursor.close()
+            val contentValue = ContentValues()
+            contentValue.put(DBMusicHelper.MUSIC_PATH, music.path)
+            //contentValue.put(DBMusicHelper.MUSIC_HASH, music.hash)
+            contentValue.put(DBMusicHelper.MUSIC_ISVALID, music.valid)
+            contentValue.put(DBMusicHelper.MUSIC_TITLE, music.title)
+            contentValue.put(DBMusicHelper.MUSIC_ARTIST, music.artist)
+            contentValue.put(DBMusicHelper.MUSIC_ALBUM, music.album)
+            id = database.insert(DBMusicHelper.MUSIC_TABLE, null, contentValue).toInt()
+            addMusicIdToListId(id.toInt(), ID_MUSIC_ALL)
+            return id
+        }
+        cursor.moveToFirst()
+        id = cursor.getInt(0)
+        cursor.close()
+        return id
     }
 
     //////////////////////////////////////// LIST FUNCTIONS
@@ -235,199 +288,66 @@ class MusicDB(private val context: Context) {
         return false
     }
 
-    fun isMusicIdInListId(list_id : Int, music_id : Int) : Boolean
+    fun isMusicIdInListId(music_id: Int, list_id: Int) : Boolean
     {
-        val where = "${DBMusicHelper.LINK_LIST_ID} = ${list_id + 1} AND ${DBMusicHelper.LINK_MUSIC_ID} = ${music_id + 1}"
+        val where = "${DBMusicHelper.LINK_LIST_ID} = $list_id AND ${DBMusicHelper.LINK_MUSIC_ID} = $music_id"
         val cursor = database.query(DBMusicHelper.LINK_TABLE, null, where, null, null, null, null)
         val itIs = cursor.count > 0
+        Log.d("MusicDB", "isMusicIdInListId($list_id,$music_id) = $itIs")
         cursor.close()
         return itIs
     }
 
-    fun addMusicIdToListId(list_id : Int, music_id : Int) : Boolean
+    fun addMusicIdToListId(music_id: Int, list_id: Int) : Boolean
     {
-        if(!isMusicIdInListId(list_id , music_id))
+        Log.d("MusicDB", "addMusicIdToListId($list_id,$music_id)")
+        if(!isMusicIdInListId(music_id, list_id))
         {
             val contentValue = ContentValues()
-            contentValue.put(DBMusicHelper.LINK_LIST_ID, list_id + 1)
-            contentValue.put(DBMusicHelper.LINK_MUSIC_ID, music_id + 1)
-            var id = database.insert(DBMusicHelper.LINK_TABLE, null, contentValue)
+            contentValue.put(DBMusicHelper.LINK_LIST_ID, list_id)
+            contentValue.put(DBMusicHelper.LINK_MUSIC_ID, music_id)
+            val id = database.insert(DBMusicHelper.LINK_TABLE, null, contentValue)
             Log.d("v", id.toString())
             return true
         }
         return false
     }
 
-    ////////////// NOT TESTED
-
-    fun removeMusicIdFromListId(list_id : Int, music_id : Int)
+    fun removeMusicIdFromListId(music_id: Int, list_id: Int)
     {
-        val where = "${DBMusicHelper.LINK_LIST_ID} = ${list_id + 1} AND ${DBMusicHelper.LINK_MUSIC_ID} = ${music_id + 1}"
+        Log.d("MusicDB", "removeMusicIdFromListId($list_id,$music_id)")
+        val where = "${DBMusicHelper.LINK_LIST_ID} = ${list_id} AND ${DBMusicHelper.LINK_MUSIC_ID} = ${music_id}"
         database.delete(DBMusicHelper.LINK_TABLE, where,null)
     }
 
-    /////////////////
-
-/*
-    fun getMusicsFromList(list_id : Int) : ArrayList<SyncMusic>
-    {
-        val list = ArrayList<SyncMusic>()
-        val columns = arrayOf(DBMusicHelper.MUSIC_ID,DBMusicHelper.MUSIC_ISVALID, DBMusicHelper.MUSIC_PATH, DBMusicHelper.MUSIC_TITLE,DBMusicHelper.MUSIC_ARTIST,DBMusicHelper.MUSIC_ALBUM)
-
-        val cursor = database.query(DBMusicHelper.LINK_TABLE, columns, null, null, null, null, null)
-        cursor.moveToFirst()
-        for (i in 0 until cursor.count)
-        {
-            list.add(SyncMusic(cursor))
-            cursor.moveToNext()
-        }
-        cursor.close()
-        return list
-    }*/
-
-    // MUSICS FUNCTIONS
-
-   /* fun addMusic(music : Music) : Boolean
-    {
-        val where = "${DBMusicHelper.MUSIC_PATH} = \"${music.path}\""
-        val cursor = database.query(DBMusicHelper.MUSIC_TABLE, null, where, null, null, null, null)
-        if(cursor.count == 0)
-        {
-            val contentValue = ContentValues()
-            contentValue.put(DBMusicHelper.MUSIC_PATH, music.path)
-            contentValue.put(DBMusicHelper.MUSIC_ISVALID, music.valid)
-            contentValue.put(DBMusicHelper.MUSIC_TITLE, music.title)
-            contentValue.put(DBMusicHelper.MUSIC_ARTIST, music.artist)
-            contentValue.put(DBMusicHelper.MUSIC_ALBUM, music.album)
-            //contentValue.put(DBMusicHelper.MUSIC_IMAGE, music.image)
-            //val id = database.insert(DBMusicHelper.MUSIC_TABLE, null, contentValue)
-            cursor.close()
-            //addMusicToList(0, id.toInt() - 0)
-            return true
-        }
-        cursor.close()
-        return false
-    }*/
-
-    /*fun getMusic(id : Int) : Music?
-    {
-        val columns = arrayOf(DBMusicHelper.MUSIC_ID,DBMusicHelper.MUSIC_ISVALID, DBMusicHelper.MUSIC_PATH, DBMusicHelper.MUSIC_TITLE,DBMusicHelper.MUSIC_ARTIST,DBMusicHelper.MUSIC_ALBUM)
-        val where = "${DBMusicHelper.MUSIC_ID} = ${id + 1}"
-        val cursor = database.query(DBMusicHelper.MUSIC_TABLE, columns, where, null, null, null, null)
-
-        if(cursor.count > 0)
-        {
-            cursor.moveToFirst()
-
-            //val id = cursor.getInt(0)
-            val valid = cursor.getInt(1)
-            val path = cursor.getString(2)
-            val title = cursor.getString(3)
-            val artist = cursor.getString(4)
-            val album = cursor.getString(5)
-
-            //return SyncMusic(cursor)
-
-            return Music(path, title, artist, album, valid > 0)
-        }
-
-        return null
-    }*/
-
-
-
-
-    /*
-
-    fun removeMusicFromList(list_id : Int, music_id : Int)
-    {
-        val where = "${DBMusicHelper.LINK_LIST_ID} = $list_id AND ${DBMusicHelper.LINK_MUSIC_ID} = $music_id"
-        database.delete(DBMusicHelper.LINK_TABLE, where,null)
-    }
-
-
-
-
-    fun getListsIdFromType(listType: ListType) : ArrayList<Int>
-    {
-        val list = ArrayList<Int>()
-        val columns = arrayOf(DBMusicHelper.LIST_ID)
-        val where = "${DBMusicHelper.LIST_TYPE} = \"${listType}\""
-        val cursor = database.query(DBMusicHelper.LIST_TABLE, columns, where, null, null, null, null)
-        cursor.moveToFirst()
-        for (i in 0 until cursor.count)
-        {
-            list.add(cursor.getInt(0))
-            cursor.moveToNext()
-        }
-        cursor.close()
-        return list
-    }
-*/
     fun getListNameFromId(list_id: Int) : String?
     {
         val columns = arrayOf(DBMusicHelper.LIST_NAME)
-        val where = "${DBMusicHelper.LIST_ID} = ${list_id+1}"
+        val where = "${DBMusicHelper.LIST_ID} = ${list_id}"
         val cursor = database.query(DBMusicHelper.LIST_TABLE, columns, where, null, null, null, null)
         cursor.moveToFirst()
         val name = if(cursor.count > 0) cursor.getString(0)
         else null
         cursor.close()
+        //Log.d("MusicDB", "getListNameFromId($list_id) = \"$name\"")
         return name
     }
 
-    /*
-    fun getMusicsIdFromList(list_id : Int) : ArrayList<Int>
+    fun getListTypeFromId(list_id: Int) : ListType?
     {
-        val list = ArrayList<Int>()
-        val columns = arrayOf(DBMusicHelper.LINK_MUSIC_ID)
-        val where = "${DBMusicHelper.LINK_LIST_ID} = $list_id"
-        val cursor = database.query(DBMusicHelper.LINK_TABLE, columns, where, null, null, null, null)
+        val columns = arrayOf(DBMusicHelper.LIST_TYPE)
+        val where = "${DBMusicHelper.LIST_ID} = ${list_id}"
+        val cursor = database.query(DBMusicHelper.LIST_TABLE, columns, where, null, null, null, null)
         cursor.moveToFirst()
-        for (i in 0 until cursor.count)
-        {
-            list.add(cursor.getInt(0))
-            cursor.moveToNext()
-        }
+        val name = if(cursor.count > 0) cursor.getString(0)
+        else null
         cursor.close()
-        return list
-    }
-*/
-
-
-    // MISCELLANEOUS
-
-    /*
-    fun insert(music : Music) {
-        val contentValue = ContentValues()
-        contentValue.put(DBMusicHelper.PATH, music.path)
-        contentValue.put(DBMusicHelper.TITLE, music.title)
-        contentValue.put(DBMusicHelper.ARTIST, music.artist)
-        contentValue.put(DBMusicHelper.ALBUM, music.album)
-        database.insert(DBMusicHelper.TABLE_NAME, null, contentValue)
-    }*/
-
-    /*fun fetch(): Cursor {
-        val columns = arrayOf(DBMusicHelper._ID, DBMusicHelper.PATH, DBMusicHelper.TITLE,DBMusicHelper.ARTIST,DBMusicHelper.ALBUM)
-        val cursor = database.query(DBMusicHelper.TABLE_NAME, columns, null, null, null, null, null)
-
-        cursor.moveToFirst()
-        return cursor
+        val ListType = ListType.valueOf(name!!)
+        //Log.d("MusicDB", "getListTypeFromId($list_id) = \"$ListType\"")
+        return ListType
     }
 
-    */
-
-    /*
-    fun update(_id: Long, name: String?, desc: String?): Int {
-        val contentValues = ContentValues()
-        contentValues.put(DBMusicHelper.SUBJECT, name)
-        contentValues.put(DBMusicHelper.DESC, desc)
-        return database!!.update(DBMusicHelper.TABLE_NAME, contentValues, DBMusicHelper._ID + " = " + _id, null)
-    }*/
-
-    /*fun delete(_id: Long) {
-        database.delete(DBMusicHelper.TABLE_NAME, DBMusicHelper._ID + "=" + _id, null)
-    }*/
+    // Database clear function
 
     fun clear()
     {

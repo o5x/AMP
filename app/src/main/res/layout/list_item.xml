@@ -30,7 +30,7 @@
             android:id="@+id/list_image"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            tools:srcCompat="@drawable/music" />
+            tools:src="@drawable/music" />
 
         <LinearLayout
             android:layout_width="match_parent"

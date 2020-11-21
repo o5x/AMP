@@ -12,6 +12,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.renderscript.RenderScript
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -26,7 +27,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
-import com.example.musictest.MusicController
 import com.example.musictest.R
 import com.example.musictest.SyncMusicController
 import com.example.musictest.builders.CreateNotification
@@ -36,6 +36,14 @@ import com.example.musictest.fragments.SearchFragment
 import com.example.musictest.fragments.SettingsFragment
 import com.example.musictest.services.OnClearFromRecentService
 import java.io.File
+
+/*
+Bugs :
+- Can select folder and files
+
+todo :
+- manage multi selection files
+ */
 
 
 // global MusicController
@@ -378,5 +386,4 @@ class MainActivity : AppCompatActivity() {
     {
         replaceFragment(SettingsFragment())
     }
-
 }

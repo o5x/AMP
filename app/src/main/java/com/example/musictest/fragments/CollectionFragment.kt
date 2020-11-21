@@ -55,8 +55,6 @@ class CollectionFragment : Fragment() {
             download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac");
         }
 
-        // var collectionPlaylists = v.findViewById<LinearLayout>(R.id.collectionPlaylists)
-
         val fm = fragmentManager
 
         // init with all ids
