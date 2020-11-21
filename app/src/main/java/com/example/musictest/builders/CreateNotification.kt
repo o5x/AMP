@@ -7,10 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.AudioManager
-import android.media.MediaMetadata
 import android.os.Build
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.musictest.R
@@ -18,6 +18,33 @@ import com.example.musictest.SyncMusic
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.services.NotificationActionService
 
+
+private val callback = object: MediaSessionCompat.Callback() {
+    override fun onPlay() {
+        super.onPlay()
+        syncMusicController.togglePlay()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        syncMusicController.togglePlay()
+    }
+
+    override fun onSkipToNext() {
+        super.onSkipToNext()
+        syncMusicController.next()
+    }
+
+    override fun onSkipToPrevious() {
+        super.onSkipToPrevious()
+        syncMusicController.prev()
+    }
+
+    override fun onSeekTo(pos: Long) {
+        super.onSeekTo(pos)
+        syncMusicController.player.seekTo(pos.toInt())
+    }
+}
 
 object CreateNotification {
     const val CHANNEL_ID = "channel1"
@@ -46,8 +73,18 @@ object CreateNotification {
                     .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.artist)
                     .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.album)
                     .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.title)
-                        .putString( MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, "android.resource")
-                        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, syncMusicController.player.duration.toLong())
+                    .putString(
+                        MediaMetadataCompat.METADATA_KEY_MEDIA_ID,
+                        syncMusicController.player.hashCode().toString()
+                    )
+                    .putString(
+                        MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
+                        "android.resource"
+                    )
+                    .putLong(
+                        MediaMetadataCompat.METADATA_KEY_DURATION,
+                        syncMusicController.player.duration.toLong()
+                    )
                     .build()
             )
 
@@ -55,29 +92,27 @@ object CreateNotification {
             val intentPrevious = Intent(context, NotificationActionService::class.java)
                     .setAction(ACTION_PREVIOUS)
             val pendingIntentPrevious = PendingIntent.getBroadcast(
-                    context, 0,
-                    intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT
+                context, 0,
+                intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT
             )
 
             val intentPlay = Intent(context, NotificationActionService::class.java)
                     .setAction(ACTION_PLAY)
             val pendingIntentPlay = PendingIntent.getBroadcast(
-                    context, 0,
-                    intentPlay, PendingIntent.FLAG_UPDATE_CURRENT
+                context, 0,
+                intentPlay, PendingIntent.FLAG_UPDATE_CURRENT
             )
 
             val intentNext = Intent(context, NotificationActionService::class.java)
                     .setAction(ACTION_NEXT)
             val pendingIntentNext = PendingIntent.getBroadcast(
-                    context, 0,
-                    intentNext, PendingIntent.FLAG_UPDATE_CURRENT
+                context, 0,
+                intentNext, PendingIntent.FLAG_UPDATE_CURRENT
             )
-
-
 
             var bmp = BitmapFactory.decodeResource(context.resources, R.drawable.music)
 
-            if(track.image != null) bmp = track!!.image
+            if(track.image != null) bmp = track.image
 
             val meciastyle = androidx.media.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
@@ -85,16 +120,35 @@ object CreateNotification {
 
 
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
-            val result = audioManager!!.requestAudioFocus({ },
-                    AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+            val result = audioManager!!.requestAudioFocus(
+                { },
+                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
+            )
             if (result != AudioManager.AUDIOFOCUS_GAIN) {
                 return  //Failed to gain audio focus
             }
+            var State = PlaybackStateCompat.STATE_PAUSED
 
+            if(syncMusicController.isMusicPlaying) State = PlaybackStateCompat.STATE_PLAYING
+
+            val playbackStateCompat = PlaybackStateCompat.Builder()
+                .setActions(
+                    PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                            PlaybackStateCompat.ACTION_PAUSE or
+                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                            //or PlaybackStateCompat.ACTION_SEEK_TO
+                )
+                .setState(State, syncMusicController.player.currentPosition.toLong(), 1f)
+                .build()
+
+            mediaSessionCompat.setPlaybackState(playbackStateCompat);
+
+            mediaSessionCompat.setCallback(callback);
 
             //create notification
             notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                //.setProgress(100,50,true)
+                .setProgress(100, 50, true)
                 .setSmallIcon(R.drawable.appiconrot)
                 .setContentTitle(track.title)
                 .setContentText(track.artist)

@@ -12,6 +12,12 @@ import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
+import com.example.musictest.databases.MusicDB
+import com.example.musictest.listId
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_music_controller.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 class SearchFragment : Fragment() {
 
@@ -39,11 +45,11 @@ class SearchFragment : Fragment() {
 
         val v = inflater.inflate(R.layout.fragment_search, container, false)
 
-        search = v.findViewById(R.id.editTextSearch);
+        search = v.findViewById(R.id.editTextSearch)
 
-        val fm = fragmentManager
+        val fm = childFragmentManager
 
-        var id = 0
+        var id: Int
 
         var tab = ArrayList<Int>()
 
@@ -69,21 +75,21 @@ class SearchFragment : Fragment() {
 
                 id = 0
 
-                if (search.text.toString().length != 0) {
+                if (search.text.toString().isNotEmpty()) {
 
-                    for (m in syncMusicController.list_all) {
+                    for (m in syncMusicController.getList(listId.ID_MUSIC_ALL).list) {
                         val music = syncMusicController.getMusic(id)
-                        if (music.title.toString().toLowerCase().contains(
-                                search.text.toString().toLowerCase()
+                        if (music.title.toString().toLowerCase(Locale.ROOT).contains(
+                                search.text.toString().toLowerCase(Locale.ROOT)
                             )
-                            || music.artist.toString().toLowerCase().contains(
-                                search.text.toString().toLowerCase()
+                            || music.artist.toString().toLowerCase(Locale.ROOT).contains(
+                                search.text.toString().toLowerCase(Locale.ROOT)
                             )
-                            || music.album.toString().toLowerCase().contains(
-                                search.text.toString().toLowerCase()
+                            || music.album.toString().toLowerCase(Locale.ROOT).contains(
+                                search.text.toString().toLowerCase(Locale.ROOT)
                             )
-                            || music.path.toString().toLowerCase().contains(
-                                search.text.toString().toLowerCase()
+                            || music.path.toString().toLowerCase(Locale.ROOT).contains(
+                                search.text.toString().toLowerCase(Locale.ROOT)
                             )
                         ) {
                             newtab.add(id)
@@ -94,7 +100,7 @@ class SearchFragment : Fragment() {
                 }
 
                 if (tab.hashCode() != newtab.hashCode()) {
-                    v.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews();
+                    v.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews()
                     tab = newtab
 
                     if(tab.size > 0)

@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.util.Log
@@ -20,6 +18,25 @@ import java.io.File
 enum class Repeat {
     None, All, Once
 }
+
+class listId{
+    companion object
+    {
+        const val ID_MUSIC_ALL = 1
+        const val ID_MUSIC_QUEUE = 2
+        const val ID_MUSIC_QUEUE_SHUFFLED = 3
+        const val ID_MUSIC_LIKED = 4
+        const val ID_MUSIC_MOST = 5
+        const val ID_MUSIC_SUGGEST = 6
+        const val ID_MUSIC_DOWNLOAD = 7
+
+        const val ID_MUSIC_ARTISTS = 8
+        const val ID_MUSIC_ALBUMS = 9
+    }
+}
+
+
+
 
 val metaRetriever = MediaMetadataRetriever()
 
@@ -49,7 +66,7 @@ class SyncMusic
     var valid = false
         private set
 
-    constructor(f : File)
+    constructor(f: File)
     {
         try{
             this.path = f.path
@@ -82,7 +99,7 @@ class SyncMusic
         }
     }
 
-    constructor(cursor : Cursor)
+    constructor(cursor: Cursor)
     {
         //id = cursor.getInt(0)
         this.valid = cursor.getInt(1) > 0
@@ -96,8 +113,12 @@ class SyncMusic
 
     // lazy Image loader
 
-    private fun initImage() : Bitmap?
+    /*private fun initImage() : Bitmap?
     {
+        if(imageInitialized) return image
+
+        imageInitialized = true
+
         try{
             metaRetriever.setDataSource(path)
 
@@ -114,8 +135,6 @@ class SyncMusic
                 val matrix = Matrix()
                 matrix.postScale(scale_factor, scale_factor)
 
-                imageInitialized = true
-
                 return if (landscape) {
                     val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
                     Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
@@ -130,14 +149,15 @@ class SyncMusic
             Log.w("MusicController", "Invalid music load image= " + path)
         }
         return null
-    }
+    }*/
 
     var imageInitialized = false
         private set
 
-    val image: Bitmap? by lazy {
-        initImage()
-    }
+    val image: Bitmap? = null
+    /*? by lazy {
+        if(imageInitialized) image else initImage()
+    }*/
 }
 
 class SyncList{
@@ -145,14 +165,14 @@ class SyncList{
     var list: ArrayList<Int> = ArrayList()
     var listType = ListType.None
 
-    constructor(name_ : String, listType_ : ListType)
+    constructor(name_: String, listType_: ListType)
     {
         list =  ArrayList()
         name = name_
         listType = listType_
     }
 
-    constructor(name_ : String, cursor: Cursor, listType_ : ListType)
+    constructor(name_: String, cursor: Cursor, listType_: ListType)
     {
         list =  ArrayList()
         name = name_
@@ -170,6 +190,8 @@ class SyncList{
 
 class SyncMusicController : Application() {
 
+
+
     lateinit var c : Context
         private set
 
@@ -179,21 +201,15 @@ class SyncMusicController : Application() {
     lateinit var musicsM: HashMap<Int, SyncMusic>
     lateinit var listsM: HashMap<Int, SyncList>
 
-    fun getMusic(index : Int) : SyncMusic
+    fun getMusic(index: Int) : SyncMusic
     {
         return if (musicsM[index] == null) SyncMusic() else musicsM[index]!!
     }
 
-    fun getList(index : Int) : SyncList
+    fun getList(index: Int) : SyncList
     {
         return if (listsM[index] == null) SyncList() else listsM[index]!!
     }
-
-    //lateinit var musics: ArrayList<SyncMusic>
-    //    private set
-
-    //lateinit var lists: ArrayList<SyncList>
-    //    private set
 
     var player: MediaPlayer = MediaPlayer()
         private set
@@ -206,16 +222,8 @@ class SyncMusicController : Application() {
     var currentMusic: SyncMusic = SyncMusic()
         get() = if(musicsM.isNotEmpty() && currentMusicId >= 0 && musicsM[currentMusicId] != null)musicsM[currentMusicId]!! else SyncMusic()
 
-    var list_all : ArrayList<Int> = ArrayList()
-        get() = getList(MusicDB.ID_MUSIC_ALL).list
-        private set
-
     var list_queue : ArrayList<Int> = ArrayList()
-        get() = getList(MusicDB.ID_MUSIC_QUEUE).list
-        private set
-
-    var list_liked : ArrayList<Int> = ArrayList()
-        get() = getList(MusicDB.ID_MUSIC_LIKED).list
+        get() = getList(listId.ID_MUSIC_QUEUE).list
         private set
 
     var isQueuePlaying: Boolean = false
@@ -240,8 +248,12 @@ class SyncMusicController : Application() {
         listsM = db.getAllListMaps()
     }
 
+    var initialized = false
+
     fun init(context: Context)
     {
+        if(initialized) return
+
         c = context
 
         db = MusicDB(c)
@@ -249,6 +261,8 @@ class SyncMusicController : Application() {
 
         // new impl
         retrieveAllFromDB()
+
+        initialized = true
 
         // restore queue state ?
     }
@@ -259,9 +273,9 @@ class SyncMusicController : Application() {
     {
         val newMusic = SyncMusic(f)
 
-        if(db.addMusic(newMusic)) {
+        if(db.addMusic(newMusic).size > 1) {
             //musics.add(newMusic)
-            retrieveAllFromDB()
+            //retrieveAllFromDB()
             return true
         }
 
@@ -314,8 +328,10 @@ class SyncMusicController : Application() {
 
     private fun updateRequired()
     {
-        c.sendBroadcast(Intent("com.example.musictest.Update_Music")
-                .putExtra("actionname", "update"))
+        c.sendBroadcast(
+            Intent("com.example.musictest.Update_Music")
+                .putExtra("actionname", "update")
+        )
     }
 
     ///////////////////////////////////////// Input filter not to spam media controls
@@ -405,31 +421,31 @@ class SyncMusicController : Application() {
     fun isCurrentMusicLiked() : Boolean
     {
         if(currentMusicId < 0) return false
-        return currentMusicId in getList(MusicDB.ID_MUSIC_LIKED).list
+        return currentMusicId in getList(listId.ID_MUSIC_LIKED).list
     }
 
     fun toggleCurrentMusicLiked()
     {
         if(currentMusicId < 0) return
 
-        if(isCurrentMusicLiked()) removeMusicIdFromListId(currentMusicId,MusicDB.ID_MUSIC_LIKED)
-        else addMusicIdToListId(currentMusicId,MusicDB.ID_MUSIC_LIKED)
+        if(isCurrentMusicLiked()) removeMusicIdFromListId(currentMusicId, listId.ID_MUSIC_LIKED)
+        else addMusicIdToListId(currentMusicId, listId.ID_MUSIC_LIKED)
 
         updateRequired()
     }
 
     // DB interface list
 
-    fun addMusicIdToListId(music_id : Int, list_id : Int)
+    fun addMusicIdToListId(music_id: Int, list_id: Int)
     {
-        db.addMusicIdToListId(music_id, list_id)
-        retrieveAllFromDB()
+        db.addIdToListId(music_id, list_id)
+        listsM[list_id]?.list = db.getListContentFromId(list_id)
     }
 
-    fun removeMusicIdFromListId(music_id : Int, list_id : Int)
+    fun removeMusicIdFromListId(music_id: Int, list_id: Int)
     {
-        db.removeMusicIdFromListId(music_id, list_id)
-        retrieveAllFromDB()
+        db.removeIdFromListId(music_id, list_id)
+        listsM[list_id]?.list = db.getListContentFromId(list_id)
     }
 
     fun setQueue(ids: ArrayList<Int>)
@@ -469,7 +485,12 @@ class SyncMusicController : Application() {
         return playlistIds
     }
 
-    fun addToPlaylistDialog(context: Context, selection: ArrayList<Int>, onSuccess: () -> Unit = {}, onCancel: () -> Unit = {})
+    fun addToPlaylistDialog(
+        context: Context,
+        selection: ArrayList<Int>,
+        onSuccess: () -> Unit = {},
+        onCancel: () -> Unit = {}
+    )
     {
         val playlistNames : ArrayList<String> = ArrayList()
         val playlistIds : ArrayList<Int> = ArrayList()
@@ -492,13 +513,17 @@ class SyncMusicController : Application() {
 
         mBuilder.setSingleChoiceItems(li2, -1) { dialogInterface, i ->
 
-            if(selection.size == 1)Toast.makeText(context,
-                    getMusic(selection[0]).title + " added to " + li2[i],
-                    Toast.LENGTH_LONG).show()
+            if(selection.size == 1)Toast.makeText(
+                context,
+                getMusic(selection[0]).title + " added to " + li2[i],
+                Toast.LENGTH_LONG
+            ).show()
 
-            else Toast.makeText(context,
-                    selection.size.toString() + " songs added to " + li2[i],
-                    Toast.LENGTH_LONG).show()
+            else Toast.makeText(
+                context,
+                selection.size.toString() + " songs added to " + li2[i],
+                Toast.LENGTH_LONG
+            ).show()
 
             for (s in selection) addMusicIdToListId(s, i)
 
@@ -506,7 +531,7 @@ class SyncMusicController : Application() {
             onSuccess()
         }
 
-        mBuilder.setNeutralButton("Cancel") { dialog, which ->
+        mBuilder.setNeutralButton("Cancel") { dialog, _ ->
             dialog.cancel()
             onCancel()
         }
@@ -515,36 +540,60 @@ class SyncMusicController : Application() {
         mDialog.show()
     }
 
-    fun setQueueFiles(files: ArrayList<File>, idToPlay : Int = -1)
+    fun setQueueFiles(files: ArrayList<File>, idToPlay: Int = -2)
     {
         var id = 0
         var nextQueueId = 0
 
+        var updateMusics = false
+
         // TODO Synchronize with db
 
-        list_queue.clear()
+        val musicPaths = HashMap<String, Int>()
+
+        var nextQueue = ArrayList<Int>()
+
+        for (m in musicsM) musicPaths[m.value.path] = m.key
+
+        /*Thread{
+            var dialog = ProgressDialog(c)
+            dialog.setMessage("Impotring musics")
+            dialog.show()
+
+            dialog.dismiss()
+
+        }.start()*/
 
         files.forEach{ f ->
 
             if(MainActivity.isMusicFile(f))
             {
-                val newMusic = SyncMusic(f)
+                var insertId = musicPaths[f.path]
 
-                val insertId = db.addMusicEx(newMusic)
+                if(insertId == null)
+                {
+                    updateMusics = true
+                    val newMusic = SyncMusic(f)
+                    insertId = db.addMusic(newMusic)[0]
+                }
 
-                list_queue.add(insertId)
-                if(id == idToPlay) {
-                    nextQueueId = list_queue.size -1
+                if(insertId >= 0)
+                {
+                    nextQueue.add(insertId)
+                    if(id == idToPlay) {
+                        nextQueueId = nextQueue.size -1
+                    }
                 }
             }
-
             id++
         }
 
-        //retrieveAllFromDB()
+        if(updateMusics) retrieveAllFromDB()
+
+        listsM[listId.ID_MUSIC_QUEUE]?.list?.clear()
+        listsM[listId.ID_MUSIC_QUEUE]?.list = nextQueue
 
         prepare(nextQueueId)
         play(nextQueueId)
     }
-
 }

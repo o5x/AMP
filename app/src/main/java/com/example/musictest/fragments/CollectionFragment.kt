@@ -18,16 +18,11 @@ import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-
 class CollectionFragment : Fragment() {
     lateinit var imageButtonDownload : ImageButton
 
-    fun addListItem(
+
+    private fun addListItem(
             fm: androidx.fragment.app.FragmentManager?,
             layout_id: Int,
     ) : ListerRecyclerFragment
@@ -47,7 +42,7 @@ class CollectionFragment : Fragment() {
     ): View? {
 
         // Inflate the layout for this fragment
-        var v = inflater.inflate(R.layout.fragment_collection, container, false)
+        val v = inflater.inflate(R.layout.fragment_collection, container, false)
 
         imageButtonDownload = v.findViewById(R.id.imageButtonDownload)
         imageButtonDownload.setOnClickListener {
@@ -55,7 +50,7 @@ class CollectionFragment : Fragment() {
             download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac");
         }
 
-        val fm = fragmentManager
+        val fm = childFragmentManager
 
         // init with all ids
         addListItem(fm, R.id.collectionPlaylists).initPlaylistList(syncMusicController.getPlaylistsIds())
@@ -71,7 +66,7 @@ class CollectionFragment : Fragment() {
             val request = DownloadManager.Request(Uri.parse(url))
             request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
 
-            var name = URLUtil.guessFileName(url, null, null)
+            val name = URLUtil.guessFileName(url, null, null)
             //name = "musicdl.mp3"
             request.setDescription("Downloading...")
 
@@ -98,8 +93,8 @@ class CollectionFragment : Fragment() {
         (activity as MainActivity).button_settings.visibility = View.VISIBLE
         (activity as MainActivity).title.text = "Collection"
 
-        (activity as MainActivity).btn_home.setColorFilter(null)
-        (activity as MainActivity).btn_search.setColorFilter(null)
+        (activity as MainActivity).btn_home.colorFilter = null
+        (activity as MainActivity).btn_search.colorFilter = null
         (activity as MainActivity).btn_collection.setColorFilter(R.color.th)
     }
 }

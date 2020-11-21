@@ -151,7 +151,7 @@ class ListerRecyclerFragment : Fragment()  {
                 }
                 ListerMode.ListPlaylists ->{
                     childSelected.clear()
-                    for(i in 0 until listIds.size) childSelected.add(false);
+                    for(i in 0 until listIds.size) childSelected.add(false)
 
                     lra.clickCallback = {
                         (activity as MainActivity).replaceFragment(
@@ -178,7 +178,7 @@ class ListerRecyclerFragment : Fragment()  {
                     }
 
                     childSelected.clear()
-                    for(i in 0 until files.size) childSelected.add(false);
+                    for(i in 0 until files.size) childSelected.add(false)
                 }
                 else -> {
                     Toast.makeText(context, "ListerMode None !", Toast.LENGTH_SHORT).show()

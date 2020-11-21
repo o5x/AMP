@@ -28,7 +28,7 @@ class QueueActivity : AppCompatActivity() {
         setContentView(R.layout.activity_queue)
 
         // listerLayout
-        var fm = supportFragmentManager
+        val fm = supportFragmentManager
         addListItem(fm, R.id.listerLayout).initMusicIdList(syncMusicController.list_queue)
     }
 }

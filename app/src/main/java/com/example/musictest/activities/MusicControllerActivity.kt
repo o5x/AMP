@@ -167,8 +167,7 @@ class MusicControllerActivity : AppCompatActivity() {
         textViewArtist.text = syncMusicController.currentMusic.artist
         val totalTime = syncMusicController.player.duration
         positionBar.max = totalTime
-        val totalTimeTime = createTimeLabel(totalTime)
-        remainingTimeLabel.text = "$totalTimeTime"
+        remainingTimeLabel.text = createTimeLabel(totalTime)
 
         // Update Play button
         if (syncMusicController.isMusicPlaying) playBtn.setBackgroundResource(R.drawable.ic_pause)

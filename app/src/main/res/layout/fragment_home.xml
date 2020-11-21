@@ -47,7 +47,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginRight="20dp"
                 android:layout_marginBottom="5dp"
-                android:text="Recently played"
+                android:text="On your phone"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -57,7 +57,7 @@
                 android:scrollbars="none">
 
                 <LinearLayout
-                    android:id="@+id/layout_recent"
+                    android:id="@+id/layout_onyourphone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />
@@ -71,7 +71,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginRight="20dp"
                 android:layout_marginBottom="5dp"
-                android:text="Suggested"
+                android:text="Recently played"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -81,7 +81,7 @@
                 android:scrollbars="none">
 
                 <LinearLayout
-                    android:id="@+id/layout_suggest"
+                    android:id="@+id/layout_recent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />

@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -17,27 +17,26 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@drawable/appicon"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/MusicTest.TransparentTheme">
-        <activity android:name=".activities.QueueActivity"></activity>
-        <activity android:name=".activities.MusicControllerActivity"></activity>
-        <activity android:name=".activities.MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize">
+        android:theme="@style/MusicTest.TransparentTheme"
+        android:usesCleartextTraffic="true">
+        <activity android:name=".activities.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <receiver android:name=".services.RemoteControlService" >
+        <activity android:name=".activities.QueueActivity" />
+        <activity android:name=".activities.MusicControllerActivity" />
+        <activity
+            android:name=".activities.MainActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize">
+        </activity>
+        <receiver android:name=".services.RemoteControlService">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </receiver>
-
-
-
         <receiver android:name=".services.NotificationActionService" />
 
         <service android:name=".services.OnClearFromRecentService" />

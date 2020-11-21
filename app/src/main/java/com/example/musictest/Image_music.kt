@@ -1,5 +1,6 @@
 package com.example.musictest
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PorterDuff
@@ -28,18 +29,36 @@ class Image_music : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        var v = inflater.inflate(R.layout.fragment_image_music, container, false)
-        var imageMusic = v.findViewById<ImageView>(R.id.imageMusic);
+        val v = inflater.inflate(R.layout.fragment_image_music, container, false)
+        val imageMusic = v.findViewById<ImageView>(R.id.imageMusic)
 
-        var left = v.findViewById<View>(R.id.leftshadow);
-        var right = v.findViewById<View>(R.id.rightshadow);
+        val left = v.findViewById<View>(R.id.leftshadow)
+        val right = v.findViewById<View>(R.id.rightshadow)
+
+        /* imageMusic.setImageResource(R.drawable.music)
+
+         if(syncMusicController.getMusicFromQueueId(param1!!).imageInitialized)
+         {
+             if(syncMusicController.getMusicFromQueueId(param1!!).image != null)imageMusic.setImageBitmap(syncMusicController.getMusicFromQueueId(param1!!).image)
+         }
+         else
+         {
+             Thread(Runnable(fun() {
+                 if (syncMusicController.getMusicFromQueueId(param1!!).image != null) {
+                     (this.context as Activity).runOnUiThread(Runnable {
+                         imageMusic.setImageBitmap(syncMusicController.getMusicFromQueueId(param1!!).image)
+                         //ImageViewAnimatedChange2(lrf.context,mImageView!!,music.image)
+                     })
+                 }
+             })).start()
+         }*/
 
         val bmp = syncMusicController.getMusicFromQueueId(param1!!).image
 
         if(bmp != null) {
             val blurredBmp = BlurBuilder.blur(v.context, Bitmap.createBitmap(bmp))
             imageMusic.setImageBitmap(blurredBmp)
-            imageMusic.setColorFilter(Color.rgb(123, 123, 123), PorterDuff.Mode.MULTIPLY);
+            imageMusic.setColorFilter(Color.rgb(123, 123, 123), PorterDuff.Mode.MULTIPLY)
         }
         else {
             imageMusic.visibility = View.INVISIBLE

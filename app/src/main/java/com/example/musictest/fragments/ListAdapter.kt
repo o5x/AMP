@@ -1,14 +1,8 @@
 package com.example.musictest.fragments
 
-import android.app.Activity
-import android.content.Context
-import android.graphics.Bitmap
-import android.os.Message
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
@@ -16,13 +10,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import java.lang.Exception
 
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
     : RecyclerView.Adapter<MovieViewHolder>() {
 
-    private var checkBoxVisibility = View.GONE;
+    private var checkBoxVisibility = View.GONE
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -45,7 +38,7 @@ class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
 
     override fun getItemCount(): Int = listerRecyclerFragment.childSelected.size
 }
-
+/*
 fun ImageViewAnimatedChange(c: Context?, v: ImageView, new_image: Bitmap?) {
     val anim_out: Animation = AnimationUtils.loadAnimation(c, R.anim.fade_out)
     val anim_in: Animation = AnimationUtils.loadAnimation(c, R.anim.fade_in)
@@ -77,7 +70,7 @@ fun ImageViewAnimatedChange2(c: Context?, v: ImageView, new_image: Bitmap?) {
     })
     v.startAnimation(anim_in)
 
-}
+}*/
 
 class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     RecyclerView.ViewHolder(inflater.inflate(R.layout.list_item, parent, false)) {
@@ -117,7 +110,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                 mImageView?.setImageResource(R.drawable.music)
 
-                if(music.imageInitialized)
+                /*if(music.imageInitialized)
                 {
                     if(music.image != null)mImageView?.setImageBitmap(music.image)
                 }
@@ -131,7 +124,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                             })
                         }
                     })).start()
-                }
+                }*/
 
                 // erase onclick with custom one
                 onclick = {
@@ -143,8 +136,15 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                 val list = syncMusicController.getList(lrf.listIds[adapterPosition])
                 mTitleView?.text = list.name
-                mYearView?.text = "Playlist"
+                mYearView?.text = "${list.list.size} songs"
                 mImageView?.setImageResource(R.drawable.playlist)
+
+                onclick = {
+                    lrf.replaceFragment(
+                        ListerRecyclerFragment().initMusicIdList(list.list),
+                        true
+                    )
+                }
             }
             ListerMode.ListFiles -> {
 
@@ -167,7 +167,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     mYearView?.text = "File"
                     mImageView?.setImageResource(R.drawable.file)
 
-                    if (MainActivity.isMusicFile(file!!)) {
+                    if (MainActivity.isMusicFile(file)) {
                         mCheckBox?.isEnabled = true
                         mYearView?.text = "Music"
                         mImageView?.setImageResource(R.drawable.music)
@@ -177,6 +177,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         }
                     }
                 }
+            }
+            else -> {
+
             }
         }
 

@@ -12,12 +12,9 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.renderscript.RenderScript
 import android.util.Log
 import android.view.View
-import android.widget.Button
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -35,6 +32,7 @@ import com.example.musictest.fragments.HomeFragment
 import com.example.musictest.fragments.SearchFragment
 import com.example.musictest.fragments.SettingsFragment
 import com.example.musictest.services.OnClearFromRecentService
+import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
 /*
@@ -43,6 +41,11 @@ Bugs :
 
 todo :
 - manage multi selection files
+- update interface on lists changed
+- restore queue state / time when restarted
+- group by artists / albums - fix ' character sql
+- finish multimedia control
+-
  */
 
 
@@ -54,16 +57,10 @@ class MainActivity : AppCompatActivity() {
     private val CHANNEL_ID = "channel2"
     private val CHANNEL_NID = 2
 
-    lateinit var playBtn2 : Button
-
-    lateinit var notificationManager: NotificationManager
+    private var notificationManager: NotificationManager? = null
 
     lateinit var mBuilder : NotificationCompat.Builder
     lateinit var mNotifyManager : NotificationManagerCompat
-
-    lateinit var imageView_cover : ImageView
-    lateinit var textView_title  : TextView
-    lateinit var textView_artist : TextView
 
     lateinit var button_back: ImageButton
     lateinit var button_settings: ImageButton
@@ -91,21 +88,6 @@ class MainActivity : AppCompatActivity() {
                     || f.name.endsWith(".ogg")
                     || f.name.endsWith(".mkv"))
         }
-    }
-
-
-    private fun musicReader(root: File) : ArrayList<File>{
-        val fileList: ArrayList<File> = ArrayList()
-        val listAllFiles = root.listFiles()
-        if (listAllFiles != null && listAllFiles.isNotEmpty()) {
-            for (currentFile in listAllFiles) {
-                if (isMusicFile(currentFile)) {
-                    fileList.add(currentFile.absoluteFile)
-                }
-            }
-            fileList.sortedWith(compareBy { it.name })
-        }
-        return fileList;
     }
 
     fun scanMusics()
@@ -144,6 +126,8 @@ class MainActivity : AppCompatActivity() {
                     .setProgress(0, 0, true)
 
             mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
+
+            syncMusicController.retrieveAllFromDB()
         }
 
         Thread {
@@ -168,6 +152,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
         setContentView(R.layout.activity_main)
 
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
@@ -183,10 +169,8 @@ class MainActivity : AppCompatActivity() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED)
         {
-            ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf<String>(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    0
+            ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 0
             );
         }
 
@@ -194,19 +178,16 @@ class MainActivity : AppCompatActivity() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED)
         {
-            ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf<String>(Manifest.permission.RECORD_AUDIO),
-                    0
+            ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.RECORD_AUDIO),0
             );
         }
 
         // init context
         syncMusicController.init(this)
-        //scanMusics()
+        scanMusics()
 
         // check intent filter
-
         /*if (intent.action!!.compareTo(Intent.ACTION_VIEW) == 0) {
 
             if (intent.scheme!!.compareTo(ContentResolver.SCHEME_CONTENT) == 0) {
@@ -227,37 +208,26 @@ class MainActivity : AppCompatActivity() {
             {
                 Log.w("loader", "nope")
             }
-
         }
         else
         {*/
 
-        title = findViewById(R.id.Apptitle)
-        button_back = findViewById(R.id.imageButtonBack)
-        button_settings= findViewById(R.id.imageButtonSettings)
-        imageView_cover = findViewById(R.id.imageView_cover)
-        textView_title = findViewById(R.id.listerTitle)
-        textView_artist = findViewById(R.id.textView_artist)
-        playBtn2 = findViewById(R.id.playBtn2)
+        title = Apptitle
+        button_back = imageButtonBack
+        button_settings= imageButtonSettings
 
-        btn_home = findViewById(R.id.imageButtonHome)
-        btn_search = findViewById(R.id.imageButtonSearch)
-        btn_collection = findViewById(R.id.imageButtonCollection)
+        btn_home = imageButtonHome
+        btn_search = imageButtonSearch
+        btn_collection = imageButtonCollection
 
         // Notification controller
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(CreateNotification.CHANNEL_ID, "Playback")
-            registerReceiver(broadcastReceiver, IntentFilter("com.example.musictest.Control_Music"))
-            startService(Intent(baseContext, OnClearFromRecentService::class.java))
-        }
+        createNotificationChannel(CreateNotification.CHANNEL_ID, "Playback")
+        registerReceiver(broadcastReceiver, IntentFilter("com.example.musictest.Control_Music"))
+        startService(Intent(baseContext, OnClearFromRecentService::class.java))
 
         registerReceiver(broadcastReceiver2, IntentFilter("com.example.musictest.Update_Music"))
 
         updateInterface()
-
-        // set default fragment
-        HomeClick(findViewById<View>(android.R.id.content).getRootView())
-        //SearchClick(findViewById<View>(android.R.id.content).getRootView())
     }
 
     fun updateInterface()
@@ -272,7 +242,7 @@ class MainActivity : AppCompatActivity() {
         else
             imageView_cover.setImageBitmap(syncMusicController.currentMusic.image)
 
-        textView_title.text = syncMusicController.currentMusic.title
+        listerTitle.text = syncMusicController.currentMusic.title
         textView_artist.text = syncMusicController.currentMusic.artist
 
         if(syncMusicController.isQueuePlaying)
@@ -289,9 +259,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         else
-        {
             CreateNotification.cancelNotification(this)
-        }
+
+        if(syncMusicController.isQueuePlaying)
+            linearLayoutControl.visibility = View.VISIBLE
+        else
+            linearLayoutControl.visibility = View.GONE
     }
 
     var broadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -366,6 +339,20 @@ class MainActivity : AppCompatActivity() {
     fun backClick(v: View)
     {
         onBackPressed();
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if(supportFragmentManager.backStackEntryCount == 0)
+            HomeClick(findViewById<View>(android.R.id.content).getRootView())
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if(supportFragmentManager.backStackEntryCount == 0)
+        {
+            moveTaskToBack(true)
+        }
     }
 
     fun HomeClick(v: View)
