@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
-import com.example.musictest.databases.listId
+import com.example.musictest.databases.ListId
 import com.example.musictest.fragments.ListerRecyclerFragment
 
 class QueueActivity : AppCompatActivity() {
@@ -30,6 +30,6 @@ class QueueActivity : AppCompatActivity() {
 
         // listerLayout
         val fm = supportFragmentManager
-        addListItem(fm, R.id.listerLayout).initMusicIdList(syncMusicController.getList(listId.ID_MUSIC_QUEUE).list)
+        addListItem(fm, R.id.listerLayout).initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_QUEUE).list)
     }
 }

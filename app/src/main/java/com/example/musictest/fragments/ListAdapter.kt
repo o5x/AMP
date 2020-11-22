@@ -1,7 +1,6 @@
 package com.example.musictest.fragments
 
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,8 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.listId
-
+import com.example.musictest.databases.ListId
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
     : RecyclerView.Adapter<MovieViewHolder>() {
@@ -42,46 +40,12 @@ class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
 
     override fun getItemCount(): Int = listerRecyclerFragment.childSelected.size
 }
-/*
-fun ImageViewAnimatedChange(c: Context?, v: ImageView, new_image: Bitmap?) {
-    val anim_out: Animation = AnimationUtils.loadAnimation(c, R.anim.fade_out)
-    val anim_in: Animation = AnimationUtils.loadAnimation(c, R.anim.fade_in)
-    anim_out.setAnimationListener(object : Animation.AnimationListener {
-        override fun onAnimationStart(animation: Animation?) {}
-        override fun onAnimationRepeat(animation: Animation?) {}
-        override fun onAnimationEnd(animation: Animation?) {
-            v.setImageBitmap(new_image)
-            anim_in.setAnimationListener(object : Animation.AnimationListener {
-                override fun onAnimationStart(animation: Animation?) {}
-                override fun onAnimationRepeat(animation: Animation?) {}
-                override fun onAnimationEnd(animation: Animation?) {}
-            })
-            v.startAnimation(anim_in)
-        }
-    })
-    v.startAnimation(anim_out)
-}
-
-fun ImageViewAnimatedChange2(c: Context?, v: ImageView, new_image: Bitmap?) {
-
-    val anim_in: Animation = AnimationUtils.loadAnimation(c, R.anim.fade_in)
-
-    v.setImageBitmap(new_image!!)
-    anim_in.setAnimationListener(object : Animation.AnimationListener {
-        override fun onAnimationStart(animation: Animation?) {}
-        override fun onAnimationRepeat(animation: Animation?) {}
-        override fun onAnimationEnd(animation: Animation?) {}
-    })
-    v.startAnimation(anim_in)
-
-}*/
 
 class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     RecyclerView.ViewHolder(inflater.inflate(R.layout.list_item, parent, false)) {
     var mTitleView: TextView? = null
     var mYearView: TextView? = null
     var mImageView: ImageView? = null
-    var mImageView2: ImageView? = null
     var mCheckBox: CheckBox? = null
     var imageButtonMore : ImageButton? = null
 
@@ -89,7 +53,6 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         mTitleView = itemView.findViewById(R.id.list_title)
         mYearView = itemView.findViewById(R.id.list_description)
         mImageView = itemView.findViewById(R.id.list_image)
-        //mImageView2 = itemView.findViewById(R.id.list_image2)
         mCheckBox = itemView.findViewById(R.id.list_checkBox)
         imageButtonMore = itemView.findViewById(R.id.imageButtonMore)
     }
@@ -130,29 +93,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 mTitleView?.text = music.title
                 mYearView?.text = music.artist
 
-                //mImageView2?.setImageResource(R.drawable.music)
-                //if(music.image != null)mImageView?.setImageBitmap(music.image)
-                // else mImageView?.setImageResource(R.drawable.music)
-
                 mImageView?.setImageResource(R.drawable.music)
                 if(music.image != null)mImageView?.setImageBitmap(music.image)
-
-
-                /*if(music.imageInitialized)
-                {
-                    if(music.image != null)mImageView?.setImageBitmap(music.image)
-                }
-                else
-                {
-                    Thread(Runnable(fun() {
-                        if (music.image != null) {
-                            (lrf.context as Activity).runOnUiThread(Runnable {
-                                mImageView?.setImageBitmap(music.image)
-                                //ImageViewAnimatedChange2(lrf.context,mImageView!!,music.image)
-                            })
-                        }
-                    })).start()
-                }*/
 
                 // erase onclick with custom one
                 onclick = {
@@ -166,11 +108,10 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 mTitleView?.text = list.name
                 mYearView?.text = "${list.list.size} songs"
 
-
                 when(lrf.listIds[adapterPosition])
                 {
-                    listId.ID_MUSIC_LIKED -> mImageView?.setImageResource(R.drawable.liked)
-                    listId.ID_MUSIC_QUEUE -> mImageView?.setImageResource(R.drawable.queue)
+                    ListId.ID_MUSIC_LIKED -> mImageView?.setImageResource(R.drawable.liked)
+                    ListId.ID_MUSIC_QUEUE -> mImageView?.setImageResource(R.drawable.queue)
                     else -> mImageView?.setImageResource(R.drawable.playlist)
                 }
 

@@ -12,16 +12,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.ViewPager2
 import com.example.musictest.Image_music
 import com.example.musictest.R
 import com.example.musictest.Repeat
-import com.example.musictest.databases.listId
+import com.example.musictest.databases.ListId
 import io.github.jeffshee.visualizer.painters.fft.FftCLine
 import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.*
-import io.github.jeffshee.visualizer.utils.VisualizerHelper
-import io.github.jeffshee.visualizer.views.VisualizerView
 import kotlinx.android.synthetic.main.activity_music_controller.*
 
 
@@ -73,8 +70,8 @@ class MusicControllerActivity : AppCompatActivity() {
         val pagerAdapter = ScreenSlidePagerAdapter(this)
         pager.adapter = pagerAdapter
 
-        //pager.isUserInputEnabled = false
-        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+        pager.isUserInputEnabled = false
+       /* pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (ignoreFirst) {
@@ -84,7 +81,7 @@ class MusicControllerActivity : AppCompatActivity() {
                 Toast.makeText(applicationContext, "scrolled by user", Toast.LENGTH_SHORT).show()
                 syncMusicController.play(position)
             }
-        })
+        })*/
 
         pager.setCurrentItem(syncMusicController.currentQueueId, false)
 
@@ -108,7 +105,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     // Build carousel
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount(): Int = syncMusicController.getList(listId.ID_MUSIC_QUEUE).list.size
+        override fun getItemCount(): Int = syncMusicController.getList(ListId.ID_MUSIC_QUEUE).list.size
         override fun createFragment(position: Int): Fragment = Image_music.newInstance(
             position
         )

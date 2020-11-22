@@ -12,7 +12,7 @@ import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.listId
+import com.example.musictest.databases.ListId
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -74,7 +74,7 @@ class SearchFragment : Fragment() {
 
                 if (search.text.toString().isNotEmpty()) {
 
-                    for (m in syncMusicController.getList(listId.ID_MUSIC_ALL).list) {
+                    for (m in syncMusicController.getList(ListId.ID_MUSIC_ALL).list) {
                         val music = syncMusicController.getMusic(id)
                         if (music.title.toString().toLowerCase(Locale.ROOT).contains(
                                 search.text.toString().toLowerCase(Locale.ROOT)

@@ -17,7 +17,7 @@ import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.databases.ListType
 import com.example.musictest.databases.MusicDB
-import com.example.musictest.databases.listId
+import com.example.musictest.databases.ListId
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
 
@@ -288,9 +288,11 @@ class SyncMusicController : Application() {
         // restore queue state
         sharedPref = sp
 
-        currentQueueId = sp.getInt("currentQueueId", currentQueueId)
-        shuffleMode = sp.getBoolean("shuffleMode", shuffleMode)
-        playingFrom = sp.getString("playingFrom", playingFrom).toString()
+        currentQueueId = sharedPref.getInt("currentQueueId", currentQueueId)
+        shuffleMode = sharedPref.getBoolean("shuffleMode", shuffleMode)
+        var r = sharedPref.getString("repeatMode", repeatMode.toString())
+        if(r != null && r.length > 0) repeatMode = Repeat.valueOf(r)
+        playingFrom = sharedPref.getString("playingFrom", playingFrom).toString()
 
         if(currentQueueId >= 0)
         {
@@ -325,10 +327,10 @@ class SyncMusicController : Application() {
 
     private fun prepare(newQueueMusicId: Int)
     {
-        if(0 <= newQueueMusicId && newQueueMusicId < getList(listId.ID_MUSIC_QUEUE).list.size)
+        if(0 <= newQueueMusicId && newQueueMusicId < getList(ListId.ID_MUSIC_QUEUE).list.size)
         {
             currentQueueId = newQueueMusicId
-            val nextMusicId = getList(listId.ID_MUSIC_QUEUE).list[currentQueueId]
+            val nextMusicId = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
             if(getMusic(nextMusicId).valid)
             {
                 currentMusicId = nextMusicId
@@ -399,6 +401,7 @@ class SyncMusicController : Application() {
             Repeat.All -> Repeat.Once
             Repeat.Once -> Repeat.None
         }
+        sharedPref.edit().putString("repeatMode", repeatMode.toString()).apply()
         updateRequired()
     }
 
@@ -441,7 +444,7 @@ class SyncMusicController : Application() {
 
         if(currentQueueId == 0)
         {
-            if(repeatMode == Repeat.All) return play(getList(listId.ID_MUSIC_QUEUE).list.size - 1)
+            if(repeatMode == Repeat.All) return play(getList(ListId.ID_MUSIC_QUEUE).list.size - 1)
             return restartMusic()
         }
 
@@ -455,7 +458,7 @@ class SyncMusicController : Application() {
         if(filterInput()) return
 
         Log.w("Next", "Current = " + currentQueueId + " = " + currentMusicId)
-        if(currentQueueId == getList(listId.ID_MUSIC_QUEUE).list.size -1)
+        if(currentQueueId == getList(ListId.ID_MUSIC_QUEUE).list.size -1)
         {
             if(repeatMode == Repeat.All) return play(0)
             updateRequired()
@@ -470,15 +473,15 @@ class SyncMusicController : Application() {
     fun isCurrentMusicLiked() : Boolean
     {
         if(currentMusicId < 0) return false
-        return currentMusicId in getList(listId.ID_MUSIC_LIKED).list
+        return currentMusicId in getList(ListId.ID_MUSIC_LIKED).list
     }
 
     fun toggleCurrentMusicLiked()
     {
         if(currentMusicId < 0) return
 
-        if(isCurrentMusicLiked()) removeIdFromList(currentMusicId, listId.ID_MUSIC_LIKED)
-        else addIdToList(currentMusicId, listId.ID_MUSIC_LIKED)
+        if(isCurrentMusicLiked()) removeIdFromList(currentMusicId, ListId.ID_MUSIC_LIKED)
+        else addIdToList(currentMusicId, ListId.ID_MUSIC_LIKED)
 
         updateRequired()
     }
@@ -486,23 +489,23 @@ class SyncMusicController : Application() {
 
     private fun startShuffle()
     {
-        val currentMusic = getList(listId.ID_MUSIC_QUEUE).list[currentQueueId]
-        val currentQueue = getList(listId.ID_MUSIC_QUEUE).list
-        updateList(listId.ID_MUSIC_QUEUE_ORIGINAL, currentQueue)
+        val currentMusic = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
+        val currentQueue = getList(ListId.ID_MUSIC_QUEUE).list
+        updateList(ListId.ID_MUSIC_QUEUE_ORIGINAL, currentQueue)
         currentQueue.remove(currentMusic)
         currentQueue.shuffle()
         val newQueue = ArrayList<Int>()
         newQueue.add(currentMusic)
         for (music in currentQueue) newQueue.add(music)
-        updateList(listId.ID_MUSIC_QUEUE, newQueue)
-        currentQueueId = getList(listId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
+        updateList(ListId.ID_MUSIC_QUEUE, newQueue)
+        currentQueueId = getList(ListId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
     }
 
     private fun stopShuffle()
     {
-        val currentMusic = getList(listId.ID_MUSIC_QUEUE).list[currentQueueId]
-        updateList(listId.ID_MUSIC_QUEUE, getList(listId.ID_MUSIC_QUEUE_ORIGINAL).list)
-        currentQueueId = getList(listId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
+        val currentMusic = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
+        updateList(ListId.ID_MUSIC_QUEUE, getList(ListId.ID_MUSIC_QUEUE_ORIGINAL).list)
+        currentQueueId = getList(ListId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
     }
 
     ///////////////////////////////////////// Queue actions
@@ -510,19 +513,19 @@ class SyncMusicController : Application() {
     fun setQueue(ids: ArrayList<Int>, from: String)
     {
         playingFrom = from
-        updateList(listId.ID_MUSIC_QUEUE, ids)
+        updateList(ListId.ID_MUSIC_QUEUE, ids)
         if(shuffleMode) startShuffle()
         prepare(0)
     }
 
     fun getMusicFromQueueId(queueId: Int) : SyncMusic
     {
-        return getMusic(getList(listId.ID_MUSIC_QUEUE).list[queueId])
+        return getMusic(getList(ListId.ID_MUSIC_QUEUE).list[queueId])
     }
 
     fun getPlaylistsIds() : ArrayList<Int>
     {
-        return getList(listId.ID_MUSIC_USER_PLAYLISTS).list
+        return getList(ListId.ID_MUSIC_USER_PLAYLISTS).list
     }
 
     fun addMusicIdsToPlaylistName(selection: ArrayList<Int>, text: String)
@@ -551,7 +554,7 @@ class SyncMusicController : Application() {
         val playlistNames : ArrayList<String> = ArrayList()
         val playlistIds : ArrayList<Int> = ArrayList()
 
-        val userplaylists = getList(listId.ID_MUSIC_USER_PLAYLISTS)
+        val userplaylists = getList(ListId.ID_MUSIC_USER_PLAYLISTS)
 
         for (playlistId in userplaylists.list)
         {
@@ -628,7 +631,7 @@ class SyncMusicController : Application() {
             id++
         }
 
-        updateList(listId.ID_MUSIC_QUEUE, nextQueue)
+        updateList(ListId.ID_MUSIC_QUEUE, nextQueue)
 
         prepare(nextQueueId)
         play(nextQueueId)

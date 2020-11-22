@@ -15,15 +15,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
 
-
-// //data/data/com.example.musictest/databases/musics.db
-
+//data/data/com.example.musictest/databases/musics.db
 
 enum class ListType {
     None, SystemR, SystemRW, Album, Artist, User, SystemRList, SystemRWList
 }
 
-class listId{
+class ListId{
     companion object
     {
         const val ID_MUSIC_ALL = 1
@@ -31,6 +29,7 @@ class listId{
         const val ID_MUSIC_QUEUE_ORIGINAL = 3
         const val ID_MUSIC_LIKED = 4
         const val ID_MUSIC_MOST = 5
+        //const val ID_MUSIC_RECENT = 6
         const val ID_MUSIC_SUGGEST = 6
         const val ID_MUSIC_DOWNLOAD = 7
 
@@ -163,8 +162,8 @@ class MusicDB(private val context: Context) {
             addList("albums", ListType.SystemRList)
 
             addList("userPlaylists", ListType.SystemRWList)
-            addIdToListId(listId.ID_MUSIC_QUEUE, listId.ID_MUSIC_USER_PLAYLISTS)
-            addIdToListId(listId.ID_MUSIC_LIKED, listId.ID_MUSIC_USER_PLAYLISTS)
+            addIdToListId(ListId.ID_MUSIC_QUEUE, ListId.ID_MUSIC_USER_PLAYLISTS)
+            addIdToListId(ListId.ID_MUSIC_LIKED, ListId.ID_MUSIC_USER_PLAYLISTS)
         }
         return this
     }
@@ -309,11 +308,11 @@ class MusicDB(private val context: Context) {
             syncMusicController.invalidateMusics()
 
             // add to all musics
-            addIdToListId(id, listId.ID_MUSIC_ALL)
+            addIdToListId(id, ListId.ID_MUSIC_ALL)
             val aid = addIdToListNameType(id, music.artist.toString(), ListType.Artist)
             val abid = addIdToListNameType(id, music.album.toString(), ListType.Album)
-            addIdToListId(aid, listId.ID_MUSIC_ARTISTS)
-            addIdToListId(abid, listId.ID_MUSIC_ALBUMS)
+            addIdToListId(aid, ListId.ID_MUSIC_ARTISTS)
+            addIdToListId(abid, ListId.ID_MUSIC_ALBUMS)
 
             return arrayOf(id, 1)
         }
