@@ -22,21 +22,12 @@ class HomeFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        (activity as MainActivity).currentfragment = this
-
-        (activity as MainActivity).button_back.visibility = View.INVISIBLE
-        (activity as MainActivity).button_settings.visibility = View.VISIBLE
-        (activity as MainActivity).title.text = "Home"
-
         (activity as MainActivity).btn_home.setColorFilter(R.color.th)
         (activity as MainActivity).btn_search.colorFilter = null
         (activity as MainActivity).btn_collection.colorFilter = null
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        (activity as MainActivity).currentfragment = null
-    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

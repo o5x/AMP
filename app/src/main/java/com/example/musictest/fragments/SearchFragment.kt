@@ -112,12 +112,6 @@ class SearchFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        (activity as MainActivity).currentfragment = this
-
-        (activity as MainActivity).button_back.visibility = View.INVISIBLE
-        (activity as MainActivity).button_settings.visibility = View.VISIBLE
-        (activity as MainActivity).title.text = "Search"
-
         (activity as MainActivity).btn_home.setColorFilter(null)
         (activity as MainActivity).btn_search.setColorFilter(R.color.th)
         (activity as MainActivity).btn_collection.setColorFilter(null)

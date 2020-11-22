@@ -138,7 +138,7 @@ class MusicDB(private val context: Context) {
     @Throws(SQLException::class)
     fun open(): MusicDB {
 
-       // clear()
+        // clear()
 
         dbHelper = DBMusicHelper(context)
         database = dbHelper.writableDatabase

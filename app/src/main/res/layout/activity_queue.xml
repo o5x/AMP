@@ -17,10 +17,10 @@
             android:id="@+id/listerTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="16dp"
             android:text="Songs in queue :"
             android:textColor="@color/white"
-            android:textSize="30sp" />
+            android:textSize="24sp" />
 
         <LinearLayout
             android:id="@+id/listerLayout"

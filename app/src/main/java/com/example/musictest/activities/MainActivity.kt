@@ -22,6 +22,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import com.example.musictest.R
@@ -38,27 +39,22 @@ import java.io.File
 /*
 todo bug fixes :
 - Can select folder and files
-- visualizer helper crash sometimes
 - duplicates in database ?
 
 todo add :
 - manage multi selection files
 - update interface on lists changed
-- finish multimedia control
-- shuffle mode
+- finish multimedia control notification
 - image lazy load
 - image database / localfiles
-- notification control advanced / mediasessioncompat
+- notification control advanced / mediasessioncompact
 - change search screen to have albums / artist
 - add date in local structures
-- add date to music (last played) + added + play count + time spent on this music ?
+- add date to music (last played) + added + play count + time spent on this music ? - musicstats table ?
 - manage file removed skip
 - show recently played (liked albums playlists, artists)
-- add queue playing from (search, playlist, liked, all)
-
-
+- sort by name, date,
  */
-
 
 // global MusicController
 var syncMusicController = SyncMusicController();
@@ -190,12 +186,14 @@ class MainActivity : AppCompatActivity() {
             != PackageManager.PERMISSION_GRANTED)
         {
             ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.RECORD_AUDIO),0
+                    arrayOf(Manifest.permission.RECORD_AUDIO), 0
             );
         }
 
         // init context
-        syncMusicController.init(this)
+        val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
+
+        syncMusicController.init(this, sharedPref)
         scanMusics()
 
         // check intent filter
@@ -322,7 +320,7 @@ class MainActivity : AppCompatActivity() {
 
     // Interface buttons handlers
 
-    fun replaceFragment(newfragment: Fragment, force: Boolean = false)
+    fun replaceFragment(newfragment: Fragment, force: Boolean = false, backBtn: Boolean = true, atitle: String? = null, isSettings: Boolean = false)
     {
         if(force || currentfragment == null || currentfragment!!.javaClass != newfragment.javaClass)
         {
@@ -332,6 +330,13 @@ class MainActivity : AppCompatActivity() {
                 addToBackStack(null)
             }
             currentfragment = newfragment
+            //if(backBtn)button_back.visibility = View.VISIBLE
+            //else button_back.visibility = View.INVISIBLE
+
+            if(atitle != null) title.text = atitle
+
+            if(isSettings)button_settings.visibility = View.INVISIBLE
+            else button_settings.visibility = View.VISIBLE
         }
     }
 
@@ -358,30 +363,44 @@ class MainActivity : AppCompatActivity() {
             HomeClick(findViewById<View>(android.R.id.content).getRootView())
     }
 
+    fun getPrevVisibleFragment(): Fragment? {
+        val fragmentManager: FragmentManager = this@MainActivity.supportFragmentManager
+        val fragments: List<Fragment> = fragmentManager.getFragments()
+        var prevFrag : Fragment? = null
+
+        for (fragment in fragments) {
+            if (fragment.isVisible) return prevFrag
+            prevFrag = fragment
+        }
+
+        return null
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
         if(supportFragmentManager.backStackEntryCount == 0)
         {
             moveTaskToBack(true)
         }
+        currentfragment = getPrevVisibleFragment()
     }
 
     fun HomeClick(v: View)
     {
-        replaceFragment(HomeFragment())
+        replaceFragment(HomeFragment(), atitle = "Home", backBtn = false)
     }
     fun SearchClick(v: View)
     {
-        replaceFragment(SearchFragment())
+        replaceFragment(SearchFragment(), atitle = "Search", backBtn = false)
     }
 
     fun ColectionClick(v: View)
     {
-        replaceFragment(CollectionFragment())
+        replaceFragment(CollectionFragment(), atitle = "Collection", backBtn = false)
     }
 
     fun settingsClick(v: View)
     {
-        replaceFragment(SettingsFragment())
+        replaceFragment(SettingsFragment(), atitle = "Settings")
     }
 }

@@ -141,7 +141,7 @@ class ListerRecyclerFragment : Fragment()  {
                     for(i in 0 until listIds.size) childSelected.add(false);
 
                     listerButtonPlay.setOnClickListener{
-                        syncMusicController.setQueue(getSelection())
+                        syncMusicController.setQueue(getSelection(), "Search")
                         syncMusicController.play(0)
                     }
 

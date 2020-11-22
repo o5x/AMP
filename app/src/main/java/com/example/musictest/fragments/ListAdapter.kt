@@ -1,15 +1,19 @@
 package com.example.musictest.fragments
 
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
+import com.example.musictest.databases.listId
 
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
@@ -79,6 +83,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     var mImageView: ImageView? = null
     var mImageView2: ImageView? = null
     var mCheckBox: CheckBox? = null
+    var imageButtonMore : ImageButton? = null
 
     init {
         mTitleView = itemView.findViewById(R.id.list_title)
@@ -86,11 +91,14 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         mImageView = itemView.findViewById(R.id.list_image)
         //mImageView2 = itemView.findViewById(R.id.list_image2)
         mCheckBox = itemView.findViewById(R.id.list_checkBox)
+        imageButtonMore = itemView.findViewById(R.id.imageButtonMore)
     }
 
     fun bind(visibility: Int, lrf: ListerRecyclerFragment) {
 
         if(adapterPosition >= lrf.childSelected.size) return
+
+        imageButtonMore?.visibility = View.GONE
 
         var onclick = {
             lrf.clickCallback(adapterPosition)
@@ -100,6 +108,24 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
             ListerMode.ListMusicId -> {
 
                 val music = syncMusicController.getMusic(lrf.listIds[adapterPosition])
+
+                imageButtonMore?.visibility = View.VISIBLE
+                imageButtonMore?.setOnClickListener {
+                    val builder1 = AlertDialog.Builder(lrf.context)
+                    builder1.setTitle(music.title)
+                    builder1.setMessage("\nName : ${music.title}\n\nAlbum : ${music.album}\n\nArtist : ${music.artist}\n\nPath : ${music.path}")
+                    builder1.setCancelable(true)
+                    builder1.setIcon(R.drawable.ic_music)
+                    //builder1.setNeutralButton("Add to", { dialog, id -> dialog.cancel()})
+                    //builder1.setNeutralButton("Go to Album", { dialog, id -> dialog.cancel()})
+                    //builder1.setNegativeButton("Go to Artist", { dialog, id -> dialog.cancel()})
+                    //builder1.setPositiveButton("Cancel", { dialog, id -> dialog.cancel()})
+
+                    builder1.setPositiveButton("Done", { dialog, id -> dialog.cancel()})
+                    val alert11 = builder1.create()
+                    alert11.show()
+                }
+
 
                 mTitleView?.text = music.title
                 mYearView?.text = music.artist
@@ -128,7 +154,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                 // erase onclick with custom one
                 onclick = {
-                    syncMusicController.setQueue(lrf.listIds)
+                    syncMusicController.setQueue(lrf.listIds, lrf.title)
                     syncMusicController.play(adapterPosition)
                 }
             }
@@ -137,12 +163,19 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 val list = syncMusicController.getList(lrf.listIds[adapterPosition])
                 mTitleView?.text = list.name
                 mYearView?.text = "${list.list.size} songs"
-                mImageView?.setImageResource(R.drawable.playlist)
+
+
+                when(lrf.listIds[adapterPosition])
+                {
+                    listId.ID_MUSIC_LIKED -> mImageView?.setImageResource(R.drawable.liked)
+                    listId.ID_MUSIC_QUEUE -> mImageView?.setImageResource(R.drawable.queue)
+                    else -> mImageView?.setImageResource(R.drawable.playlist)
+                }
 
                 onclick = {
                     lrf.replaceFragment(
-                        ListerRecyclerFragment().initMusicIdList(list.list),
-                        true
+                            ListerRecyclerFragment().initMusicIdList(list.list).setTitle(lrf.title + " - " + list.name),
+                            true
                     )
                 }
             }
@@ -173,7 +206,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         mImageView?.setImageResource(R.drawable.music)
 
                         onclick = {
-                            syncMusicController.setQueueFiles(lrf.files, adapterPosition)
+                            syncMusicController.setQueueFiles(lrf.files, lrf.folderPath, adapterPosition)
                         }
                     }
                 }

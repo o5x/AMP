@@ -22,59 +22,30 @@ import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.*
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import io.github.jeffshee.visualizer.views.VisualizerView
+import kotlinx.android.synthetic.main.activity_music_controller.*
 
 
 class MusicControllerActivity : AppCompatActivity() {
 
-    private lateinit var helper: VisualizerHelper
+
 
     private var currentSeek: Int = 0
 
     var ignoreFirst : Boolean = true
 
-    private lateinit var positionBar: SeekBar
-    private lateinit var elapsedTimeLabel: TextView
-    private lateinit var remainingTimeLabel: TextView
-    private lateinit var playBtn: Button
-    private lateinit var shuffle: ImageButton
-    private lateinit var repeat: ImageButton
-    private lateinit var favourite: ImageButton
-    private lateinit var mPager: ViewPager2
-    private lateinit var textViewTitle: TextView
-    private lateinit var textViewArtist: TextView
-
-    private lateinit var visual: VisualizerView
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_music_controller)
 
-        helper = VisualizerHelper(syncMusicController.player.audioSessionId)
 
-        visual = findViewById(R.id.visual)
+
         visual.fps = false
 
         registerReceiver(broadcastReceiver, IntentFilter("com.example.musictest.Update_Music"))
 
-        favourite = findViewById(R.id.favBtn)
-
-        textViewTitle = findViewById(R.id.textViewTitle)
         textViewTitle.isSelected = true
-
-        textViewArtist = findViewById(R.id.textViewArtist)
         textViewArtist.isSelected = true
-
-        shuffle = findViewById(R.id.buttonShuffle)
-        repeat = findViewById(R.id.buttonRepeat)
-
         //volumeBar = findViewById(R.id.volumeBar)
-        positionBar = findViewById(R.id.positionBar)
-        elapsedTimeLabel = findViewById(R.id.elapsedTimeLabel)
-        remainingTimeLabel = findViewById(R.id.remainingTimeLabel)
-        playBtn = findViewById(R.id.playBtn)
-
-
-
 
         // Position Bar
 
@@ -99,12 +70,11 @@ class MusicControllerActivity : AppCompatActivity() {
             }
         )
 
-        mPager = findViewById(R.id.pager)
         val pagerAdapter = ScreenSlidePagerAdapter(this)
-        mPager.adapter = pagerAdapter
+        pager.adapter = pagerAdapter
 
-        //mPager.isUserInputEnabled = false
-        mPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+        //pager.isUserInputEnabled = false
+        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (ignoreFirst) {
@@ -116,7 +86,7 @@ class MusicControllerActivity : AppCompatActivity() {
             }
         })
 
-        mPager.setCurrentItem(syncMusicController.currentQueueId, false)
+        pager.setCurrentItem(syncMusicController.currentQueueId, false)
 
         // Thread
         Thread(Runnable(fun() {
@@ -157,14 +127,21 @@ class MusicControllerActivity : AppCompatActivity() {
         if(syncMusicController.currentMusic.image != null)
             bitmap = syncMusicController.currentMusic.image
 
-        visual.setup(helper, Scale(Compose(FftCLine(),
+        visual.setup(syncMusicController.helper, Scale(Compose(FftCLine(),
             Scale(Icon(Icon.getCircledBitmap(bitmap)), scaleX = 1.2f, scaleY = 1.2f)
         ), scaleX = 1.3f, scaleY = 1.3f)
         )
 
+        // playing from
+        playingFrom.text = syncMusicController.playingFrom
+        playingFrom.isSelected = true
+
         // Update metadata
-        textViewTitle.text = syncMusicController.currentMusic.title
-        textViewArtist.text = syncMusicController.currentMusic.artist
+        if(textViewTitle.text != syncMusicController.currentMusic.title) // avoid reset scroll position
+            textViewTitle.text = syncMusicController.currentMusic.title
+        if( textViewArtist.text != syncMusicController.currentMusic.artist)
+            textViewArtist.text = syncMusicController.currentMusic.artist
+
         val totalTime = syncMusicController.player.duration
         positionBar.max = totalTime
         remainingTimeLabel.text = createTimeLabel(totalTime)
@@ -174,47 +151,47 @@ class MusicControllerActivity : AppCompatActivity() {
         else playBtn.setBackgroundResource(R.drawable.ic_play)
 
         // Update shuffle
-        if(syncMusicController.shuffleMode)  shuffle.setColorFilter(R.color.th)
-        else shuffle.colorFilter = null
+        if(syncMusicController.shuffleMode)  buttonShuffle.setColorFilter(R.color.th)
+        else buttonShuffle.colorFilter = null
 
         // update repeat mode
         when (syncMusicController.repeatMode) {
             Repeat.None -> {
-                repeat.colorFilter = null
-                repeat.setImageResource(R.drawable.ic_repeat)
+                buttonRepeat.colorFilter = null
+                buttonRepeat.setImageResource(R.drawable.ic_repeat)
             }
             Repeat.All -> {
-                repeat.setColorFilter(R.color.th)
-                repeat.setImageResource(R.drawable.ic_repeat)
+                buttonRepeat.setColorFilter(R.color.th)
+                buttonRepeat.setImageResource(R.drawable.ic_repeat)
             }
             Repeat.Once -> {
-                repeat.setColorFilter(R.color.th)
-                repeat.setImageResource(R.drawable.ic_repeat_one)
+                buttonRepeat.setColorFilter(R.color.th)
+                buttonRepeat.setImageResource(R.drawable.ic_repeat_one)
             }
         }
 
         // Update shuffle
-        if(syncMusicController.shuffleMode)shuffle.setColorFilter(R.color.th)
-        else shuffle.colorFilter = null
+        if(syncMusicController.shuffleMode)buttonShuffle.setColorFilter(R.color.th)
+        else buttonShuffle.colorFilter = null
 
         // Update favourites
 
         if(syncMusicController.isCurrentMusicLiked())
         {
-            favourite.setColorFilter(R.color.th)
-            favourite.setImageResource(R.drawable.ic_favourite)
+            favBtn.setColorFilter(R.color.th)
+            favBtn.setImageResource(R.drawable.ic_favourite)
         }
         else
         {
-            favourite.colorFilter = null
-            favourite.setImageResource(R.drawable.ic_addfavourite)
+            favBtn.colorFilter = null
+            favBtn.setImageResource(R.drawable.ic_addfavourite)
         }
 
         // update background cover
-        if(mPager.currentItem != syncMusicController.currentQueueId)
+        if(pager.currentItem != syncMusicController.currentQueueId)
         {
             ignoreFirst = true
-            mPager.currentItem = syncMusicController.currentQueueId
+            pager.currentItem = syncMusicController.currentQueueId
         }
     }
 
@@ -296,7 +273,7 @@ class MusicControllerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        helper.release()
+
         super.onDestroy()
     }
 }
