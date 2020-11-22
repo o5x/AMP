@@ -86,6 +86,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Music Title"
+                android:ellipsize="marquee"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
                 android:textColor="@color/white"
                 android:textSize="18sp" />
 
@@ -93,7 +99,13 @@
                 android:id="@+id/textView_artist"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="marquee"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:marqueeRepeatLimit="marquee_forever"
                 android:text="by Arrol"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
                 android:textColor="@color/white" />
         </LinearLayout>
 

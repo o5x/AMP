@@ -1,10 +1,7 @@
 package com.example.musictest.activities
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
@@ -19,6 +16,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.musictest.Image_music
 import com.example.musictest.R
 import com.example.musictest.Repeat
+import com.example.musictest.databases.listId
 import io.github.jeffshee.visualizer.painters.fft.FftCLine
 import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.*
@@ -74,6 +72,8 @@ class MusicControllerActivity : AppCompatActivity() {
         elapsedTimeLabel = findViewById(R.id.elapsedTimeLabel)
         remainingTimeLabel = findViewById(R.id.remainingTimeLabel)
         playBtn = findViewById(R.id.playBtn)
+
+
 
 
         // Position Bar
@@ -138,7 +138,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     // Build carousel
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount(): Int = syncMusicController.list_queue.size
+        override fun getItemCount(): Int = syncMusicController.getList(listId.ID_MUSIC_QUEUE).list.size
         override fun createFragment(position: Int): Fragment = Image_music.newInstance(
             position
         )

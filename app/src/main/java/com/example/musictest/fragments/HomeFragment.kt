@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.listId
+import com.example.musictest.databases.listId
 
 data class HomeItem(
         val name : String,
@@ -46,7 +46,11 @@ class HomeFragment : Fragment() {
         // Inflate the layout for this fragment
         val v = inflater.inflate(R.layout.fragment_home, container, false)
 
-        val fm = childFragmentManager
+        //val fm = childFragmentManager
+
+        //if(savedInstanceState != null)return v
+        // TODO fix childFragmentManager
+        val fm = fragmentManager
 
        /* var favs = arrayOf(
                 HomeItem("Liked Songs", "", R.drawable.liked

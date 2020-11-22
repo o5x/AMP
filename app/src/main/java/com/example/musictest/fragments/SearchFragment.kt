@@ -12,10 +12,7 @@ import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.MusicDB
-import com.example.musictest.listId
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.activity_music_controller.*
+import com.example.musictest.databases.listId
 import java.util.*
 import kotlin.collections.ArrayList
 

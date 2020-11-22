@@ -13,32 +13,12 @@ import android.widget.Toast
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.databases.ListType
 import com.example.musictest.databases.MusicDB
+import com.example.musictest.databases.listId
 import java.io.File
 
 enum class Repeat {
     None, All, Once
 }
-
-class listId{
-    companion object
-    {
-        const val ID_MUSIC_ALL = 1
-        const val ID_MUSIC_QUEUE = 2
-        const val ID_MUSIC_QUEUE_SHUFFLED = 3
-        const val ID_MUSIC_LIKED = 4
-        const val ID_MUSIC_MOST = 5
-        const val ID_MUSIC_SUGGEST = 6
-        const val ID_MUSIC_DOWNLOAD = 7
-
-        const val ID_MUSIC_ARTISTS = 8
-        const val ID_MUSIC_ALBUMS = 9
-    }
-}
-
-
-
-
-val metaRetriever = MediaMetadataRetriever()
 
 class SyncMusic
 {
@@ -76,6 +56,7 @@ class SyncMusic
                 Log.w("MusicController", "Invalid file = " + f.path)
                 return
             }
+            val metaRetriever = MediaMetadataRetriever()
 
             metaRetriever.setDataSource(path)
 
@@ -164,12 +145,15 @@ class SyncList{
     var name: String = "Invalid list"
     var list: ArrayList<Int> = ArrayList()
     var listType = ListType.None
+    var valid = false
 
     constructor(name_: String, listType_: ListType)
     {
         list =  ArrayList()
         name = name_
         listType = listType_
+        valid = true
+
     }
 
     constructor(name_: String, cursor: Cursor, listType_: ListType)
@@ -177,6 +161,7 @@ class SyncList{
         list =  ArrayList()
         name = name_
         listType = listType_
+        valid = true
         for (i in 0 until cursor.count)
         {
             list.add(cursor.getInt(0))
@@ -187,10 +172,7 @@ class SyncList{
     constructor()
 }
 
-
 class SyncMusicController : Application() {
-
-
 
     lateinit var c : Context
         private set
@@ -198,17 +180,24 @@ class SyncMusicController : Application() {
     lateinit var db : MusicDB
 
     // TODO implement map instead of arrayList
-    lateinit var musicsM: HashMap<Int, SyncMusic>
-    lateinit var listsM: HashMap<Int, SyncList>
+    private lateinit var musics: HashMap<Int, SyncMusic>
 
-    fun getMusic(index: Int) : SyncMusic
-    {
-        return if (musicsM[index] == null) SyncMusic() else musicsM[index]!!
+    var musicsListValid = false
+
+    private lateinit var lists: HashMap<Int, SyncList>
+
+    fun invalidateMusics(){
+        musicsListValid = false
     }
 
-    fun getList(index: Int) : SyncList
+    fun getMusic(id : Int) : SyncMusic
     {
-        return if (listsM[index] == null) SyncList() else listsM[index]!!
+        if(!musicsListValid)
+        {
+            musics = db.getAllMusicMaps()
+            musicsListValid = true
+        }
+        return if (musics[id] == null) SyncMusic() else musics[id]!!
     }
 
     var player: MediaPlayer = MediaPlayer()
@@ -219,12 +208,13 @@ class SyncMusicController : Application() {
     var currentMusicId: Int = -1
         private set
 
+    // TODO check music access here
     var currentMusic: SyncMusic = SyncMusic()
-        get() = if(musicsM.isNotEmpty() && currentMusicId >= 0 && musicsM[currentMusicId] != null)musicsM[currentMusicId]!! else SyncMusic()
+        get() = if(musics.isNotEmpty() && currentMusicId >= 0 && musics[currentMusicId] != null)musics[currentMusicId]!! else SyncMusic()
 
-    var list_queue : ArrayList<Int> = ArrayList()
+    /*var list_queue : ArrayList<Int> = ArrayList()
         get() = getList(listId.ID_MUSIC_QUEUE).list
-        private set
+        private set*/
 
     var isQueuePlaying: Boolean = false
         private set
@@ -239,14 +229,45 @@ class SyncMusicController : Application() {
     var repeatMode: Repeat = Repeat.None
         private set
 
-    ///////////////////////////////////////// Context init
+    // List operations
 
-
-    fun retrieveAllFromDB()
+    fun getList(id : Int) : SyncList
     {
-        musicsM = db.getAllMusicMaps()
-        listsM = db.getAllListMaps()
+        if(lists[id] != null && lists[id]?.valid == true) return lists[id]!!
+        val newList = db.getListFromId(id)
+        return if(newList == null || !newList.valid) SyncList()
+        else{
+            lists[id] = newList
+            lists[id]!!
+        }
     }
+
+    fun invalidateList(id : Int)
+    {
+        lists[id]?.valid = false
+    }
+
+    fun updateList(id : Int, newList : ArrayList<Int>)
+    {
+        db.setListData(id, newList)
+    }
+
+    fun clearList(id : Int)
+    {
+        db.clearListId(id)
+    }
+
+    fun addIdToList(music_id: Int, list_id: Int)
+    {
+        db.addIdToListId(music_id, list_id)
+    }
+
+    fun removeIdFromList(music_id: Int, list_id: Int)
+    {
+        db.removeIdFromListId(music_id, list_id)
+    }
+
+    ///////////////////////////////////////// Context init
 
     var initialized = false
 
@@ -256,11 +277,11 @@ class SyncMusicController : Application() {
 
         c = context
 
+        musics = HashMap()
+        lists = HashMap()
+
         db = MusicDB(c)
         db.open()
-
-        // new impl
-        retrieveAllFromDB()
 
         initialized = true
 
@@ -271,15 +292,7 @@ class SyncMusicController : Application() {
 
     fun addMusic(f: File) : Boolean
     {
-        val newMusic = SyncMusic(f)
-
-        if(db.addMusic(newMusic).size > 1) {
-            //musics.add(newMusic)
-            //retrieveAllFromDB()
-            return true
-        }
-
-        return false
+        return db.addMusicByPath(f).size > 1
     }
 
     ///////////////////////////////////////// Song over callback
@@ -298,11 +311,11 @@ class SyncMusicController : Application() {
 
     private fun prepare(newQueueMusicId: Int)
     {
-        if(0 <= newQueueMusicId && newQueueMusicId < list_queue.size)
+        if(0 <= newQueueMusicId && newQueueMusicId < getList(listId.ID_MUSIC_QUEUE).list.size)
         {
             currentQueueId = newQueueMusicId
-            val nextMusicId = list_queue[currentQueueId]
-            if(musicsM[nextMusicId] != null)
+            val nextMusicId = getList(listId.ID_MUSIC_QUEUE).list[currentQueueId]
+            if(getMusic(nextMusicId).valid)
             {
                 currentMusicId = nextMusicId
                 player.reset()
@@ -338,11 +351,11 @@ class SyncMusicController : Application() {
     var lastTime : Long = 0
     private fun filterInput() : Boolean
     {
-        val currenttime = System.currentTimeMillis()
+        val currentTime = System.currentTimeMillis()
 
-        if(currenttime - lastTime > 100)
+        if(currentTime - lastTime > 100)
         {
-            lastTime = currenttime
+            lastTime = currentTime
             return false
         }
         return true
@@ -368,12 +381,28 @@ class SyncMusicController : Application() {
     fun togglePlay()
     {
         if(currentMusicId < 0) return
-
         if(filterInput()) return
 
         if(isMusicPlaying) player.pause()
         else player.start()
         isQueuePlaying = true
+        updateRequired()
+    }
+
+    fun play()
+    {
+        if(currentMusicId < 0) return
+        if(filterInput()) return
+        player.start()
+        isQueuePlaying = true
+        updateRequired()
+    }
+
+    fun pause()
+    {
+        if(currentMusicId < 0) return
+        if(filterInput()) return
+        player.pause()
         updateRequired()
     }
 
@@ -394,7 +423,7 @@ class SyncMusicController : Application() {
 
         if(currentQueueId == 0)
         {
-            if(repeatMode == Repeat.All) return play(list_queue.size - 1)
+            if(repeatMode == Repeat.All) return play(getList(listId.ID_MUSIC_QUEUE).list.size - 1)
             return restartMusic()
         }
 
@@ -408,7 +437,7 @@ class SyncMusicController : Application() {
         if(filterInput()) return
 
         Log.w("Next", "Current = " + currentQueueId + " = " + currentMusicId)
-        if(currentQueueId == list_queue.size -1)
+        if(currentQueueId == getList(listId.ID_MUSIC_QUEUE).list.size -1)
         {
             if(repeatMode == Repeat.All) return play(0)
             updateRequired()
@@ -428,40 +457,21 @@ class SyncMusicController : Application() {
     {
         if(currentMusicId < 0) return
 
-        if(isCurrentMusicLiked()) removeMusicIdFromListId(currentMusicId, listId.ID_MUSIC_LIKED)
-        else addMusicIdToListId(currentMusicId, listId.ID_MUSIC_LIKED)
+        if(isCurrentMusicLiked()) removeIdFromList(currentMusicId, listId.ID_MUSIC_LIKED)
+        else addIdToList(currentMusicId, listId.ID_MUSIC_LIKED)
 
         updateRequired()
     }
 
-    // DB interface list
-
-    fun addMusicIdToListId(music_id: Int, list_id: Int)
-    {
-        db.addIdToListId(music_id, list_id)
-        listsM[list_id]?.list = db.getListContentFromId(list_id)
-    }
-
-    fun removeMusicIdFromListId(music_id: Int, list_id: Int)
-    {
-        db.removeIdFromListId(music_id, list_id)
-        listsM[list_id]?.list = db.getListContentFromId(list_id)
-    }
-
     fun setQueue(ids: ArrayList<Int>)
     {
-        list_queue.clear()
-
-        ids.forEach{ f ->
-            list_queue.add(f)
-        }
-
+        updateList(listId.ID_MUSIC_QUEUE, ids)
         prepare(0)
     }
 
     fun getMusicFromQueueId(queueId: Int) : SyncMusic
     {
-        return getMusic(list_queue[queueId])
+        return getMusic(getList(listId.ID_MUSIC_QUEUE).list[queueId])
     }
 
     /*fun addToQueue(selection: ArrayList<Int>, duplicates: Boolean = false)
@@ -474,15 +484,7 @@ class SyncMusicController : Application() {
 
     fun getPlaylistsIds() : ArrayList<Int>
     {
-        val playlistIds = ArrayList<Int>()
-
-        for (i in listsM)
-        {
-            if(i.value.listType == ListType.SystemRW || i.value.listType == ListType.User)
-                playlistIds.add(i.key)
-        }
-
-        return playlistIds
+        return getList(listId.ID_MUSIC_USER_PLAYLISTS).list
     }
 
     fun addToPlaylistDialog(
@@ -495,13 +497,13 @@ class SyncMusicController : Application() {
         val playlistNames : ArrayList<String> = ArrayList()
         val playlistIds : ArrayList<Int> = ArrayList()
 
-        for (i in listsM)
+        val userplaylists = getList(listId.ID_MUSIC_USER_PLAYLISTS)
+
+        for (playlistId in userplaylists.list)
         {
-            if(i.value.listType == ListType.SystemRW || i.value.listType == ListType.User)
-            {
-                playlistIds.add(i.key)
-                playlistNames.add(i.value.name)
-            }
+            val list = getList(playlistId)
+            playlistIds.add(playlistId)
+            playlistNames.add(list.name)
         }
 
         val li2 = playlistNames.toTypedArray()
@@ -525,7 +527,7 @@ class SyncMusicController : Application() {
                 Toast.LENGTH_LONG
             ).show()
 
-            for (s in selection) addMusicIdToListId(s, i)
+            for (s in selection) addIdToList(s, i)
 
             dialogInterface.dismiss()
             onSuccess()
@@ -545,16 +547,7 @@ class SyncMusicController : Application() {
         var id = 0
         var nextQueueId = 0
 
-        var updateMusics = false
-
-        // TODO Synchronize with db
-
-        val musicPaths = HashMap<String, Int>()
-
         var nextQueue = ArrayList<Int>()
-
-        for (m in musicsM) musicPaths[m.value.path] = m.key
-
         /*Thread{
             var dialog = ProgressDialog(c)
             dialog.setMessage("Impotring musics")
@@ -568,30 +561,16 @@ class SyncMusicController : Application() {
 
             if(MainActivity.isMusicFile(f))
             {
-                var insertId = musicPaths[f.path]
-
-                if(insertId == null)
-                {
-                    updateMusics = true
-                    val newMusic = SyncMusic(f)
-                    insertId = db.addMusic(newMusic)[0]
-                }
-
-                if(insertId >= 0)
-                {
-                    nextQueue.add(insertId)
-                    if(id == idToPlay) {
-                        nextQueueId = nextQueue.size -1
-                    }
+                val insertId = db.addMusicByPath(f)[0]
+                nextQueue.add(insertId)
+                if(id == idToPlay) {
+                    nextQueueId = nextQueue.size -1
                 }
             }
             id++
         }
 
-        if(updateMusics) retrieveAllFromDB()
-
-        listsM[listId.ID_MUSIC_QUEUE]?.list?.clear()
-        listsM[listId.ID_MUSIC_QUEUE]?.list = nextQueue
+        updateList(listId.ID_MUSIC_QUEUE, nextQueue)
 
         prepare(nextQueueId)
         play(nextQueueId)

@@ -36,16 +36,27 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 
 /*
-Bugs :
+todo bug fixes :
 - Can select folder and files
+- visualizer helper crash sometimes
+- duplicates in database ?
 
-todo :
+todo add :
 - manage multi selection files
 - update interface on lists changed
-- restore queue state / time when restarted
-- group by artists / albums - fix ' character sql
 - finish multimedia control
--
+- shuffle mode
+- image lazy load
+- image database / localfiles
+- notification control advanced / mediasessioncompat
+- change search screen to have albums / artist
+- add date in local structures
+- add date to music (last played) + added + play count + time spent on this music ?
+- manage file removed skip
+- show recently played (liked albums playlists, artists)
+- add queue playing from (search, playlist, liked, all)
+
+
  */
 
 
@@ -107,7 +118,7 @@ class MainActivity : AppCompatActivity() {
 
         fun recursiveMusicScan(path: File)
         {
-            Log.w("fileScan", "scanning " + path.path)
+            //Log.w("fileScan", "scanning " + path.path)
 
             val listAllFiles = path.listFiles()
             if (listAllFiles != null && listAllFiles.isNotEmpty()) {
@@ -126,8 +137,6 @@ class MainActivity : AppCompatActivity() {
                     .setProgress(0, 0, true)
 
             mNotifyManager.notify(CHANNEL_NID, mBuilder.build())
-
-            syncMusicController.retrieveAllFromDB()
         }
 
         Thread {
@@ -153,7 +162,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         setContentView(R.layout.activity_main)
 
         val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
@@ -164,6 +172,9 @@ class MainActivity : AppCompatActivity() {
         if (result != AudioManager.AUDIOFOCUS_GAIN) {
             return  //Failed to gain audio focus
         }
+
+        listerTitle.isSelected = true
+        textView_artist.isSelected = true
 
         // Require access to storage
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
