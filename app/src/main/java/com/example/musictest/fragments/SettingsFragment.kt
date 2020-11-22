@@ -15,9 +15,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onStart() {
         super.onStart()
 
-        (activity as MainActivity).currentfragment = this
-        (activity as MainActivity).button_back.visibility = View.VISIBLE
-        (activity as MainActivity).button_settings.visibility = View.INVISIBLE
+
+        //(activity as MainActivity).button_back.visibility = View.VISIBLE
+        //(activity as MainActivity).button_settings.visibility = View.INVISIBLE
         (activity as MainActivity).title.text = "Settings"
     }
 }

@@ -39,21 +39,20 @@ import java.io.File
 /*
 todo bug fixes :
 - Can select folder and files
-- duplicates in database ?
 
 todo add :
 - manage multi selection files
 - update interface on lists changed
-- finish multimedia control notification
-- image lazy load
-- image database / localfiles
-- notification control advanced / mediasessioncompact
+- finish multimedia control notification  advanced / mediasessioncompact
 - change search screen to have albums / artist
-- add date in local structures
 - add date to music (last played) + added + play count + time spent on this music ? - musicstats table ?
-- manage file removed skip
+- manage file removed skip ?
 - show recently played (liked albums playlists, artists)
-- sort by name, date,
+- sort by name, date, songs count
+
+todo optionnal :
+- image lazy load
+- add date in local structures
  */
 
 // global MusicController
@@ -332,6 +331,7 @@ class MainActivity : AppCompatActivity() {
             currentfragment = newfragment
             //if(backBtn)button_back.visibility = View.VISIBLE
             //else button_back.visibility = View.INVISIBLE
+            button_back.visibility = View.INVISIBLE
 
             if(atitle != null) title.text = atitle
 

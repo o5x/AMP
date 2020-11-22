@@ -3,16 +3,15 @@ package com.example.musictest
 import android.app.AlertDialog
 import android.app.Application
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
-import android.text.InputType
 import android.util.Log
-import android.widget.EditText
 import android.widget.Toast
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
@@ -34,6 +33,9 @@ class SyncMusic
 
     //var hash: ByteArray = ByteArray(0)
     //    private set
+
+    var byteArray: ByteArray? = null
+        private set
 
     var title: String? = null
         get() = if(field == null) "Unknown title" else field
@@ -67,8 +69,6 @@ class SyncMusic
 
             metaRetriever.setDataSource(path)
 
-            //hash = metaRetriever.hashCode()
-
             this.title = if (metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) != null)
                 metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
             else f.nameWithoutExtension
@@ -76,9 +76,32 @@ class SyncMusic
             this.artist = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
             this.album = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
 
-            this.image_id = null
-            this.image // load lazy image by accessing it
             this.valid = true
+
+            byteArray = metaRetriever.embeddedPicture
+            if (byteArray != null) {
+                val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
+                val newimage = Bitmap.createBitmap(bmp)
+
+                val IMAGE_SIZE = 600
+                val landscape: Boolean = newimage.getWidth() > newimage.getHeight()
+
+                val scale_factor: Float
+                if (landscape) scale_factor = IMAGE_SIZE.toFloat() / newimage.getHeight() else scale_factor = IMAGE_SIZE.toFloat() / newimage.getWidth()
+                val matrix = Matrix()
+                matrix.postScale(scale_factor, scale_factor)
+
+                image2 =  if (landscape) {
+                    val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
+                    Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
+                } else {
+                    val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
+                    Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
+                }
+            }
+
+            metaRetriever.close()
+
         }
         catch (exception: Exception)
         {
@@ -95,57 +118,15 @@ class SyncMusic
         this.title = cursor.getString(3)
         this.artist = cursor.getString(4)
         this.album = cursor.getString(5)
+        this.image_id = cursor.getInt(6)
     }
 
     constructor()
 
-    // lazy Image loader
+    var image2: Bitmap? = null
 
-    /*private fun initImage() : Bitmap?
-    {
-        if(imageInitialized) return image
-
-        imageInitialized = true
-
-        try{
-            metaRetriever.setDataSource(path)
-
-            val imageByte = metaRetriever.embeddedPicture
-            if (imageByte != null) {
-                val bmp = BitmapFactory.decodeByteArray(imageByte, 0, imageByte!!.size)
-                val newimage = Bitmap.createBitmap(bmp)
-
-                val IMAGE_SIZE = 400
-                val landscape: Boolean = newimage.getWidth() > newimage.getHeight()
-
-                val scale_factor: Float
-                if (landscape) scale_factor = IMAGE_SIZE.toFloat() / newimage.getHeight() else scale_factor = IMAGE_SIZE.toFloat() / newimage.getWidth()
-                val matrix = Matrix()
-                matrix.postScale(scale_factor, scale_factor)
-
-                return if (landscape) {
-                    val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
-                    Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
-                } else {
-                    val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
-                    Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
-                }
-            }
-        }catch (exception: Exception)
-        {
-            this.valid = false
-            Log.w("MusicController", "Invalid music load image= " + path)
-        }
-        return null
-    }*/
-
-    var imageInitialized = false
-        private set
-
-    val image: Bitmap? = null
-    /*? by lazy {
-        if(imageInitialized) image else initImage()
-    }*/
+    val image: Bitmap?
+        get() = syncMusicController.images[image_id]
 }
 
 class SyncList{
@@ -191,6 +172,8 @@ class SyncMusicController : Application() {
     private lateinit var sharedPref: SharedPreferences
 
     private lateinit var musics: HashMap<Int, SyncMusic>
+
+    var images: HashMap<Int, Bitmap> = HashMap()
 
     private var musicsListValid = false
 
@@ -314,6 +297,9 @@ class SyncMusicController : Application() {
             prepare(currentQueueId)
             isQueuePlaying = true
         }
+
+        // update musics by getting one
+        getMusic(0)
     }
 
     ///////////////////////////////////////// music add

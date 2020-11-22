@@ -135,6 +135,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 // else mImageView?.setImageResource(R.drawable.music)
 
                 mImageView?.setImageResource(R.drawable.music)
+                if(music.image != null)mImageView?.setImageBitmap(music.image)
+
 
                 /*if(music.imageInitialized)
                 {
