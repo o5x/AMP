@@ -1,23 +1,19 @@
-package com.example.musictest
+package com.example.musictest.musics
 
 import android.app.AlertDialog
 import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.database.Cursor
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.widget.Toast
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.ListType
-import com.example.musictest.databases.MusicDB
-import com.example.musictest.databases.ListId
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
 
@@ -26,138 +22,33 @@ enum class Repeat {
     None, All, Once
 }
 
-class SyncMusic
-{
-    var path: String = ""
-        private set
 
-    //var hash: ByteArray = ByteArray(0)
-    //    private set
-
-    var byteArray: ByteArray? = null
-        private set
-
-    var title: String? = null
-        get() = if(field == null) "Unknown title" else field
-        private set
-
-    var artist: String? = null
-        get() = if(field == null) "Unknown artist" else field
-        private set
-
-    var album: String? = null
-        get() = if(field == null) "Unknown album" else field
-        private set
-
-    var image_id: Int? = null
-        private set
-
-    var valid = false
-        private set
-
-    constructor(f: File)
-    {
-        try{
-            this.path = f.path
-
-            if(!f.exists()) {
-                valid = false
-                Log.w("MusicController", "Invalid file = " + f.path)
-                return
-            }
-            val metaRetriever = MediaMetadataRetriever()
-
-            metaRetriever.setDataSource(path)
-
-            this.title = if (metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) != null)
-                metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-            else f.nameWithoutExtension
-
-            this.artist = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-            this.album = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
-
-            this.valid = true
-
-            byteArray = metaRetriever.embeddedPicture
-            if (byteArray != null) {
-                val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
-                val newimage = Bitmap.createBitmap(bmp)
-
-                val IMAGE_SIZE = 600
-                val landscape: Boolean = newimage.getWidth() > newimage.getHeight()
-
-                val scale_factor: Float
-                if (landscape) scale_factor = IMAGE_SIZE.toFloat() / newimage.getHeight() else scale_factor = IMAGE_SIZE.toFloat() / newimage.getWidth()
-                val matrix = Matrix()
-                matrix.postScale(scale_factor, scale_factor)
-
-                image2 =  if (landscape) {
-                    val start: Int = (newimage.getWidth() - newimage.getHeight()) / 2
-                    Bitmap.createBitmap(newimage, start, 0, newimage.getHeight(), newimage.getHeight(), matrix, true)
-                } else {
-                    val start: Int = (newimage.getHeight() - newimage.getWidth()) / 2
-                    Bitmap.createBitmap(newimage, 0, start, newimage.getWidth(), newimage.getWidth(), matrix, true)
-                }
-            }
-
-            metaRetriever.close()
-
-        }
-        catch (exception: Exception)
-        {
-            this.valid = false
-            Log.w("MusicController", "Invalid music = " + f.path)
-        }
+private val callback = object : MediaSessionCompat.Callback() {
+    override fun onPlay() {
+        super.onPlay()
+        syncMusicController.play()
     }
 
-    constructor(cursor: Cursor)
-    {
-        //id = cursor.getInt(0)
-        this.valid = cursor.getInt(1) > 0
-        this.path = cursor.getString(2)
-        this.title = cursor.getString(3)
-        this.artist = cursor.getString(4)
-        this.album = cursor.getString(5)
-        this.image_id = cursor.getInt(6)
+    override fun onPause() {
+        super.onPause()
+        syncMusicController.pause()
     }
 
-    constructor()
-
-    var image2: Bitmap? = null
-
-    val image: Bitmap?
-        get() = syncMusicController.images[image_id]
-}
-
-class SyncList{
-    var name: String = "Invalid list"
-    var list: ArrayList<Int> = ArrayList()
-    var listType = ListType.None
-    var valid = false
-
-    constructor(name_: String, listType_: ListType)
-    {
-        list =  ArrayList()
-        name = name_
-        listType = listType_
-        valid = true
-
+    override fun onSkipToNext() {
+        super.onSkipToNext()
+        syncMusicController.next()
     }
 
-    constructor(name_: String, cursor: Cursor, listType_: ListType)
-    {
-        list =  ArrayList()
-        name = name_
-        listType = listType_
-        valid = true
-        for (i in 0 until cursor.count)
-        {
-            list.add(cursor.getInt(0))
-            cursor.moveToNext()
-        }
+    override fun onSkipToPrevious() {
+        super.onSkipToPrevious()
+        syncMusicController.prev()
     }
 
-    constructor()
+    override fun onSeekTo(pos: Long) {
+        super.onSeekTo(pos)
+        syncMusicController.player.seekTo(pos.toInt())
+        syncMusicController.updatesession()
+    }
 }
 
 class SyncMusicController : Application() {
@@ -189,12 +80,15 @@ class SyncMusicController : Application() {
         private set
 
     val currentMusic: SyncMusic
-        get() = if(musics.isNotEmpty() && currentMusicId >= 0 && musics[currentMusicId] != null)musics[currentMusicId]!! else SyncMusic()
+        get() = if (musics.isNotEmpty() && currentMusicId >= 0 && musics[currentMusicId] != null) musics[currentMusicId]!! else SyncMusic()
 
     var isQueuePlaying: Boolean = false
         private set
 
-    var isMusicPlaying : Boolean = false
+    var isNotificationShown: Boolean = false
+        private set
+
+    var isMusicPlaying: Boolean = false
         get() = player.isPlaying
         private set
 
@@ -204,22 +98,22 @@ class SyncMusicController : Application() {
     var repeatMode: Repeat = Repeat.None
         private set
 
-    var playingFrom : String = "Phone"
-        set(value){
-            sharedPref.edit().putString("playingFrom", playingFrom).apply()
+    var playingFrom: String = "Phone"
+        set(value) {
+            sharedPref.edit().putString("playingFrom", value).apply()
             field = value
         }
 
+    lateinit var mediaSessionCompat: MediaSessionCompat
+
     ///////////////////////////////////////// Musics operations
 
-    fun invalidateMusics(){
+    fun invalidateMusics() {
         musicsListValid = false
     }
 
-    fun getMusic(id: Int) : SyncMusic
-    {
-        if(!musicsListValid)
-        {
+    fun getMusic(id: Int): SyncMusic {
+        if (!musicsListValid) {
             musics = db.getAllMusicMaps()
             musicsListValid = true
         }
@@ -228,39 +122,33 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// List operations
 
-    fun getList(id: Int) : SyncList
-    {
-        if(lists[id] != null && lists[id]?.valid == true) return lists[id]!!
+    fun getList(id: Int): SyncList {
+        if (lists[id] != null && lists[id]?.valid == true) return lists[id]!!
         val newList = db.getListFromId(id)
-        return if(newList == null || !newList.valid) SyncList()
-        else{
+        return if (newList == null || !newList.valid) SyncList()
+        else {
             lists[id] = newList
             lists[id]!!
         }
     }
 
-    fun invalidateList(id: Int)
-    {
+    fun invalidateList(id: Int) {
         lists[id]?.valid = false
     }
 
-    fun updateList(id: Int, newList: ArrayList<Int>)
-    {
+    private fun updateList(id: Int, newList: ArrayList<Int>) {
         db.setListData(id, newList)
     }
 
-    fun clearList(id: Int)
-    {
+    private fun clearList(id: Int) {
         db.clearListId(id)
     }
 
-    fun addIdToList(music_id: Int, list_id: Int)
-    {
+    private fun addIdToList(music_id: Int, list_id: Int) {
         db.addIdToListId(music_id, list_id)
     }
 
-    fun removeIdFromList(music_id: Int, list_id: Int)
-    {
+    private fun removeIdFromList(music_id: Int, list_id: Int) {
         db.removeIdFromListId(music_id, list_id)
     }
 
@@ -290,24 +178,78 @@ class SyncMusicController : Application() {
 
         currentQueueId = sharedPref.getInt("currentQueueId", currentQueueId)
         shuffleMode = sharedPref.getBoolean("shuffleMode", shuffleMode)
-        var r = sharedPref.getString("repeatMode", repeatMode.toString())
-        if(r != null && r.length > 0) repeatMode = Repeat.valueOf(r)
+        val r = sharedPref.getString("repeatMode", repeatMode.toString())
+        if (r != null && r.isNotEmpty()) repeatMode = Repeat.valueOf(r)
         playingFrom = sharedPref.getString("playingFrom", playingFrom).toString()
 
-        if(currentQueueId >= 0)
-        {
+        if (currentQueueId >= 0) {
             prepare(currentQueueId)
             isQueuePlaying = true
         }
 
         // update musics by getting one
         getMusic(0)
+
+        // initialize mediasession
+
+        mediaSessionCompat = MediaSessionCompat(c, "PlayerService")
+        mediaSessionCompat.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+
+        mediaSessionCompat.setCallback(callback);
+    }
+
+    fun updatesession() {
+
+        var bbmp: Bitmap? = null
+
+        if (currentMusic.image != null) bbmp = currentMusic.image
+
+        mediaSessionCompat.setMetadata(
+                MediaMetadataCompat.Builder()
+
+                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bbmp)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentMusic.artist)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentMusic.album)
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentMusic.title)
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, syncMusicController.player.hashCode().toString())
+                        .putString(
+                                MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
+                                "android.resource"
+                        )
+                        .putLong(
+                                MediaMetadataCompat.METADATA_KEY_DURATION,
+                                syncMusicController.player.duration.toLong()
+                        )
+                        .build()
+        )
+
+        /*val audioManager = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
+        val result = audioManager!!.requestAudioFocus({ }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        if (result != AudioManager.AUDIOFOCUS_GAIN) {
+            return  //Failed to gain audio focus
+        }*/
+
+        val state = if (isMusicPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_STOPPED
+
+        val playbackStateCompat = PlaybackStateCompat.Builder()
+                .setActions(
+                        PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                                PlaybackStateCompat.ACTION_PAUSE or
+                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                                or PlaybackStateCompat.ACTION_SEEK_TO
+                )
+                .setState(state, syncMusicController.player.currentPosition.toLong(), 1f)
+                .build()
+
+        mediaSessionCompat.setPlaybackState(playbackStateCompat)
+
     }
 
     ///////////////////////////////////////// music add
 
-    fun addMusic(f: File) : Boolean
-    {
+    fun addMusic(f: File): Boolean {
         return db.addMusicByPath(f).size > 1
     }
 
@@ -331,17 +273,21 @@ class SyncMusicController : Application() {
         {
             currentQueueId = newQueueMusicId
             val nextMusicId = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
-            if(getMusic(nextMusicId).valid)
-            {
+            if (getMusic(nextMusicId).valid) {
                 currentMusicId = nextMusicId
                 player.reset()
                 player.setDataSource(currentMusic.path)
                 player.prepare()
-                player.setOnCompletionListener{
+                player.setOnCompletionListener {
                     songOverCallback()
+                }
+                player.setOnErrorListener { _, _, _ ->
+                    next()
+                    return@setOnErrorListener true
                 }
                 sharedPref.edit().putInt("currentQueueId", currentQueueId).apply()
                 isQueuePlaying = false
+                isNotificationShown = false
             }
         }
     }
@@ -351,6 +297,7 @@ class SyncMusicController : Application() {
         prepare(queueMusicId)
         player.start()
         isQueuePlaying = true
+        isNotificationShown = true
         updateRequired()
     }
 
@@ -364,6 +311,7 @@ class SyncMusicController : Application() {
 
     private fun updateRequired()
     {
+        updatesession()
         c.sendBroadcast(
                 Intent("com.example.musictest.Update_Music")
                         .putExtra("actionname", "update")
@@ -371,7 +319,7 @@ class SyncMusicController : Application() {
     }
 
     ///////////////////////////////////////// Input filter not to spam media controls
-    var lastTime : Long = 0
+    private var lastTime: Long = 0
     private fun filterInput() : Boolean
     {
         val currentTime = System.currentTimeMillis()
@@ -394,8 +342,7 @@ class SyncMusicController : Application() {
         sharedPref.edit().putBoolean("shuffleMode", shuffleMode).apply()
     }
 
-    fun toggleRepeat()
-    {
+    fun toggleRepeat() {
         repeatMode = when (repeatMode) {
             Repeat.None -> Repeat.All
             Repeat.All -> Repeat.Once
@@ -405,46 +352,50 @@ class SyncMusicController : Application() {
         updateRequired()
     }
 
-    fun togglePlay()
-    {
-        if(currentMusicId < 0) return
-        if(filterInput()) return
+    fun togglePlay() {
+        if (currentMusicId < 0) return
+        if (filterInput()) return
 
-        if(isMusicPlaying) player.pause()
+        if (isMusicPlaying) player.pause()
         else player.start()
         isQueuePlaying = true
+        isNotificationShown = true
         updateRequired()
     }
 
-    fun play()
-    {
-        if(currentMusicId < 0) return
-        if(filterInput()) return
+    fun play() {
+        if (currentMusicId < 0) return
+        //if(filterInput()) return
         player.start()
         isQueuePlaying = true
+        isNotificationShown = true
         updateRequired()
     }
 
-    fun pause()
-    {
-        if(currentMusicId < 0) return
-        if(filterInput()) return
+    fun pause() {
+        if (currentMusicId < 0) return
+        //if(filterInput()) return
         player.pause()
         updateRequired()
     }
 
-    fun prev()
-    {
-        if(currentMusicId < 0) return
+    fun stop() {
+        //if(currentMusicId < 0) return
+        if (filterInput()) return
+        player.pause()
+        updateRequired()
+        isNotificationShown = false
+    }
 
-        if(filterInput()) return
-        // TODO manage shuffle
+    fun prev() {
+        if (currentMusicId < 0) return
 
-        if(player.currentPosition > 4000) return restartMusic()
+        if (filterInput()) return
 
-        if(currentQueueId == 0)
-        {
-            if(repeatMode == Repeat.All) return play(getList(ListId.ID_MUSIC_QUEUE).list.size - 1)
+        if (player.currentPosition > 4000) return restartMusic()
+
+        if (currentQueueId == 0) {
+            if (repeatMode == Repeat.All) return play(getList(ListId.ID_MUSIC_QUEUE).list.size - 1)
             return restartMusic()
         }
 
@@ -457,7 +408,7 @@ class SyncMusicController : Application() {
 
         if(filterInput()) return
 
-        Log.w("Next", "Current = " + currentQueueId + " = " + currentMusicId)
+        Log.w("Next", "Current = $currentQueueId = $currentMusicId")
         if(currentQueueId == getList(ListId.ID_MUSIC_QUEUE).list.size -1)
         {
             if(repeatMode == Repeat.All) return play(0)
@@ -465,7 +416,7 @@ class SyncMusicController : Application() {
             return prepare(0)
         }
         play(currentQueueId + 1)
-        Log.w("Next", "after = " + currentQueueId + " = " + currentMusicId)
+        Log.w("Next", "after = $currentQueueId = $currentMusicId")
     }
 
     ///////////////////////////////////////// current music interactions
@@ -510,12 +461,18 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// Queue actions
 
-    fun setQueue(ids: ArrayList<Int>, from: String)
-    {
+    fun setQueue(ids: ArrayList<Int>, from: String, idToPlay: Int, playNow: Boolean) {
         playingFrom = from
         updateList(ListId.ID_MUSIC_QUEUE, ids)
-        if(shuffleMode) startShuffle()
-        prepare(0)
+        currentQueueId = idToPlay
+        if (shuffleMode) {
+            startShuffle()
+            if (playNow) play(0)
+            else prepare(0)
+        } else {
+            if (playNow) play(idToPlay)
+            else prepare(idToPlay)
+        }
     }
 
     fun getMusicFromQueueId(queueId: Int) : SyncMusic
@@ -540,24 +497,12 @@ class SyncMusicController : Application() {
             onCancel: () -> Unit = {},
     )
     {
-
-        fun onNew() {
-            val alertDialog = AlertDialog.Builder(c).create()
-            alertDialog.setTitle("Alert")
-            alertDialog.setMessage("Alert message to be shown")
-            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK"
-            ) { dialog, which -> dialog.dismiss() }
-            alertDialog.show()
-        }
-
-
         val playlistNames : ArrayList<String> = ArrayList()
         val playlistIds : ArrayList<Int> = ArrayList()
 
-        val userplaylists = getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+        val userPlaylists = getList(ListId.ID_MUSIC_USER_PLAYLISTS)
 
-        for (playlistId in userplaylists.list)
-        {
+        for (playlistId in userPlaylists.list) {
             val list = getList(playlistId)
             playlistIds.add(playlistId)
             playlistNames.add(list.name)

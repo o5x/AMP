@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.ListId
+import com.example.musictest.musics.ListId
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
     : RecyclerView.Adapter<MovieViewHolder>() {
@@ -84,22 +84,20 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     //builder1.setNegativeButton("Go to Artist", { dialog, id -> dialog.cancel()})
                     //builder1.setPositiveButton("Cancel", { dialog, id -> dialog.cancel()})
 
-                    builder1.setPositiveButton("Done", { dialog, id -> dialog.cancel()})
+                    builder1.setPositiveButton("Done", { dialog, id -> dialog.cancel() })
                     val alert11 = builder1.create()
                     alert11.show()
                 }
-
 
                 mTitleView?.text = music.title
                 mYearView?.text = music.artist
 
                 mImageView?.setImageResource(R.drawable.music)
-                if(music.image != null)mImageView?.setImageBitmap(music.image)
+                if (music.image != null) mImageView?.setImageBitmap(music.image)
 
                 // erase onclick with custom one
                 onclick = {
-                    syncMusicController.setQueue(lrf.listIds, lrf.title)
-                    syncMusicController.play(adapterPosition)
+                    syncMusicController.setQueue(lrf.listIds, lrf.title, adapterPosition, true)
                 }
             }
             ListerMode.ListPlaylists -> {

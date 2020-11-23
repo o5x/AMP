@@ -9,42 +9,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.URLUtil
-import android.widget.ImageButton
 import android.widget.Toast
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
+import kotlinx.android.synthetic.main.fragment_collection.*
 
 class CollectionFragment : Fragment() {
-    lateinit var imageButtonDownload : ImageButton
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-    private fun addListItem(
-            fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int,
-    ) : ListerRecyclerFragment
-    {
-        val fragOne: Fragment = ListerRecyclerFragment()
-        val tr = fm!!.beginTransaction()
-        tr.add(layout_id, fragOne)
-        tr.commitAllowingStateLoss()
-        tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-
-        return fragOne as ListerRecyclerFragment
-    }
-
-    override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?,
-    ): View? {
-
-        // Inflate the layout for this fragment
-        val v = inflater.inflate(R.layout.fragment_collection, container, false)
-
-        imageButtonDownload = v.findViewById(R.id.imageButtonDownload)
         imageButtonDownload.setOnClickListener {
             //download("https://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3");
             download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac");
@@ -53,9 +29,16 @@ class CollectionFragment : Fragment() {
         val fm = childFragmentManager
 
         // init with all ids
-        addListItem(fm, R.id.collectionPlaylists).initPlaylistList(syncMusicController.getPlaylistsIds())
+        ListerRecyclerFragment().addItem(fm, R.id.collectionPlaylists)
+                .initPlaylistList(syncMusicController.getPlaylistsIds())
+    }
 
-        return v;
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?,
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_collection, container, false)
     }
 
     private fun download(url: String) {

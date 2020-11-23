@@ -1,16 +1,16 @@
 package com.example.musictest.fragments
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
-import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
+import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.ListId
+import com.example.musictest.musics.ListId
 
 data class HomeItem(
         val name : String,
@@ -29,99 +29,74 @@ class HomeFragment : Fragment() {
     }
 
 
-    private fun addListItem(
-            fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int,
-    ) : ListerRecyclerFragment
-    {
-        val fragOne: Fragment = ListerRecyclerFragment()
-        val tr = fm!!.beginTransaction()
-        tr.add(layout_id, fragOne)
-        tr.commitAllowingStateLoss()
-        tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-
-        return fragOne as ListerRecyclerFragment
-    }
-
-
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-
-        // Inflate the layout for this fragment
-        val v = inflater.inflate(R.layout.fragment_home, container, false)
-
-        //val fm = childFragmentManager
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        val fm = childFragmentManager
 
         //if(savedInstanceState != null)return v
         // TODO fix childFragmentManager
-        val fm = fragmentManager
+        //val fm = fragmentManager
 
-       /* var favs = arrayOf(
-                HomeItem("Liked Songs", "", R.drawable.liked
-                ) {
-                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
-                            .initMusicIdList(syncMusicController.list_liked)
-                            .setTitle("Liked"))
-                },
-                HomeItem("All Songs", "", R.drawable.all
-                ) {
-                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
-                            .initMusicIdList(syncMusicController.list_all)
-                            .setTitle("All"))
-                },
-                HomeItem("Local Files", "", R.drawable.folder
-                ) {
-                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
-                            .initFile(Environment.getExternalStorageDirectory().toString() + "/Music"))
-                },
-                HomeItem("Most Listened", "", R.drawable.most
-                ) {
-                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
-                            .initMusicIdList(syncMusicController.getList(listId.ID_MUSIC_MOST).list)
-                            .setTitle("Most Listened"))
-                },
-                HomeItem("Downloads", "", R.drawable.download
-                ) {
-                    (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
-                            .initMusicIdList(syncMusicController.getList(listId.ID_MUSIC_DOWNLOAD).list)
-                            .setTitle("Downloaded"))
-                }
-        )
+        /* var favs = arrayOf(
+                 HomeItem("Liked Songs", "", R.drawable.liked
+                 ) {
+                     (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
+                             .initMusicIdList(syncMusicController.list_liked)
+                             .setTitle("Liked"))
+                 },
+                 HomeItem("All Songs", "", R.drawable.all
+                 ) {
+                     (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
+                             .initMusicIdList(syncMusicController.list_all)
+                             .setTitle("All"))
+                 },
+                 HomeItem("Local Files", "", R.drawable.folder
+                 ) {
+                     (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
+                             .initFile(Environment.getExternalStorageDirectory().toString() + "/Music"))
+                 },
+                 HomeItem("Most Listened", "", R.drawable.most
+                 ) {
+                     (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
+                             .initMusicIdList(syncMusicController.getList(listId.ID_MUSIC_MOST).list)
+                             .setTitle("Most Listened"))
+                 },
+                 HomeItem("Downloads", "", R.drawable.download
+                 ) {
+                     (activity as MainActivity).replaceFragment(ListerRecyclerFragment()
+                             .initMusicIdList(syncMusicController.getList(listId.ID_MUSIC_DOWNLOAD).list)
+                             .setTitle("Downloaded"))
+                 }
+         )
 
 
-        var id = 0
-        for(fav in favs)
-        {
-            ItemSquare.addItem(fm, id, fav.name, fav.desc, fav.image, id == 0).setClickCallback { fav.onclick() }
-            id++
-        }
-*/
+         var id = 0
+         for(fav in favs)
+         {
+             ItemSquare.addItem(fm, id, fav.name, fav.desc, fav.image, id == 0).setClickCallback { fav.onclick() }
+             id++
+         }
+ */
 
         // FILL FAVOURITES
-        val tabFav = arrayOf("Liked Songs","Local Files","Most Listened","Suggested")
-        val tabFav_i = arrayOf(R.drawable.liked,  R.drawable.folder, R.drawable.most,R.drawable.suggest)
+        val tabFav = arrayOf("Liked Songs", "Local Files", "Most Listened", "Suggested")
+        val tabFav_i = arrayOf(R.drawable.liked, R.drawable.folder, R.drawable.most, R.drawable.suggest)
         val tabFav_c = arrayOf(
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_LIKED).list).setTitle("Liked")) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music")) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_MOST).list).setTitle("Most Listened")) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_SUGGEST).list).setTitle("Suggested")) }
-
         )
 
-        for(i in tabFav.indices)
-        {
-            ItemSquare.addItem(fm, R.id.layout_favourites, tabFav[i], "", tabFav_i[i], i == 0,110f).setClickCallback { tabFav_c[i]() }
+        for (i in tabFav.indices) {
+            ItemSquare.addItem(fm, R.id.layout_favourites, tabFav[i], "", tabFav_i[i], i == 0, 110f).setClickCallback { tabFav_c[i]() }
         }
 
         //var id = 0
 
         // FILL Recent
-
-        val tabFav2 = arrayOf("All Songs","Albums","Artists","Downloads")
-        val tabFav2_i = arrayOf(R.drawable.all,R.drawable.album, R.drawable.artist, R.drawable.download)
+        val tabFav2 = arrayOf("All Songs", "Albums", "Artists", "Downloads")
+        val tabFav2_i = arrayOf(R.drawable.all, R.drawable.album, R.drawable.artist, R.drawable.download)
         val tabFav2_c = arrayOf(
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_ALL).list).setTitle("All Songs")) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initPlaylistList(syncMusicController.getList(ListId.ID_MUSIC_ALBUMS).list).setTitle("All albums")) },
@@ -129,22 +104,23 @@ class HomeFragment : Fragment() {
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_DOWNLOAD).list).setTitle("Downloaded")) }
         )
 
-        var id = 0
-        for(i in 0 until tabFav2.size)
-        {
-            ItemSquare.addItem(fm, R.id.layout_onyourphone, tabFav2[i], "", tabFav2_i[i], id == 0,85.5f).setClickCallback { tabFav2_c[i]() }
-            id++
+        for ((id, i) in tabFav2.indices.withIndex()) {
+            ItemSquare.addItem(fm, R.id.layout_onyourphone, tabFav2[i], "", tabFav2_i[i], id == 0, 85.5f).setClickCallback { tabFav2_c[i]() }
         }
 
         // FILL suggested
-
-        addListItem(fm, R.id.layout_recent).initPlaylistList(syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS).list)
-
-        return v
+        ListerRecyclerFragment().addItem(fm, R.id.layout_recent).initPlaylistList(syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS).list)
     }
 
-    fun settingsClick(v: View)
-    {
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?,
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_home, container, false)
+    }
+
+    fun settingsClick(v: View) {
         (activity as MainActivity).settingsClick(v)
     }
 }

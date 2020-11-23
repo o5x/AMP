@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
@@ -138,20 +139,19 @@ class ListerRecyclerFragment : Fragment()  {
             {
                 ListerMode.ListMusicId -> {
                     childSelected.clear()
-                    for(i in 0 until listIds.size) childSelected.add(false);
+                    for (i in 0 until listIds.size) childSelected.add(false);
 
-                    listerButtonPlay.setOnClickListener{
-                        syncMusicController.setQueue(getSelection(), "Search")
-                        syncMusicController.play(0)
+                    listerButtonPlay.setOnClickListener {
+                        syncMusicController.setQueue(getSelection(), "Search", 0, true)
                     }
 
-                    listerButtonAddTo.setOnClickListener{
+                    listerButtonAddTo.setOnClickListener {
                         syncMusicController.addToPlaylistDialog(syncMusicController.c, getSelection())
                     }
                 }
-                ListerMode.ListPlaylists ->{
+                ListerMode.ListPlaylists -> {
                     childSelected.clear()
-                    for(i in 0 until listIds.size) childSelected.add(false)
+                    for (i in 0 until listIds.size) childSelected.add(false)
 
                     lra.clickCallback = {
                         (activity as MainActivity).replaceFragment(
@@ -160,7 +160,7 @@ class ListerRecyclerFragment : Fragment()  {
                     }
 
                 }
-                ListerMode.ListFiles ->{
+                ListerMode.ListFiles -> {
 
                     listerTitle.visibility = View.VISIBLE
                     listerTitle.text = folderPath
@@ -178,7 +178,7 @@ class ListerRecyclerFragment : Fragment()  {
                     }
 
                     childSelected.clear()
-                    for(i in 0 until files.size) childSelected.add(false)
+                    for (i in 0 until files.size) childSelected.add(false)
                 }
                 else -> {
                     Toast.makeText(context, "ListerMode None !", Toast.LENGTH_SHORT).show()
@@ -196,6 +196,19 @@ class ListerRecyclerFragment : Fragment()  {
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_lister_recycler, container, false)
+    }
+
+    fun addItem(
+            fm: androidx.fragment.app.FragmentManager?,
+            layout_id: Int,
+    ): ListerRecyclerFragment {
+        val fragOne: Fragment = ListerRecyclerFragment()
+        val tr = fm!!.beginTransaction()
+        tr.add(layout_id, fragOne)
+        tr.commitAllowingStateLoss()
+        tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+
+        return fragOne as ListerRecyclerFragment
     }
 
 

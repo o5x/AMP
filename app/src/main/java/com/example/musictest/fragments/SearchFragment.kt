@@ -6,25 +6,23 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.LinearLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
-import com.example.musictest.activities.MainActivity
 import com.example.musictest.R
+import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.databases.ListId
+import com.example.musictest.musics.ListId
+import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.*
 import kotlin.collections.ArrayList
 
 class SearchFragment : Fragment() {
 
-    lateinit var search : EditText;
-
     fun addListItem(
             fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int
-    ) : ListerRecyclerFragment
-    {
+            layout_id: Int,
+    ): ListerRecyclerFragment {
         val fragOne: Fragment = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
         tr.add(layout_id, fragOne)
@@ -34,32 +32,13 @@ class SearchFragment : Fragment() {
         return fragOne as ListerRecyclerFragment
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-
-        val v = inflater.inflate(R.layout.fragment_search, container, false)
-
-        search = v.findViewById(R.id.editTextSearch)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         val fm = childFragmentManager
-
-        var id: Int
-
         var tab = ArrayList<Int>()
 
-        /*for(i in syncMusicController.musics)
-        {
-            tab.add(id++)
-        }*/
-
-        // init with all ids
-
-        //addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
-
-        search.addTextChangedListener(object : TextWatcher {
+        editTextSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
             }
 
@@ -68,52 +47,50 @@ class SearchFragment : Fragment() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
 
-                val newtab: ArrayList<Int> = ArrayList()
+                val newTab: ArrayList<Int> = ArrayList()
+                var id = 0
 
-                id = 0
+                val currentSearch = editTextSearch.text.toString().toLowerCase(Locale.ROOT)
 
-                if (search.text.toString().isNotEmpty()) {
-
+                if (currentSearch.isNotEmpty()) {
                     for (m in syncMusicController.getList(ListId.ID_MUSIC_ALL).list) {
                         val music = syncMusicController.getMusic(id)
-                        if (music.title.toString().toLowerCase(Locale.ROOT).contains(
-                                search.text.toString().toLowerCase(Locale.ROOT)
-                            )
-                            || music.artist.toString().toLowerCase(Locale.ROOT).contains(
-                                search.text.toString().toLowerCase(Locale.ROOT)
-                            )
-                            || music.album.toString().toLowerCase(Locale.ROOT).contains(
-                                search.text.toString().toLowerCase(Locale.ROOT)
-                            )
-                            || music.path.toString().toLowerCase(Locale.ROOT).contains(
-                                search.text.toString().toLowerCase(Locale.ROOT)
-                            )
+                        if (music.title.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
+                                || music.artist.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
+                                || music.album.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
+                                || music.path.toLowerCase(Locale.ROOT).contains(currentSearch)
                         ) {
-                            newtab.add(id)
+                            newTab.add(id)
                         }
-
                         id++
                     }
                 }
 
-                if (tab.hashCode() != newtab.hashCode()) {
-                    v.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews()
-                    tab = newtab
+                if (tab.hashCode() != newTab.hashCode()) {
+                    view.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews()
+                    tab = newTab
 
-                    if(tab.size > 0)
+                    if (tab.size > 0)
                         addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
                 }
             }
         })
 
-        return v
+    }
+
+    override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?,
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_search, container, false)
     }
 
     override fun onStart() {
         super.onStart()
 
-        (activity as MainActivity).btn_home.setColorFilter(null)
+        (activity as MainActivity).btn_home.colorFilter = null
         (activity as MainActivity).btn_search.setColorFilter(R.color.th)
-        (activity as MainActivity).btn_collection.setColorFilter(null)
+        (activity as MainActivity).btn_collection.colorFilter = null
     }
 }

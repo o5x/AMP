@@ -6,166 +6,83 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.media.AudioManager
-import android.os.Build
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.text.HtmlCompat
 import com.example.musictest.R
-import com.example.musictest.SyncMusic
+import com.example.musictest.activities.MusicControllerActivity
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.services.NotificationActionService
 
-
-private val callback = object: MediaSessionCompat.Callback() {
-    override fun onPlay() {
-        super.onPlay()
-        syncMusicController.togglePlay()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        syncMusicController.togglePlay()
-    }
-
-    override fun onSkipToNext() {
-        super.onSkipToNext()
-        syncMusicController.next()
-    }
-
-    override fun onSkipToPrevious() {
-        super.onSkipToPrevious()
-        syncMusicController.prev()
-    }
-
-    override fun onSeekTo(pos: Long) {
-        super.onSeekTo(pos)
-        syncMusicController.player.seekTo(pos.toInt())
-    }
-}
-
 object CreateNotification {
     const val CHANNEL_ID = "channel1"
-    const val ACTION_PREVIOUS = "actionprevious"
-    const val ACTION_PLAY = "actionplay"
-    const val ACTION_NEXT = "actionnext"
-    lateinit var notification: Notification
-    lateinit var mediaSessionCompat : MediaSessionCompat
+    private const val CHANNEL_NID = 1
+    const val ACTION_PREVIOUS = "actionPrevious"
+    const val ACTION_PLAY = "actionPlay"
+    const val ACTION_NEXT = "actionNext"
+    const val ACTION_STOP = "actionStop"
+    const val ACTION_LIKE = "actionLike"
+    private lateinit var notification: Notification
 
-    fun cancelNotification(context: Context)
-    {
+    fun cancelNotification(context: Context) {
         val ns = Context.NOTIFICATION_SERVICE
         val nMgr: NotificationManager = context.getSystemService(ns) as NotificationManager
-        nMgr.cancel(1)
+        nMgr.cancel(CHANNEL_NID)
     }
 
-    fun createNotification(context: Context, track: SyncMusic, playbutton: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManagerCompat = NotificationManagerCompat.from(context)
-            //val mediaSessionCompat = MediaSessionCompat(context, "tag")
+    fun createNotification(context: Context) {
+        // Intents build
+        val intentLike = Intent(context, NotificationActionService::class.java).setAction(ACTION_LIKE)
+        val intentPrev = Intent(context, NotificationActionService::class.java).setAction(ACTION_PREVIOUS)
+        val intentPlay = Intent(context, NotificationActionService::class.java).setAction(ACTION_PLAY)
+        val intentNext = Intent(context, NotificationActionService::class.java).setAction(ACTION_NEXT)
+        val intentStop = Intent(context, NotificationActionService::class.java).setAction(ACTION_STOP)
 
-            mediaSessionCompat = MediaSessionCompat(context, "PlayerService")
-            mediaSessionCompat.setMetadata(
-                MediaMetadataCompat.Builder()
-                    .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, track.image)
-                    .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track.artist)
-                    .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track.album)
-                    .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track.title)
-                    .putString(
-                        MediaMetadataCompat.METADATA_KEY_MEDIA_ID,
-                        syncMusicController.player.hashCode().toString()
-                    )
-                    .putString(
-                        MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
-                        "android.resource"
-                    )
-                    .putLong(
-                        MediaMetadataCompat.METADATA_KEY_DURATION,
-                        syncMusicController.player.duration.toLong()
-                    )
-                    .build()
-            )
+        val pendingIntentLike = PendingIntent.getBroadcast(context, 0, intentLike, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntentPrev = PendingIntent.getBroadcast(context, 0, intentPrev, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntentPlay = PendingIntent.getBroadcast(context, 0, intentPlay, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntentNext = PendingIntent.getBroadcast(context, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntentStop = PendingIntent.getBroadcast(context, 0, intentStop, PendingIntent.FLAG_UPDATE_CURRENT)
 
-            // Intents build
-            val intentPrevious = Intent(context, NotificationActionService::class.java)
-                    .setAction(ACTION_PREVIOUS)
-            val pendingIntentPrevious = PendingIntent.getBroadcast(
-                context, 0,
-                intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT
-            )
+        val contentIntent = PendingIntent.getActivity(context, 0,
+                Intent(context, MusicControllerActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT)
 
-            val intentPlay = Intent(context, NotificationActionService::class.java)
-                    .setAction(ACTION_PLAY)
-            val pendingIntentPlay = PendingIntent.getBroadcast(
-                context, 0,
-                intentPlay, PendingIntent.FLAG_UPDATE_CURRENT
-            )
+        // Setup elements
+        val track = syncMusicController.currentMusic
+        val bmp = if (track.image != null) track.image else BitmapFactory.decodeResource(context.resources, R.drawable.music)
+        val playButton = if (syncMusicController.isMusicPlaying) R.drawable.ic_pause2 else R.drawable.ic_play2
+        val likeButton = if (syncMusicController.isCurrentMusicLiked()) R.drawable.ic_favourite else R.drawable.ic_addfavourite
 
-            val intentNext = Intent(context, NotificationActionService::class.java)
-                    .setAction(ACTION_NEXT)
-            val pendingIntentNext = PendingIntent.getBroadcast(
-                context, 0,
-                intentNext, PendingIntent.FLAG_UPDATE_CURRENT
-            )
+        val mediaStyle = androidx.media.app.NotificationCompat.DecoratedMediaCustomViewStyle()
+                .setShowActionsInCompactView(1, 2, 3)
+                .setMediaSession(syncMusicController.mediaSessionCompat.sessionToken)
 
-            var bmp = BitmapFactory.decodeResource(context.resources, R.drawable.music)
+        // Setup title
+        val html = "Playing from <b>${syncMusicController.playingFrom}</b>"
 
-            if(track.image != null) bmp = track.image
-
-            val meciastyle = androidx.media.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
-                    .setMediaSession(mediaSessionCompat.sessionToken)
-
-
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
-            val result = audioManager!!.requestAudioFocus(
-                { },
-                AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
-            )
-            if (result != AudioManager.AUDIOFOCUS_GAIN) {
-                return  //Failed to gain audio focus
-            }
-            var State = PlaybackStateCompat.STATE_PAUSED
-
-            if(syncMusicController.isMusicPlaying) State = PlaybackStateCompat.STATE_PLAYING
-
-            val playbackStateCompat = PlaybackStateCompat.Builder()
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                            PlaybackStateCompat.ACTION_PAUSE or
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                            //or PlaybackStateCompat.ACTION_SEEK_TO
-                )
-                .setState(State, syncMusicController.player.currentPosition.toLong(), 1f)
-                .build()
-
-            mediaSessionCompat.setPlaybackState(playbackStateCompat);
-
-            mediaSessionCompat.setCallback(callback);
-
-            //create notification
-            notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setProgress(100, 50, true)
+        // Create notification
+        notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.appiconrot)
                 .setContentTitle(track.title)
+                .setSubText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY))
                 .setContentText(track.artist)
                 .setLargeIcon(bmp)
-                .setOnlyAlertOnce(true) //show notification for only first time
                 .setShowWhen(false)
-                    .setNotificationSilent()
-                .addAction(R.drawable.ic_prev, "Previous", pendingIntentPrevious)
-                .addAction(playbutton, "Play", pendingIntentPlay)
+                .setColorized(true)
+                .setContentIntent(contentIntent)
+                .setNotificationSilent()
+                .addAction(likeButton, "Like", pendingIntentLike)
+                .addAction(R.drawable.ic_prev, "Previous", pendingIntentPrev)
+                .addAction(playButton, "Play", pendingIntentPlay)
                 .addAction(R.drawable.ic_next, "Next", pendingIntentNext)
-                .setStyle(meciastyle)
+                .addAction(R.drawable.ic_close, "Stop", pendingIntentStop)
+                .setStyle(mediaStyle)
                 .setOngoing(true)
-
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setDeleteIntent(pendingIntentStop)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .build()
 
-            notificationManagerCompat.notify(1, notification)
-        }
+        val notificationManagerCompat = NotificationManagerCompat.from(context)
+        notificationManagerCompat.notify(CHANNEL_NID, notification)
     }
 }

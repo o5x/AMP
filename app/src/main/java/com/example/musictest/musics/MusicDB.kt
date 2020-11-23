@@ -1,4 +1,4 @@
-package com.example.musictest.databases
+package com.example.musictest.musics
 
 import android.content.ContentValues
 import android.content.Context
@@ -8,8 +8,6 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import com.example.musictest.SyncList
-import com.example.musictest.SyncMusic
 import com.example.musictest.activities.syncMusicController
 import java.io.ByteArrayOutputStream
 import java.io.File
