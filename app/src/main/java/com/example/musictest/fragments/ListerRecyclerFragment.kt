@@ -13,34 +13,38 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-
 import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 import java.io.File
 
-enum class ListerMode{
-    None,ListMusicId,ListPlaylists, ListFiles
+enum class ListerMode {
+    None, ListMusicId, ListPlaylists, ListFiles
 }
 
-class ListerRecyclerFragment : Fragment()  {
+enum class SortMode {
+    Id, IdR, Name, NameR//, Date, DateR
+}
 
-    var title : String = ""
-    var listIds : ArrayList<Int> = ArrayList()
-    var folderPath : String = ""
-    var listerMode : ListerMode = ListerMode.None
-    var files : ArrayList<File> = ArrayList()
+class ListerRecyclerFragment : Fragment() {
 
-    var callbackCheckBox : (id : Int) -> Unit = {}
-    var clickCallback : (id : Int) -> Unit = {}
+    var title: String = ""
+    var listIds: ArrayList<Int> = ArrayList()
+    var folderPath: String = ""
+    var listerMode: ListerMode = ListerMode.None
+    var files: ArrayList<File> = ArrayList()
 
-    var childSelected : ArrayList<Boolean> = ArrayList()
+    var callbackCheckBox: (id: Int) -> Unit = {}
+    var clickCallback: (id: Int) -> Unit = {}
+
+    var childSelected: ArrayList<Boolean> = ArrayList()
+
+    var sortMode: SortMode = SortMode.Id
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
     }
 
-    fun initMusicIdList(list: ArrayList<Int>) : ListerRecyclerFragment
-    {
+    fun initMusicIdList(list: ArrayList<Int>): ListerRecyclerFragment {
         listerMode = ListerMode.ListMusicId
         listIds = list
         return this
@@ -87,8 +91,37 @@ class ListerRecyclerFragment : Fragment()  {
 
         listerOptions.visibility = View.GONE
 
-        if(title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
+        ll_options.visibility = View.GONE
+
+        btn_sort.setOnClickListener {
+            //syncMusicController.setQueue(listIds,"To set", 0, true)
+            sortMode = when (sortMode) {
+                SortMode.Id -> SortMode.IdR
+                SortMode.IdR -> SortMode.Name
+                SortMode.Name -> SortMode.NameR
+                SortMode.NameR -> SortMode.Id
+                //SortMode.Date -> SortMode.DateR
+                //SortMode.DateR -> SortMode.Id
+            }
+
+
+            apply()
+        }
+
+        if (title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
         else listerTitle.visibility = View.GONE
+
+        apply()
+    }
+
+    private fun apply() {
+
+        btn_sort.text = "Sort by " + when(sortMode){
+            SortMode.Id -> "date ▼"
+            SortMode.IdR -> "date ▲"
+            SortMode.Name -> "name ▼"
+            SortMode.NameR -> "name ▲"
+        }
 
         val lra = this
 
@@ -98,12 +131,10 @@ class ListerRecyclerFragment : Fragment()  {
 
             lra.callbackCheckBox = {
                 var count = 0
-                for(i in 0 until childSelected.size)
-                {
-                    if(childSelected[i]) count ++
+                for (i in 0 until childSelected.size) {
+                    if (childSelected[i]) count++
                 }
-                if(count > 0)
-                {
+                if (count > 0) {
                     (adapter as ListAdapter).selectMode(layoutManager!!, View.VISIBLE)
                     listerOptions.visibility = View.VISIBLE
                     listerButtonAddTo.isEnabled = true
@@ -113,10 +144,8 @@ class ListerRecyclerFragment : Fragment()  {
                             .setDuration(100)
                             .setListener(null)
 
-                    if(title.isNotEmpty()) listerTitle.text = "$title (${listIds.size}) • $count selected"
-                }
-                else
-                {
+                    if (title.isNotEmpty()) listerTitle.text = "$title (${listIds.size}) • $count selected"
+                } else {
                     (adapter as ListAdapter).selectMode(layoutManager!!, View.GONE)
 
                     listerButtonAddTo.isEnabled = false
@@ -129,15 +158,35 @@ class ListerRecyclerFragment : Fragment()  {
                                     listerOptions.visibility = View.GONE
                                 }
                             })
-                    if(title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
+                    if (title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
                 }
             }
 
             // MODES
 
-            when(listerMode)
-            {
+            when (listerMode) {
                 ListerMode.ListMusicId -> {
+
+                    val cp = syncMusicController.musics // make copy to have fixed not to change data while processing
+                    // sort list
+                    when (sortMode) {
+                        SortMode.Id -> {
+                            listIds = ArrayList(listIds.sortedWith(compareBy { it }))
+                        }
+                        SortMode.IdR -> {
+                            listIds = ArrayList(listIds.sortedWith(compareByDescending { it }))
+                        }
+                        SortMode.Name -> {
+                            listIds = ArrayList(listIds.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
+                        }
+                        SortMode.NameR -> {
+                            listIds = ArrayList(listIds.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
+                        }
+                        //SortMode.Date -> SortMode.DateR
+                        // SortMode.DateR -> SortMode.Id
+                    }
+
+                    ll_options.visibility = View.VISIBLE
                     childSelected.clear()
                     for (i in 0 until listIds.size) childSelected.add(false);
 
@@ -147,6 +196,10 @@ class ListerRecyclerFragment : Fragment()  {
 
                     listerButtonAddTo.setOnClickListener {
                         syncMusicController.addToPlaylistDialog(syncMusicController.c, getSelection())
+                    }
+
+                    btn_playall.setOnClickListener {
+                        syncMusicController.setQueue(listIds, "Search", 0, true) // TODO set value
                     }
                 }
                 ListerMode.ListPlaylists -> {

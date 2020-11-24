@@ -19,18 +19,23 @@
         android:supportsRtl="true"
         android:theme="@style/MusicTest.TransparentTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".activities.SplashScreen">
+        <activity
+            android:name=".activities.SplashScreen"
+            android:configChanges="keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.QueueActivity" />
-        <activity android:name=".activities.MusicControllerActivity" />
+        <activity
+            android:name=".activities.QueueActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize" />
+        <activity
+            android:name=".activities.MusicControllerActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity
             android:name=".activities.MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize">
-        </activity>
+            android:configChanges="keyboardHidden|orientation|screenSize"/>
         <receiver android:name=".services.RemoteControlService">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
@@ -38,7 +43,6 @@
             </intent-filter>
         </receiver>
         <receiver android:name=".services.NotificationActionService" />
-
         <service android:name=".services.OnClearFromRecentService" />
     </application>
 

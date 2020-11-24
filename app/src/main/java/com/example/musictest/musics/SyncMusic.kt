@@ -8,17 +8,20 @@ import android.media.MediaMetadataRetriever
 import android.util.Log
 import com.example.musictest.activities.syncMusicController
 import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
+import java.security.MessageDigest
 
 class SyncMusic {
     var path: String = ""
         private set
 
-    val IMAGE_SIZE = 600
+    val id : Int = 0
 
-    //var hash: ByteArray = ByteArray(0)
-    //    private set
+    val IMAGE_SIZE = 500
 
-    private var byteArray: ByteArray? = null
+    var hash: ByteArray? = null
+        private set
 
     var title: String? = null
         get() = if (field == null) "Unknown title" else field
@@ -36,6 +39,50 @@ class SyncMusic {
 
     var valid = false
         private set
+
+    private fun fileToSHA(filePath: String?): ByteArray? {
+        var inputStream: InputStream? = null
+        return try {
+            inputStream = FileInputStream(filePath)
+            val buffer = ByteArray(1024)
+            val digest: MessageDigest = MessageDigest.getInstance("SHA-256")
+            var numRead = 0
+            while (numRead != -1) {
+                numRead = inputStream.read(buffer)
+                if (numRead > 0) digest.update(buffer, 0, numRead)
+            }
+            return digest.digest()
+        } catch (e: java.lang.Exception) {
+            null
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close()
+                } catch (e: java.lang.Exception) {
+                }
+            }
+        }
+    }
+
+
+    private fun createThumbnail(byteArray: ByteArray) : Bitmap{
+        val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
+        val newImage = Bitmap.createBitmap(bmp)
+
+        val landscape: Boolean = newImage.width > newImage.height
+
+        val scaleFactor = if (landscape) IMAGE_SIZE.toFloat() / newImage.height else IMAGE_SIZE.toFloat() / newImage.width
+        val matrix = Matrix()
+        matrix.postScale(scaleFactor, scaleFactor)
+
+        return if (landscape) {
+            val start: Int = (newImage.width - newImage.height) / 2
+            Bitmap.createBitmap(newImage, start, 0, newImage.height, newImage.height, matrix, true)
+        } else {
+            val start: Int = (newImage.height - newImage.width) / 2
+            Bitmap.createBitmap(newImage, 0, start, newImage.width, newImage.width, matrix, true)
+        }
+    }
 
     constructor(f: File) {
         try {
@@ -57,29 +104,15 @@ class SyncMusic {
             this.artist = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
             this.album = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM)
 
-            this.valid = true
+            val byteArray = metaRetriever.embeddedPicture
 
-            byteArray = metaRetriever.embeddedPicture
-            if (byteArray != null) {
-                val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
-                val newImage = Bitmap.createBitmap(bmp)
+            if (byteArray != null) image2 = createThumbnail(byteArray)
 
-                val landscape: Boolean = newImage.width > newImage.height
-
-                val scaleFactor = if (landscape) IMAGE_SIZE.toFloat() / newImage.height else IMAGE_SIZE.toFloat() / newImage.width
-                val matrix = Matrix()
-                matrix.postScale(scaleFactor, scaleFactor)
-
-                image2 = if (landscape) {
-                    val start: Int = (newImage.width - newImage.height) / 2
-                    Bitmap.createBitmap(newImage, start, 0, newImage.height, newImage.height, matrix, true)
-                } else {
-                    val start: Int = (newImage.height - newImage.width) / 2
-                    Bitmap.createBitmap(newImage, 0, start, newImage.width, newImage.width, matrix, true)
-                }
-            }
+            hash = fileToSHA(path)
 
             metaRetriever.close()
+
+            this.valid = true
 
         } catch (exception: Exception) {
             this.valid = false

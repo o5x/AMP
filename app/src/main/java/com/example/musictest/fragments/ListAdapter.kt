@@ -13,6 +13,7 @@ import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.musics.ListId
+import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
     : RecyclerView.Adapter<MovieViewHolder>() {
@@ -141,7 +142,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     mYearView?.text = "File"
                     mImageView?.setImageResource(R.drawable.file)
 
-                    if (MainActivity.isMusicFile(file)) {
+                    if (isMusicFile(file)) {
                         mCheckBox?.isEnabled = true
                         mYearView?.text = "Music"
                         mImageView?.setImageResource(R.drawable.music)

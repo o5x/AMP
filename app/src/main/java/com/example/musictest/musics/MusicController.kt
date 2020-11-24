@@ -6,13 +6,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.widget.Toast
-import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
@@ -47,7 +50,7 @@ private val callback = object : MediaSessionCompat.Callback() {
     override fun onSeekTo(pos: Long) {
         super.onSeekTo(pos)
         syncMusicController.player.seekTo(pos.toInt())
-        syncMusicController.updatesession()
+        syncMusicController.updateSession()
     }
 }
 
@@ -62,7 +65,9 @@ class SyncMusicController : Application() {
 
     private lateinit var sharedPref: SharedPreferences
 
-    private lateinit var musics: HashMap<Int, SyncMusic>
+    lateinit var musics: HashMap<Int, SyncMusic>
+
+    var currentCoverImage : Bitmap? = null
 
     var images: HashMap<Int, Bitmap> = HashMap()
 
@@ -152,7 +157,29 @@ class SyncMusicController : Application() {
         db.removeIdFromListId(music_id, list_id)
     }
 
+
+
+    //////////////
+
+    companion object {
+        fun isMusicFile(f: File): Boolean { // TODO modify filter
+            return f.isFile
+                    && (f.name.endsWith(".flac")
+                    || f.name.endsWith(".mp3")
+                    || f.name.endsWith(".wav")
+                    || f.name.endsWith(".3gp")
+                    || f.name.endsWith(".m4a")
+                    || f.name.endsWith(".aac")
+                    || f.name.endsWith(".amr")
+                    || f.name.endsWith(".ota")
+                    || f.name.endsWith(".mid")
+                    || f.name.endsWith(".ogg")
+                    || f.name.endsWith(".mkv"))
+        }
+    }
     ///////////////////////////////////////// Context init
+
+
 
     var initialized = false
         private set
@@ -187,6 +214,18 @@ class SyncMusicController : Application() {
             isQueuePlaying = true
         }
 
+        // update playing time for music
+        val mainHandler = Handler(Looper.getMainLooper())
+        mainHandler.post(object : Runnable {
+            override fun run() {
+                if(isMusicPlaying && currentMusic.valid)
+                {
+                    db.updateStatForMusic(currentMusicId, 0, 1)
+                }
+                mainHandler.postDelayed(this, 1000)
+            }
+        })
+
         // update musics by getting one
         getMusic(0)
 
@@ -199,16 +238,12 @@ class SyncMusicController : Application() {
         mediaSessionCompat.setCallback(callback);
     }
 
-    fun updatesession() {
-
-        var bbmp: Bitmap? = null
-
-        if (currentMusic.image != null) bbmp = currentMusic.image
+    fun updateSession() {
 
         mediaSessionCompat.setMetadata(
                 MediaMetadataCompat.Builder()
 
-                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, bbmp)
+                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentCoverImage)
                         .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentMusic.artist)
                         .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentMusic.album)
                         .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentMusic.title)
@@ -282,12 +317,20 @@ class SyncMusicController : Application() {
                     songOverCallback()
                 }
                 player.setOnErrorListener { _, _, _ ->
-                    next()
+                    //next()
+                    Log.d("MusicController", "there was an error prepare ${currentMusic.path}")
                     return@setOnErrorListener true
                 }
                 sharedPref.edit().putInt("currentQueueId", currentQueueId).apply()
                 isQueuePlaying = false
                 isNotificationShown = false
+
+                val metaRetriever = MediaMetadataRetriever()
+                metaRetriever.setDataSource(currentMusic.path)
+                val byteArray = metaRetriever.embeddedPicture
+                currentCoverImage = if (byteArray != null) {
+                    BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
+                } else null
             }
         }
     }
@@ -299,6 +342,7 @@ class SyncMusicController : Application() {
         isQueuePlaying = true
         isNotificationShown = true
         updateRequired()
+        db.updateStatForMusic(currentMusicId, 1, 0)
     }
 
     private fun restartMusic()
@@ -311,7 +355,7 @@ class SyncMusicController : Application() {
 
     private fun updateRequired()
     {
-        updatesession()
+        updateSession()
         c.sendBroadcast(
                 Intent("com.example.musictest.Update_Music")
                         .putExtra("actionname", "update")
@@ -408,7 +452,6 @@ class SyncMusicController : Application() {
 
         if(filterInput()) return
 
-        Log.w("Next", "Current = $currentQueueId = $currentMusicId")
         if(currentQueueId == getList(ListId.ID_MUSIC_QUEUE).list.size -1)
         {
             if(repeatMode == Repeat.All) return play(0)
@@ -416,7 +459,6 @@ class SyncMusicController : Application() {
             return prepare(0)
         }
         play(currentQueueId + 1)
-        Log.w("Next", "after = $currentQueueId = $currentMusicId")
     }
 
     ///////////////////////////////////////// current music interactions
@@ -473,6 +515,11 @@ class SyncMusicController : Application() {
             if (playNow) play(idToPlay)
             else prepare(idToPlay)
         }
+    }
+
+    fun addListPlayed(lid: Int)
+    {
+        if(lid > 0) db.updateStatForList(lid, 1)
     }
 
     fun getMusicFromQueueId(queueId: Int) : SyncMusic
@@ -565,7 +612,7 @@ class SyncMusicController : Application() {
 
         files.forEach{ f ->
 
-            if(MainActivity.isMusicFile(f))
+            if(isMusicFile(f))
             {
                 val insertId = db.addMusicByPath(f)[0]
                 nextQueue.add(insertId)

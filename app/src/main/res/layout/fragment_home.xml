@@ -74,7 +74,7 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <HorizontalScrollView
+            <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:scrollbars="none">
@@ -84,7 +84,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical" />
-            </HorizontalScrollView>
+            </ScrollView>
 
         </LinearLayout>
     </ScrollView>

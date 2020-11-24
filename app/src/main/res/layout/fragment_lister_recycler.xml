@@ -8,6 +8,34 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <LinearLayout
+            android:id="@+id/ll_options"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+
+                android:id="@+id/btn_playall"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_corners"
+                android:paddingHorizontal="20dp"
+                android:text="Play all" />
+
+            <Button
+                android:id="@+id/btn_sort"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginRight="20dp"
+                android:layout_weight="1"
+                android:background="@drawable/rounded_corners"
+                android:paddingHorizontal="20dp"
+                android:text="Sort by Artist" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/listerTitle"
             android:layout_width="match_parent"

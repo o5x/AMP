@@ -21,7 +21,7 @@
             android:layout_height="match_parent"
             android:translationZ="-1dp"
             tools:layout_editor_absoluteX="-116dp"
-            tools:layout_editor_absoluteY="-80dp" >
+            tools:layout_editor_absoluteY="-80dp">
 
         </androidx.viewpager2.widget.ViewPager2>
 
@@ -97,7 +97,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="40dp"
-            android:layout_marginEnd="40dp"
             android:layout_marginBottom="30dp"
             android:ellipsize="marquee"
             android:focusable="true"
@@ -109,7 +108,7 @@
             android:textColor="@color/white"
             android:textSize="24sp"
             app:layout_constraintBottom_toTopOf="@+id/positionBar"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/imageButtonMore"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent" />
 
@@ -121,6 +120,16 @@
             android:textColor="@color/white"
             app:layout_constraintStart_toStartOf="@+id/textViewTitle"
             app:layout_constraintTop_toBottomOf="@+id/textViewTitle" />
+
+        <ImageButton
+            android:id="@+id/imageButtonMore"
+            style="@style/Widget.AppCompat.ActionButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_menu"
+            app:layout_constraintBottom_toBottomOf="@+id/textViewArtist"
+            app:layout_constraintEnd_toEndOf="@+id/positionBar"
+            app:layout_constraintTop_toTopOf="@+id/textViewTitle" />
 
         <SeekBar
             android:id="@+id/positionBar"

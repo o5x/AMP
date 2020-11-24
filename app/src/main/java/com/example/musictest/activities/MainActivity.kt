@@ -31,6 +31,7 @@ import com.example.musictest.fragments.HomeFragment
 import com.example.musictest.fragments.SearchFragment
 import com.example.musictest.fragments.SettingsFragment
 import com.example.musictest.musics.SyncMusicController
+import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
 import com.example.musictest.services.OnClearFromRecentService
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -38,17 +39,23 @@ import java.io.File
 /*
 todo bug fixes :
 - Can select folder and files
+- wrong selection on recyclerview sometimes
 
 todo add :
 - manage multi selection files
 - update interface on lists changed
-- finish multimedia control notification  advanced / mediasessioncompact
-- change search screen to have albums / artist
 - add date to music (last played) + added + play count + time spent on this music ? - musicstats table ?
 - show recently played (liked albums playlists, artists)
 - sort by name, date, songs count
+- Add 3 dots next to the name in musiconttroller
+- fix ordering queue
 
-todo optionnal :
+
+
+todo optional :
+- make visualizer facultative ?
+- add go to album artist on track
+- change search screen to have albums / artist s
 - image lazy load
 - add date in local structures
 - manage file removed skip ? (is it managed ?)
@@ -77,25 +84,8 @@ class MainActivity : AppCompatActivity() {
 
     var currentfragment: Fragment? = null
 
-    companion object {
-        fun isMusicFile(f: File): Boolean { // TODO modify filter
-            return f.isFile
-                    && (f.name.endsWith(".flac")
-                    || f.name.endsWith(".mp3")
-                    || f.name.endsWith(".wav")
-                    || f.name.endsWith(".3gp")
-                    //|| f.name.endsWith(".mp4")
-                    || f.name.endsWith(".m4a")
-                    || f.name.endsWith(".aac")
-                    || f.name.endsWith(".amr")
-                    || f.name.endsWith(".ota")
-                    || f.name.endsWith(".mid")
-                    || f.name.endsWith(".ogg")
-                    || f.name.endsWith(".mkv"))
-        }
-    }
-
     fun scanMusics() {
+
         createNotificationChannel(CHANNEL_ID, "Music Scan")
 
         // Setup notification progress
@@ -131,10 +121,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         Thread {
+
             Log.w("fileScan", "thread ${Thread.currentThread()} started ")
             val storagePath: String = Environment.getExternalStorageDirectory().absolutePath
-            val fullPath = File(storagePath)
-            recursiveMusicScan(fullPath)
+            recursiveMusicScan(File(storagePath))
 
             mBuilder.setContentTitle("Music Scan Complete")
                     .setContentText("$totalScanfilesCount musics found ($scanfilesCount added)") // Removes the progress bar
@@ -148,6 +138,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -156,22 +147,6 @@ class MainActivity : AppCompatActivity() {
         // enable auto text scroll
         listerTitle.isSelected = true
         textView_artist.isSelected = true
-
-        // Require access to storage
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 0
-            );
-        }
-
-        // Require access to record
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.RECORD_AUDIO), 0
-            );
-        }
 
         // init context
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
@@ -284,6 +259,7 @@ class MainActivity : AppCompatActivity() {
             notificationManager!!.cancelAll()
         }
 
+        mNotifyManager.cancel(CHANNEL_NID)
         unregisterReceiver(broadcastReceiver)
     }
 
