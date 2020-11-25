@@ -15,6 +15,6 @@ class QueueActivity : AppCompatActivity() {
         // listerLayout
         val fm = supportFragmentManager
         ListerRecyclerFragment().addItem(fm, R.id.listerLayout)
-                .initMusicIdList(syncMusicController.getList(ListId.ID_MUSIC_QUEUE).list)
+                .initSyncListById(ListId.ID_MUSIC_QUEUE)
     }
 }

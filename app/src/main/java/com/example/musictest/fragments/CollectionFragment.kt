@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
+import com.example.musictest.musics.ListId.Companion.ID_MUSIC_USER_PLAYLISTS
 import kotlinx.android.synthetic.main.fragment_collection.*
 
 class CollectionFragment : Fragment() {
@@ -30,7 +31,8 @@ class CollectionFragment : Fragment() {
 
         // init with all ids
         ListerRecyclerFragment().addItem(fm, R.id.collectionPlaylists)
-                .initPlaylistList(syncMusicController.getPlaylistsIds())
+                .initSyncListById(ID_MUSIC_USER_PLAYLISTS)
+                //.initPlaylistList(syncMusicController.getPlaylistsIds())
     }
 
     override fun onCreateView(
@@ -67,11 +69,16 @@ class CollectionFragment : Fragment() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
 
-        (activity as MainActivity).btn_home.colorFilter = null
-        (activity as MainActivity).btn_search.colorFilter = null
-        (activity as MainActivity).btn_collection.setColorFilter(R.color.th)
+        (activity as MainActivity).apply {
+            tv_title.text = "Collection"
+            btn_home.colorFilter = null
+            btn_search.colorFilter = null
+            btn_collection.setColorFilter(R.color.th)
+            btn_back.visibility = View.INVISIBLE
+        }
     }
+
 }

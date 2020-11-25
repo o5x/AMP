@@ -70,8 +70,8 @@ class SearchFragment : Fragment() {
                     view.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews()
                     tab = newTab
 
-                    if (tab.size > 0)
-                        addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab)
+                    //if (tab.size > 0)
+                        //addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab) // TODO RESTORE
                 }
             }
         })
@@ -86,11 +86,15 @@ class SearchFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_search, container, false)
     }
 
-    override fun onStart() {
-        super.onStart()
 
-        (activity as MainActivity).btn_home.colorFilter = null
-        (activity as MainActivity).btn_search.setColorFilter(R.color.th)
-        (activity as MainActivity).btn_collection.colorFilter = null
+    override fun onResume() {
+        super.onResume()
+        (activity as MainActivity).apply {
+            tv_title.text = "Search"
+            btn_home.colorFilter = null
+            btn_search.setColorFilter(R.color.th)
+            btn_collection.colorFilter = null
+            btn_back.visibility = View.INVISIBLE
+        }
     }
 }

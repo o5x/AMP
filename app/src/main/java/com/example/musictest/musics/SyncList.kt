@@ -5,7 +5,7 @@ import android.database.Cursor
 class SyncList {
     var name: String = "Invalid list"
     var list: ArrayList<Int> = ArrayList()
-    var listType = ListType.None
+    var listType = ListType.listOfMusics
     var valid = false
 
     constructor(name_: String, listType_: ListType) {

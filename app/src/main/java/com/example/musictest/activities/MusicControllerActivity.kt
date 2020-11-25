@@ -1,6 +1,7 @@
 package com.example.musictest.activities
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -10,7 +11,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.SeekBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -97,6 +100,52 @@ class MusicControllerActivity : AppCompatActivity() {
                 }
             }
         })).start()
+
+        imageButtonMore.setOnClickListener {
+
+            val popup = PopupMenu(applicationContext, imageButtonMore)
+
+            val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
+            sm.add(0, 11, 1, "liked ")
+            for (i in 1 until 7)
+                sm.add(0, 11 + i, i + 1, "playlist $i")
+
+            popup.menu.add(0, 2, 2, "View Album")
+            popup.menu.add(0, 3, 3, "View Artist")
+            popup.menu.add(0, 4, 4, "Info")
+            popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
+
+            popup.setOnMenuItemClickListener { item ->
+
+                when(item.itemId)
+                {
+                    1 -> {}
+                    2 -> {
+                        Toast.makeText(applicationContext, "Go album ", Toast.LENGTH_SHORT).show()}
+                    3 -> {
+                        Toast.makeText(applicationContext, "Go artist ", Toast.LENGTH_SHORT).show()}
+                    4 -> {
+                        val builder1 = AlertDialog.Builder(applicationContext)
+                        builder1.setTitle(syncMusicController.currentMusic.title)
+                        builder1.setMessage("\nName : ${syncMusicController.currentMusic.title}\n\n" +
+                                "Album : ${syncMusicController.currentMusic.album}\n\n" +
+                                "Artist : ${syncMusicController.currentMusic.artist}\n\n" +
+                                "Path : ${syncMusicController.currentMusic.path}")
+                        builder1.setCancelable(true)
+                        builder1.setIcon(R.drawable.ic_music)
+                        builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
+                        val alert11 = builder1.create()
+                        alert11.show()
+
+                    }
+                    in 11..50 -> {
+                        Toast.makeText(applicationContext, "Saving song to " + item.title , Toast.LENGTH_SHORT).show()}
+                }
+
+                return@setOnMenuItemClickListener true
+            }
+            popup.show();
+        }
 
         // update interface before showing
         updateInterface()

@@ -16,7 +16,7 @@ import java.security.MessageDigest
 //data/data/com.example.musictest/databases/musics.db
 
 enum class ListType {
-    None, SystemR, SystemRW, Album, Artist, User, SystemRList, SystemRWList
+    none, listOfLists, listOfMusics
 }
 
 class ListId{
@@ -27,14 +27,13 @@ class ListId{
         const val ID_MUSIC_QUEUE_ORIGINAL = 3
         const val ID_MUSIC_LIKED = 4
         const val ID_MUSIC_MOST = 5
-        const val ID_MUSIC_RECENT = 6
-        const val ID_MUSIC_SUGGEST = 7
-        const val ID_MUSIC_DOWNLOAD = 8
+        const val ID_MUSIC_SUGGEST = 6
+        const val ID_MUSIC_DOWNLOAD = 7
 
-        const val ID_MUSIC_ARTISTS = 9
-        const val ID_MUSIC_ALBUMS = 10
+        const val ID_MUSIC_ARTISTS = 8
+        const val ID_MUSIC_ALBUMS = 9
 
-        const val ID_MUSIC_USER_PLAYLISTS = 11
+        const val ID_MUSIC_USER_PLAYLISTS = 10
     }
 }
 
@@ -93,6 +92,7 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
         const val LIST_TYPE = "type"
         const val LIST_PLAYED_COUNT = "played_count"
         const val LIST_PLAYED_LAST = "played_last"
+        const val LIST_IMAGE_ID = "image_id"
 
         // links columns
         const val LINK_ID = "id"
@@ -129,7 +129,8 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
                         " $LIST_NAME TEXT NOT NULL," +
                         " $LIST_TYPE TEXT NOT NULL," +
                         " $LIST_PLAYED_COUNT INTEGER DEFAULT 0," +
-                        " $LIST_PLAYED_LAST DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP);")
+                        " $LIST_PLAYED_LAST DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                        " $LIST_IMAGE_ID INTEGER);")
 
         const val CREATE_TABLE_LINK =
                 ("CREATE TABLE IF NOT EXISTS $TABLE_LINK(" +
@@ -152,7 +153,6 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
                         " $STAT_PLAYED_LAST DATETIME," +
                         " $STAT_PLAYED_TIME NUMERIC DEFAULT 0," +
                         " $STAT_ADDED_TIME DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP);")
-
     }
 }
 
@@ -171,19 +171,19 @@ class MusicDB(private val context: Context) {
         // Initialize db with default playlists when created
         if(dbHelper.wasCreatedNow)
         {
-            addList("all", ListType.SystemR)
-            addList("queue", ListType.SystemRW)
-            addList("originalQueue", ListType.SystemR)
-            addList("liked", ListType.SystemRW)
-            addList("most", ListType.SystemR)
-            addList("recent", ListType.SystemR)
-            addList("suggest", ListType.SystemR)
-            addList("download", ListType.SystemR)
+            addList("all", ListType.listOfMusics)
+            addList("queue", ListType.listOfMusics)
+            addList("originalQueue", ListType.listOfMusics)
+            addList("liked", ListType.listOfMusics)
+            addList("recent", ListType.listOfMusics)
+            addList("suggest", ListType.listOfMusics)
+            addList("download", ListType.listOfMusics)
 
-            addList("artists", ListType.SystemRList)
-            addList("albums", ListType.SystemRList)
+            addList("artists", ListType.listOfLists)
+            addList("albums", ListType.listOfLists)
 
-            addList("userPlaylists", ListType.SystemRWList)
+            addList("userPlaylists", ListType.listOfLists)
+
             addIdToListId(ListId.ID_MUSIC_QUEUE, ListId.ID_MUSIC_USER_PLAYLISTS)
             addIdToListId(ListId.ID_MUSIC_LIKED, ListId.ID_MUSIC_USER_PLAYLISTS)
         }
@@ -287,19 +287,19 @@ class MusicDB(private val context: Context) {
 
     fun updateStatForMusic(music_id : Int, playedCounter: Int, playedTime: Int)
     {
-        database.execSQL("UPDATE STATS SET " +
-                "played_count = played_count + ${if (playedCounter < 1) 0 else 1}," +
-                " played_last = CURRENT_TIMESTAMP," +
-                " played_time = played_time + ${if(playedTime < 0) 0 else playedTime}" +
-                " WHERE music_id = $music_id")
+        database.execSQL("UPDATE ${DBMusicHelper.TABLE_STAT} SET " +
+                "${DBMusicHelper.STAT_PLAYED_COUNT} = ${DBMusicHelper.STAT_PLAYED_COUNT} + ${if (playedCounter < 1) 0 else 1}," +
+                " ${DBMusicHelper.STAT_PLAYED_LAST} = CURRENT_TIMESTAMP," +
+                " ${DBMusicHelper.STAT_PLAYED_TIME} = ${DBMusicHelper.STAT_PLAYED_TIME} + ${if(playedTime < 0) 0 else playedTime}" +
+                " WHERE ${DBMusicHelper.STAT_MUSIC_ID} = $music_id")
     }
 
     fun updateStatForList(list_id : Int, playedCounter: Int)
     {
-        database.execSQL("UPDATE LISTS SET " +
-                "played_count = played_count + ${if (playedCounter < 1) 0 else 1}," +
-                " played_last = CURRENT_TIMESTAMP," +
-                " WHERE id = $list_id")
+        database.execSQL("UPDATE ${DBMusicHelper.TABLE_LIST} SET " +
+                "${DBMusicHelper.LIST_PLAYED_COUNT} = ${DBMusicHelper.LIST_PLAYED_COUNT} + ${if (playedCounter < 1) 0 else 1}," +
+                " ${DBMusicHelper.LIST_PLAYED_LAST} = CURRENT_TIMESTAMP" +
+                " WHERE ${DBMusicHelper.LIST_ID} = $list_id")
     }
 
     fun addMusicByPath(f: File) : Array<Int>
@@ -319,11 +319,13 @@ class MusicDB(private val context: Context) {
             contentValue.put(DBMusicHelper.MUSIC_TITLE, music.title)
             contentValue.put(DBMusicHelper.MUSIC_ARTIST, music.artist)
             contentValue.put(DBMusicHelper.MUSIC_ALBUM, music.album)
+
             if(music.image2 != null)
             {
                 val imageId = addImageToDB(music.image2!!)
                 contentValue.put(DBMusicHelper.MUSIC_IMAGE_ID, imageId)
             }
+
             val id = database.insert(DBMusicHelper.TABLE_MUSIC, null, contentValue).toInt()
             syncMusicController.invalidateMusics()
 
@@ -331,8 +333,8 @@ class MusicDB(private val context: Context) {
             {
                 // add to all musics
                 addIdToListId(id, ListId.ID_MUSIC_ALL)
-                val aid = addIdToListNameType(id, music.artist.toString(), ListType.Artist)
-                val abid = addIdToListNameType(id, music.album.toString(), ListType.Album)
+                val aid = addIdToListNameType(id, music.artist.toString(), ListType.listOfMusics)
+                val abid = addIdToListNameType(id, music.album.toString(), ListType.listOfMusics)
                 addIdToListId(aid, ListId.ID_MUSIC_ARTISTS)
                 addIdToListId(abid, ListId.ID_MUSIC_ALBUMS)
 

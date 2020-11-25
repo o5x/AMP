@@ -1,25 +1,19 @@
 package com.example.musictest.activities
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
+import android.content.*
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.support.v4.media.MediaBrowserCompat
 import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -32,6 +26,7 @@ import com.example.musictest.fragments.SearchFragment
 import com.example.musictest.fragments.SettingsFragment
 import com.example.musictest.musics.SyncMusicController
 import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
+import com.example.musictest.services.MediaPlaybackService
 import com.example.musictest.services.OnClearFromRecentService
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
@@ -84,7 +79,7 @@ class MainActivity : AppCompatActivity() {
 
     var currentfragment: Fragment? = null
 
-    fun scanMusics() {
+    private fun scanMusics() {
 
         createNotificationChannel(CHANNEL_ID, "Music Scan")
 
@@ -149,10 +144,10 @@ class MainActivity : AppCompatActivity() {
         textView_artist.isSelected = true
 
         // init context
-        val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
-
-        syncMusicController.init(this, sharedPref)
+        syncMusicController.init(this)
         scanMusics()
+
+        startService(Intent(this@MainActivity, MediaPlaybackService::class.java))
 
         // check intent filter
         /*if (intent.action!!.compareTo(Intent.ACTION_VIEW) == 0) {
@@ -265,7 +260,7 @@ class MainActivity : AppCompatActivity() {
 
     // Interface buttons handlers
 
-    fun replaceFragment(newfragment: Fragment, force: Boolean = false, backBtn: Boolean = true, atitle: String? = null, isSettings: Boolean = false) {
+    fun replaceFragment(newfragment: Fragment, force: Boolean = false) {
         if (force || currentfragment == null || currentfragment!!.javaClass != newfragment.javaClass) {
             supportFragmentManager.commit {
                 replace(R.id.fragment, newfragment)
@@ -273,14 +268,7 @@ class MainActivity : AppCompatActivity() {
                 addToBackStack(null)
             }
             currentfragment = newfragment
-            //if(backBtn)button_back.visibility = View.VISIBLE
-            //else button_back.visibility = View.INVISIBLE
-            btn_back.visibility = View.INVISIBLE
 
-            if (atitle != null) tv_title.text = atitle
-
-            if (isSettings) btn_settings.visibility = View.INVISIBLE
-            else btn_settings.visibility = View.VISIBLE
         }
     }
 
@@ -327,18 +315,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun HomeClick(v: View) {
-        replaceFragment(HomeFragment(), atitle = "Home", backBtn = false)
+        replaceFragment(HomeFragment())
     }
 
     fun SearchClick(v: View) {
-        replaceFragment(SearchFragment(), atitle = "Search", backBtn = false)
+        replaceFragment(SearchFragment())
     }
 
     fun ColectionClick(v: View) {
-        replaceFragment(CollectionFragment(), atitle = "Collection", backBtn = false)
+        replaceFragment(CollectionFragment())
     }
 
     fun settingsClick(v: View) {
-        replaceFragment(SettingsFragment(), atitle = "Settings")
+        replaceFragment(SettingsFragment())
     }
 }

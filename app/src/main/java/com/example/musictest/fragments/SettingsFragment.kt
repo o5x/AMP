@@ -1,6 +1,7 @@
 package com.example.musictest.fragments
 
 import android.os.Bundle
+import android.view.View
 import androidx.preference.PreferenceFragmentCompat
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
@@ -11,11 +12,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
+        (activity as MainActivity).apply {
+            tv_title.text = "Search"
+            btn_back.visibility = View.VISIBLE
+            btn_settings.visibility = View.INVISIBLE
+        }
+    }
 
-        //(activity as MainActivity).button_back.visibility = View.VISIBLE
-        //(activity as MainActivity).button_settings.visibility = View.INVISIBLE
-        (activity as MainActivity).tv_title.text = "Settings"
+    override fun onPause() {
+        super.onPause()
+        (activity as MainActivity).apply {
+            btn_settings.visibility = View.VISIBLE
+        }
     }
 }
+

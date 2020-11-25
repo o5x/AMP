@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
-import android.media.MediaPlayer
+import android.media.*
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
@@ -16,6 +16,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.widget.Toast
+import androidx.preference.PreferenceManager
 import com.example.musictest.activities.syncMusicController
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
@@ -42,6 +43,11 @@ private val callback = object : MediaSessionCompat.Callback() {
         syncMusicController.next()
     }
 
+    override fun onStop() {
+        super.onStop()
+        syncMusicController.stop()
+    }
+
     override fun onSkipToPrevious() {
         super.onSkipToPrevious()
         syncMusicController.prev()
@@ -58,16 +64,18 @@ class SyncMusicController : Application() {
 
     lateinit var helper: VisualizerHelper
 
-    lateinit var c : Context
+    lateinit var c: Context
         private set
 
-    private lateinit var db : MusicDB
+    private var audioManager: AudioManager? = null
+
+    private lateinit var db: MusicDB
 
     private lateinit var sharedPref: SharedPreferences
 
     lateinit var musics: HashMap<Int, SyncMusic>
 
-    var currentCoverImage : Bitmap? = null
+    var currentCoverImage: Bitmap? = null
 
     var images: HashMap<Int, Bitmap> = HashMap()
 
@@ -179,14 +187,36 @@ class SyncMusicController : Application() {
     }
     ///////////////////////////////////////// Context init
 
+    private var wasPlaying: Boolean? = null
 
+    private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // Permanent loss of audio focus
+                pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // Pause playback
+                Log.d("audiofocus", "AUDIOFOCUS_LOSS_TRANSIENT")
+                wasPlaying = isMusicPlaying
+                pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                Log.d("audiofocus", "AUDIOFOCUS_GAIN")
+                if (wasPlaying == true) play()
+                // Your app has been granted audio focus again
+                // Raise volume to normal, restart playback if necessary
+            }
+        }
+    }
 
     var initialized = false
         private set
 
-    fun init(context: Context, sp: SharedPreferences)
-    {
-        if(initialized) return
+    fun init(context: Context) {
+        if (initialized) return
 
         c = context
 
@@ -201,7 +231,7 @@ class SyncMusicController : Application() {
         helper = VisualizerHelper(syncMusicController.player.audioSessionId)
 
         // restore queue state
-        sharedPref = sp
+        sharedPref  = PreferenceManager.getDefaultSharedPreferences(c);
 
         currentQueueId = sharedPref.getInt("currentQueueId", currentQueueId)
         shuffleMode = sharedPref.getBoolean("shuffleMode", shuffleMode)
@@ -218,8 +248,7 @@ class SyncMusicController : Application() {
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post(object : Runnable {
             override fun run() {
-                if(isMusicPlaying && currentMusic.valid)
-                {
+                if (isMusicPlaying && currentMusic.valid) {
                     db.updateStatForMusic(currentMusicId, 0, 1)
                 }
                 mainHandler.postDelayed(this, 1000)
@@ -236,6 +265,38 @@ class SyncMusicController : Application() {
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
         mediaSessionCompat.setCallback(callback);
+
+        // audio focus
+        audioManager = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
+    }
+
+    private fun getAudioFocus(): Boolean {
+        val handler = Handler()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
+                setAudioAttributes(AudioAttributes.Builder().run {
+                    setUsage(AudioAttributes.USAGE_MEDIA)
+                    setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    build()
+                })
+                setAcceptsDelayedFocusGain(true)
+                setOnAudioFocusChangeListener(afChangeListener, handler)
+                build()
+            }
+
+            val result: Int = audioManager!!.requestAudioFocus(focusRequest)
+
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                return true
+            }
+
+            Toast.makeText(c, "Unpossible to gain audio focus !", Toast.LENGTH_SHORT).show()
+            return false
+        }
+
+        return true
     }
 
     fun updateSession() {
@@ -257,23 +318,24 @@ class SyncMusicController : Application() {
                                 syncMusicController.player.duration.toLong()
                         )
                         .build()
-        )
 
-        /*val audioManager = c.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
-        val result = audioManager!!.requestAudioFocus({ }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
-        if (result != AudioManager.AUDIOFOCUS_GAIN) {
-            return  //Failed to gain audio focus
-        }*/
+        )
 
         val state = if (isMusicPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_STOPPED
 
         val playbackStateCompat = PlaybackStateCompat.Builder()
                 .setActions(
-                        PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                                PlaybackStateCompat.ACTION_PAUSE or
-                                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                        PlaybackStateCompat.ACTION_PLAY
+                                or PlaybackStateCompat.ACTION_PLAY_PAUSE
+                                or PlaybackStateCompat.ACTION_PAUSE
+                                or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                                or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                                or PlaybackStateCompat.ACTION_STOP
                                 or PlaybackStateCompat.ACTION_SEEK_TO
+                        //or PlaybackStateCompat.ACTION_FAST_FORWARD
+                        //or PlaybackStateCompat.ACTION_REWIND
+                        //or PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+                        //or PlaybackStateCompat.ACTION_SET_REPEAT_MODE
                 )
                 .setState(state, syncMusicController.player.currentPosition.toLong(), 1f)
                 .build()
@@ -335,13 +397,9 @@ class SyncMusicController : Application() {
         }
     }
 
-    fun play(queueMusicId: Int)
-    {
+    fun play(queueMusicId: Int) {
         prepare(queueMusicId)
-        player.start()
-        isQueuePlaying = true
-        isNotificationShown = true
-        updateRequired()
+        play()
         db.updateStatForMusic(currentMusicId, 1, 0)
     }
 
@@ -396,24 +454,30 @@ class SyncMusicController : Application() {
         updateRequired()
     }
 
+
     fun togglePlay() {
         if (currentMusicId < 0) return
         if (filterInput()) return
 
-        if (isMusicPlaying) player.pause()
-        else player.start()
+        if (isMusicPlaying) pause()
+        else play()
         isQueuePlaying = true
         isNotificationShown = true
         updateRequired()
     }
 
+
     fun play() {
         if (currentMusicId < 0) return
         //if(filterInput()) return
-        player.start()
-        isQueuePlaying = true
-        isNotificationShown = true
-        updateRequired()
+
+        if (getAudioFocus()) {
+            player.start()
+            isQueuePlaying = true
+            isNotificationShown = true
+            updateRequired()
+        }
+
     }
 
     fun pause() {
@@ -503,8 +567,28 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// Queue actions
 
-    fun setQueue(ids: ArrayList<Int>, from: String, idToPlay: Int, playNow: Boolean) {
+    /*fun setQueue(ids: ArrayList<Int>, from: String, idToPlay: Int, playNow: Boolean) {
         playingFrom = from
+        updateList(ListId.ID_MUSIC_QUEUE, ids)
+        currentQueueId = idToPlay
+        if (shuffleMode) {
+            startShuffle()
+            if (playNow) play(0)
+            else prepare(0)
+        } else {
+            if (playNow) play(idToPlay)
+            else prepare(idToPlay)
+        }
+    }*/
+
+
+    fun setQueue(ids: ArrayList<Int>, from: Int?, idToPlay: Int, playNow: Boolean) {
+        if(from != null)
+        {
+            addListPlayed(from)
+            playingFrom = getList(from).name
+        }
+        else playingFrom = "Search"
         updateList(ListId.ID_MUSIC_QUEUE, ids)
         currentQueueId = idToPlay
         if (shuffleMode) {
@@ -517,7 +601,7 @@ class SyncMusicController : Application() {
         }
     }
 
-    fun addListPlayed(lid: Int)
+    private fun addListPlayed(lid: Int)
     {
         if(lid > 0) db.updateStatForList(lid, 1)
     }
@@ -527,10 +611,6 @@ class SyncMusicController : Application() {
         return getMusic(getList(ListId.ID_MUSIC_QUEUE).list[queueId])
     }
 
-    fun getPlaylistsIds() : ArrayList<Int>
-    {
-        return getList(ListId.ID_MUSIC_USER_PLAYLISTS).list
-    }
 
     fun addMusicIdsToPlaylistName(selection: ArrayList<Int>, text: String)
     {
@@ -587,8 +667,6 @@ class SyncMusicController : Application() {
             dialogInterface.dismiss()
             onSuccess()
         }
-
-
 
         val mDialog = mBuilder.create()
         mDialog.show()
