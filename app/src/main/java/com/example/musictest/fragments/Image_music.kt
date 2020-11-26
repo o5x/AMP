@@ -9,7 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.musictest.R
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 import com.example.musictest.builders.BlurBuilder
 import kotlinx.android.synthetic.main.fragment_image_music.*
 
@@ -20,7 +20,7 @@ class Image_music : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val bmp = syncMusicController.getMusicFromQueueId(imageId!!).image
+        val bmp = smc.getMusicFromQueueId(imageId!!).image
 
         if (bmp != null) {
             val blurredBmp = BlurBuilder.blur(view.context, Bitmap.createBitmap(bmp))
@@ -45,8 +45,8 @@ class Image_music : Fragment() {
 
         @JvmStatic
         fun newInstance(param: Int) =
-                Image_music().apply {
-                    imageId = param
-                }
+            Image_music().apply {
+                imageId = param
+            }
     }
 }

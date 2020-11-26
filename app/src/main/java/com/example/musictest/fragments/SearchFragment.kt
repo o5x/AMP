@@ -11,9 +11,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
-import com.example.musictest.activities.syncMusicController
-import com.example.musictest.musics.ListId
+import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
+import com.example.musictest.musics.ListId
 import com.example.musictest.musics.SyncList
 import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.*
@@ -22,8 +22,8 @@ import kotlin.collections.ArrayList
 class SearchFragment : Fragment() {
 
     fun addListItem(
-            fm: androidx.fragment.app.FragmentManager?,
-            layout_id: Int,
+        fm: androidx.fragment.app.FragmentManager?,
+        layout_id: Int,
     ): ListerRecyclerFragment {
         val fragOne: Fragment = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
@@ -55,12 +55,12 @@ class SearchFragment : Fragment() {
                 val currentSearch = editTextSearch.text.toString().toLowerCase(Locale.ROOT)
 
                 if (currentSearch.isNotEmpty()) {
-                    for (m in syncMusicController.getList(ListId.ID_MUSIC_ALL).list) {
-                        val music = syncMusicController.getMusic(id)
+                    for (m in smc.getList(ListId.ID_MUSIC_ALL).list) {
+                        val music = smc.getMusic(id)
                         if (music.title.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
-                                || music.artist.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
-                                || music.album.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
-                                || music.path.toLowerCase(Locale.ROOT).contains(currentSearch)
+                            || music.artist.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
+                            || music.album.toString().toLowerCase(Locale.ROOT).contains(currentSearch)
+                            || music.path.toLowerCase(Locale.ROOT).contains(currentSearch)
                         ) {
                             newTab.add(id)
                         }
@@ -73,7 +73,13 @@ class SearchFragment : Fragment() {
                     tab = newTab
 
                     if (tab.size > 0)
-                        addListItem(fm, R.id.searchResultLayout).initSyncList(SyncList("Search", ListContent.ListOfMusics, tab))
+                        addListItem(fm, R.id.searchResultLayout).initSyncList(
+                            SyncList(
+                                "Search",
+                                ListContent.ListOfMusics,
+                                tab
+                            )
+                        )
                 }
             }
         })
@@ -81,8 +87,8 @@ class SearchFragment : Fragment() {
     }
 
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?,
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_search, container, false)

@@ -2,19 +2,17 @@ package com.example.musictest.musics
 
 import android.database.Cursor
 import android.graphics.Bitmap
-import com.example.musictest.activities.syncMusicController
-import kotlin.collections.ArrayList
+import com.example.musictest.activities.smc
 
 class SyncList {
     var name: String = "Invalid list"
     var list: ArrayList<Int> = ArrayList()
     var listType = ListContent.ListOfMusics
     var valid = false
-    var date : ArrayList<String> = ArrayList()
-    var img_id : Int? = null
+    var date: ArrayList<String> = ArrayList()
+    var img_id: Int? = null
 
-    constructor(name_: String, listContent_: ListContent, list_ : ArrayList<Int>)
-    {
+    constructor(name_: String, listContent_: ListContent, list_: ArrayList<Int>) {
         list = list_
         name = name_
         listType = listContent_
@@ -22,7 +20,7 @@ class SyncList {
         valid = true
     }
 
-    constructor(name_: String, listContent_: ListContent, imid : Int) {
+    constructor(name_: String, listContent_: ListContent, imid: Int) {
         list = ArrayList()
         name = name_
         listType = listContent_
@@ -30,7 +28,7 @@ class SyncList {
         valid = true
     }
 
-    constructor(name_: String, cursor: Cursor, listContent_: ListContent, imid : Int) {
+    constructor(name_: String, cursor: Cursor, listContent_: ListContent, imid: Int) {
         list = ArrayList()
         name = name_
         listType = listContent_
@@ -44,7 +42,7 @@ class SyncList {
     }
 
     val image: Bitmap?
-        get() = syncMusicController.images[img_id]
+        get() = smc.images[img_id]
 
     constructor()
 }

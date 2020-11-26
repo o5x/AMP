@@ -22,7 +22,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.preference.PreferenceManager
 import com.example.musictest.R
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
 
@@ -35,33 +35,33 @@ enum class Repeat {
 private val callback = object : MediaSessionCompat.Callback() {
     override fun onPlay() {
         super.onPlay()
-        syncMusicController.play()
+        smc.play()
     }
 
     override fun onPause() {
         super.onPause()
-        syncMusicController.pause()
+        smc.pause()
     }
 
     override fun onSkipToNext() {
         super.onSkipToNext()
-        syncMusicController.next()
+        smc.next()
     }
 
     override fun onStop() {
         super.onStop()
-        syncMusicController.stop()
+        smc.stop()
     }
 
     override fun onSkipToPrevious() {
         super.onSkipToPrevious()
-        syncMusicController.prev()
+        smc.prev()
     }
 
     override fun onSeekTo(pos: Long) {
         super.onSeekTo(pos)
-        syncMusicController.player.seekTo(pos.toInt())
-        syncMusicController.updateSession()
+        smc.player.seekTo(pos.toInt())
+        smc.updateSession()
     }
 }
 
@@ -170,13 +170,12 @@ class SyncMusicController : Application() {
         db.removeIdFromListId(music_id, list_id)
     }
 
-    fun createPlaylist(name : String) : Int{
-        val id = db.addList(name,ListType.Playlist, ListContent.ListOfMusics, ImageId.ID_IMAGE_PLAYLIST)
+    fun createPlaylist(name: String): Int {
+        val id = db.addList(name, ListType.Playlist, ListContent.ListOfMusics, ImageId.ID_IMAGE_PLAYLIST)
         db.addIdToListId(id, ListId.ID_MUSIC_USER_PLAYLISTS)
         db.setListImage(id, BitmapFactory.decodeResource(c.resources, R.drawable.playlist))
         return id
     }
-
 
 
     //////////////
@@ -251,10 +250,10 @@ class SyncMusicController : Application() {
 
         initialized = true
 
-        helper = VisualizerHelper(syncMusicController.player.audioSessionId)
+        helper = VisualizerHelper(smc.player.audioSessionId)
 
         // restore queue state
-        sharedPref  = PreferenceManager.getDefaultSharedPreferences(c);
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(c);
 
         currentQueueId = sharedPref.getInt("currentQueueId", currentQueueId)
         shuffleMode = sharedPref.getBoolean("shuffleMode", shuffleMode)
@@ -284,8 +283,10 @@ class SyncMusicController : Application() {
         // initialize mediasession
 
         mediaSessionCompat = MediaSessionCompat(c, "PlayerService")
-        mediaSessionCompat.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+        mediaSessionCompat.setFlags(
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+        )
 
         mediaSessionCompat.setCallback(callback);
 
@@ -325,43 +326,43 @@ class SyncMusicController : Application() {
     fun updateSession() {
 
         mediaSessionCompat.setMetadata(
-                MediaMetadataCompat.Builder()
+            MediaMetadataCompat.Builder()
 
-                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentCoverImage)
-                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentMusic.artist)
-                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentMusic.album)
-                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentMusic.title)
-                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, syncMusicController.player.hashCode().toString())
-                        .putString(
-                                MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
-                                "android.resource"
-                        )
-                        .putLong(
-                                MediaMetadataCompat.METADATA_KEY_DURATION,
-                                syncMusicController.player.duration.toLong()
-                        )
-                        .build()
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentCoverImage)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentMusic.artist)
+                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentMusic.album)
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentMusic.title)
+                .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, smc.player.hashCode().toString())
+                .putString(
+                    MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI,
+                    "android.resource"
+                )
+                .putLong(
+                    MediaMetadataCompat.METADATA_KEY_DURATION,
+                    smc.player.duration.toLong()
+                )
+                .build()
 
         )
 
         val state = if (isMusicPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_STOPPED
 
         val playbackStateCompat = PlaybackStateCompat.Builder()
-                .setActions(
-                        PlaybackStateCompat.ACTION_PLAY
-                                or PlaybackStateCompat.ACTION_PLAY_PAUSE
-                                or PlaybackStateCompat.ACTION_PAUSE
-                                or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                                or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                                or PlaybackStateCompat.ACTION_STOP
-                                or PlaybackStateCompat.ACTION_SEEK_TO
-                        //or PlaybackStateCompat.ACTION_FAST_FORWARD
-                        //or PlaybackStateCompat.ACTION_REWIND
-                        //or PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
-                        //or PlaybackStateCompat.ACTION_SET_REPEAT_MODE
-                )
-                .setState(state, syncMusicController.player.currentPosition.toLong(), 1f)
-                .build()
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY
+                        or PlaybackStateCompat.ACTION_PLAY_PAUSE
+                        or PlaybackStateCompat.ACTION_PAUSE
+                        or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                        or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                        or PlaybackStateCompat.ACTION_STOP
+                        or PlaybackStateCompat.ACTION_SEEK_TO
+                //or PlaybackStateCompat.ACTION_FAST_FORWARD
+                //or PlaybackStateCompat.ACTION_REWIND
+                //or PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE
+                //or PlaybackStateCompat.ACTION_SET_REPEAT_MODE
+            )
+            .setState(state, smc.player.currentPosition.toLong(), 1f)
+            .build()
 
         mediaSessionCompat.setPlaybackState(playbackStateCompat)
 
@@ -375,10 +376,8 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// Song over callback
 
-    private fun songOverCallback()
-    {
-        if(repeatMode == Repeat.Once)
-        {
+    private fun songOverCallback() {
+        if (repeatMode == Repeat.Once) {
             restartMusic()
             return
         }
@@ -387,10 +386,8 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// Prepare / play  song
 
-    private fun prepare(newQueueMusicId: Int)
-    {
-        if(0 <= newQueueMusicId && newQueueMusicId < getList(ListId.ID_MUSIC_QUEUE).list.size)
-        {
+    private fun prepare(newQueueMusicId: Int) {
+        if (0 <= newQueueMusicId && newQueueMusicId < getList(ListId.ID_MUSIC_QUEUE).list.size) {
             currentQueueId = newQueueMusicId
             val nextMusicId = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
             if (getMusic(nextMusicId).valid) {
@@ -426,31 +423,27 @@ class SyncMusicController : Application() {
         db.updateStatForMusic(currentMusicId, 1, 0)
     }
 
-    private fun restartMusic()
-    {
+    private fun restartMusic() {
         player.seekTo(0)
         player.start()
     }
 
     ///////////////////////////////////////// Update interface
 
-    private fun updateRequired()
-    {
+    private fun updateRequired() {
         updateSession()
         c.sendBroadcast(
-                Intent("com.example.musictest.Update_Music")
-                        .putExtra("actionname", "update")
+            Intent("com.example.musictest.Update_Music")
+                .putExtra("actionname", "update")
         )
     }
 
     ///////////////////////////////////////// Input filter not to spam media controls
     private var lastTime: Long = 0
-    private fun filterInput() : Boolean
-    {
+    private fun filterInput(): Boolean {
         val currentTime = System.currentTimeMillis()
 
-        if(currentTime - lastTime > 100)
-        {
+        if (currentTime - lastTime > 100) {
             lastTime = currentTime
             return false
         }
@@ -458,10 +451,9 @@ class SyncMusicController : Application() {
     }
 
     ///////////////////////////////////////// Media controls
-    fun toggleShuffle()
-    {
+    fun toggleShuffle() {
         shuffleMode = !shuffleMode
-        if(shuffleMode)startShuffle()
+        if (shuffleMode) startShuffle()
         else stopShuffle()
         updateRequired()
         sharedPref.edit().putBoolean("shuffleMode", shuffleMode).apply()
@@ -533,15 +525,13 @@ class SyncMusicController : Application() {
         play(currentQueueId - 1)
     }
 
-    fun next()
-    {
-        if(currentMusicId < 0) return
+    fun next() {
+        if (currentMusicId < 0) return
 
-        if(filterInput()) return
+        if (filterInput()) return
 
-        if(currentQueueId == getList(ListId.ID_MUSIC_QUEUE).list.size -1)
-        {
-            if(repeatMode == Repeat.All) return play(0)
+        if (currentQueueId == getList(ListId.ID_MUSIC_QUEUE).list.size - 1) {
+            if (repeatMode == Repeat.All) return play(0)
             updateRequired()
             return prepare(0)
         }
@@ -550,25 +540,22 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// current music interactions
 
-    fun isCurrentMusicLiked() : Boolean
-    {
-        if(currentMusicId < 0) return false
+    fun isCurrentMusicLiked(): Boolean {
+        if (currentMusicId < 0) return false
         return currentMusicId in getList(ListId.ID_MUSIC_LIKED).list
     }
 
-    fun toggleCurrentMusicLiked()
-    {
-        if(currentMusicId < 0) return
+    fun toggleCurrentMusicLiked() {
+        if (currentMusicId < 0) return
 
-        if(isCurrentMusicLiked()) removeIdFromList(currentMusicId, ListId.ID_MUSIC_LIKED)
+        if (isCurrentMusicLiked()) removeIdFromList(currentMusicId, ListId.ID_MUSIC_LIKED)
         else addIdToList(currentMusicId, ListId.ID_MUSIC_LIKED)
 
         updateRequired()
     }
 
 
-    private fun startShuffle()
-    {
+    private fun startShuffle() {
         val currentMusic = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
         val currentQueue = getList(ListId.ID_MUSIC_QUEUE).list
         updateList(ListId.ID_MUSIC_QUEUE_ORIGINAL, currentQueue)
@@ -581,8 +568,7 @@ class SyncMusicController : Application() {
         currentQueueId = getList(ListId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
     }
 
-    private fun stopShuffle()
-    {
+    private fun stopShuffle() {
         val currentMusic = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
         updateList(ListId.ID_MUSIC_QUEUE, getList(ListId.ID_MUSIC_QUEUE_ORIGINAL).list)
         currentQueueId = getList(ListId.ID_MUSIC_QUEUE).list.indexOf(currentMusic)
@@ -606,12 +592,10 @@ class SyncMusicController : Application() {
 
 
     fun setQueue(ids: ArrayList<Int>, from: Int?, idToPlay: Int, playNow: Boolean) {
-        if(from != null)
-        {
+        if (from != null) {
             addListPlayed(from)
             playingFrom = getList(from).name
-        }
-        else playingFrom = "Search"
+        } else playingFrom = "Search"
         updateList(ListId.ID_MUSIC_QUEUE, ids)
         currentQueueId = idToPlay
         if (shuffleMode) {
@@ -624,27 +608,23 @@ class SyncMusicController : Application() {
         }
     }
 
-    private fun addListPlayed(lid: Int)
-    {
-        if(lid > 0) db.updateStatForList(lid, 1)
+    private fun addListPlayed(lid: Int) {
+        if (lid > 0) db.updateStatForList(lid, 1)
     }
 
-    fun getMusicFromQueueId(queueId: Int) : SyncMusic
-    {
+    fun getMusicFromQueueId(queueId: Int): SyncMusic {
         return getMusic(getList(ListId.ID_MUSIC_QUEUE).list[queueId])
     }
 
-    fun addPlaylistMenu(sm : Menu)
-    {
+    fun addPlaylistMenu(sm: Menu) {
         sm.add(0, 9, 9, "Create new playlist")
-        val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+        val playlists = smc.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
         for (i in 0 until playlists.list.size)
-            sm.add(0, i + 10, i + 10, syncMusicController.getList(playlists.list[i]).name)
+            sm.add(0, i + 10, i + 10, smc.getList(playlists.list[i]).name)
     }
 
-    fun processPlaylistMenu(context: Context,msuciIs : Int, music : SyncMusic, menuid : MenuItem)
-    {
-        if(menuid.itemId == 9){
+    fun processPlaylistMenu(context: Context, msuciIs: Int, music: SyncMusic, menuid: MenuItem) {
+        if (menuid.itemId == 9) {
 
             val builder = AlertDialog.Builder(context)
             builder.setTitle("New Playlist")
@@ -656,31 +636,27 @@ class SyncMusicController : Application() {
 
             builder.setPositiveButton("Save") { dialog, _ ->
                 val newPlaylistName = input.text.toString()
-                if(newPlaylistName.length < 2)
-                {
+                if (newPlaylistName.length < 2) {
                     Toast.makeText(context, "Playlist name too short", Toast.LENGTH_SHORT).show()
-                }
-                else
-                {
-                    val id = syncMusicController.createPlaylist(newPlaylistName)
-                    syncMusicController.addIdToList(msuciIs, id)
+                } else {
+                    val id = smc.createPlaylist(newPlaylistName)
+                    smc.addIdToList(msuciIs, id)
                     Toast.makeText(context, "Adding ${music.title} to " + newPlaylistName, Toast.LENGTH_SHORT).show()
                 }
             }
             builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
 
             builder.show()
-        }else{
-            val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
-            syncMusicController.addIdToList(msuciIs, playlists.list[menuid.itemId - 10])
+        } else {
+            val playlists = smc.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+            smc.addIdToList(msuciIs, playlists.list[menuid.itemId - 10])
             Toast.makeText(context, "Adding ${music.title} to " + menuid.title, Toast.LENGTH_SHORT).show()
         }
 
     }
 
-    fun processPlaylistMenu(context: Context,msuciIs : ArrayList<Int>, menuid : MenuItem)
-    {
-        if(menuid.itemId == 9){
+    fun processPlaylistMenu(context: Context, msuciIs: ArrayList<Int>, menuid: MenuItem) {
+        if (menuid.itemId == 9) {
 
             val builder = AlertDialog.Builder(context)
             builder.setTitle("New Playlist")
@@ -692,23 +668,21 @@ class SyncMusicController : Application() {
 
             builder.setPositiveButton("Save") { dialog, _ ->
                 val newPlaylistName = input.text.toString()
-                if(newPlaylistName.length < 2)
-                {
+                if (newPlaylistName.length < 2) {
                     Toast.makeText(context, "Playlist name too short", Toast.LENGTH_SHORT).show()
-                }
-                else
-                {
-                    val id = syncMusicController.createPlaylist(newPlaylistName)
+                } else {
+                    val id = smc.createPlaylist(newPlaylistName)
 
                     for (mid in msuciIs) addIdToList(mid, id)
-                    Toast.makeText(context, "Adding ${msuciIs.size} songs to " + newPlaylistName, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Adding ${msuciIs.size} songs to " + newPlaylistName, Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
 
             builder.show()
-        }else{
-            val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+        } else {
+            val playlists = smc.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
             for (mid in msuciIs) addIdToList(mid, playlists.list[menuid.itemId - 10])
             Toast.makeText(context, "Adding ${msuciIs.size} songs to " + menuid.title, Toast.LENGTH_SHORT).show()
         }
@@ -716,14 +690,13 @@ class SyncMusicController : Application() {
     }
 
     fun addToPlaylistDialog(
-            context: Context,
-            selection: ArrayList<Int>,
-            onSuccess: () -> Unit = {},
-            onCancel: () -> Unit = {},
-    )
-    {
-        val playlistNames : ArrayList<String> = ArrayList()
-        val playlistIds : ArrayList<Int> = ArrayList()
+        context: Context,
+        selection: ArrayList<Int>,
+        onSuccess: () -> Unit = {},
+        onCancel: () -> Unit = {},
+    ) {
+        val playlistNames: ArrayList<String> = ArrayList()
+        val playlistIds: ArrayList<Int> = ArrayList()
 
         val userPlaylists = getList(ListId.ID_MUSIC_USER_PLAYLISTS)
 
@@ -737,7 +710,7 @@ class SyncMusicController : Application() {
 
         val mBuilder = AlertDialog.Builder(context)
 
-        if(selection.size == 1)mBuilder.setTitle("Add " + getMusic(selection[0]).title + " to:")
+        if (selection.size == 1) mBuilder.setTitle("Add " + getMusic(selection[0]).title + " to:")
         else mBuilder.setTitle("Add " + selection.size.toString() + " songs to:")
 
 
@@ -748,16 +721,15 @@ class SyncMusicController : Application() {
 
         mBuilder.setSingleChoiceItems(li2, -1) { dialogInterface, i ->
 
-            if(selection.size == 1)Toast.makeText(
-                    context,
-                    getMusic(selection[0]).title + " added to " + li2[i],
-                    Toast.LENGTH_LONG
+            if (selection.size == 1) Toast.makeText(
+                context,
+                getMusic(selection[0]).title + " added to " + li2[i],
+                Toast.LENGTH_LONG
             ).show()
-
             else Toast.makeText(
-                    context,
-                    selection.size.toString() + " songs added to " + li2[i],
-                    Toast.LENGTH_LONG
+                context,
+                selection.size.toString() + " songs added to " + li2[i],
+                Toast.LENGTH_LONG
             ).show()
 
             for (s in selection) addIdToList(s, playlistIds[i])
@@ -770,15 +742,13 @@ class SyncMusicController : Application() {
         mDialog.show()
     }
 
-    fun deletePlaylist(id : Int)
-    {
+    fun deletePlaylist(id: Int) {
         db.clearListId(id)
         db.deleteListId(id)
-        db.removeIdFromListId(id,ListId.ID_MUSIC_USER_PLAYLISTS)
+        db.removeIdFromListId(id, ListId.ID_MUSIC_USER_PLAYLISTS)
     }
 
-    fun setQueueFiles(files: ArrayList<File>, from: String, idToPlay: Int = -2)
-    {
+    fun setQueueFiles(files: ArrayList<File>, from: String, idToPlay: Int = -2) {
         playingFrom = from
         var id = 0
         var nextQueueId = 0
@@ -793,14 +763,13 @@ class SyncMusicController : Application() {
 
         }.start()*/
 
-        files.forEach{ f ->
+        files.forEach { f ->
 
-            if(isMusicFile(f))
-            {
+            if (isMusicFile(f)) {
                 val insertId = db.addMusicByPath(f)[0]
                 nextQueue.add(insertId)
-                if(id == idToPlay) {
-                    nextQueueId = nextQueue.size -1
+                if (id == idToPlay) {
+                    nextQueueId = nextQueue.size - 1
                 }
             }
             id++
@@ -811,7 +780,7 @@ class SyncMusicController : Application() {
         prepare(nextQueueId)
         play(nextQueueId)
 
-        if(shuffleMode)startShuffle()
+        if (shuffleMode) startShuffle()
     }
 
     override fun onTerminate() {

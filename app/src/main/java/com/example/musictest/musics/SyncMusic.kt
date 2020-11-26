@@ -6,7 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.MediaMetadataRetriever
 import android.util.Log
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -16,7 +16,7 @@ class SyncMusic {
     var path: String = ""
         private set
 
-    val id : Int = 0
+    val id: Int = 0
 
     val IMAGE_SIZE = 500
 
@@ -69,13 +69,14 @@ class SyncMusic {
     }
 
 
-    private fun createThumbnail(byteArray: ByteArray) : Bitmap{
+    private fun createThumbnail(byteArray: ByteArray): Bitmap {
         val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
         val newImage = Bitmap.createBitmap(bmp)
 
         val landscape: Boolean = newImage.width > newImage.height
 
-        val scaleFactor = if (landscape) IMAGE_SIZE.toFloat() / newImage.height else IMAGE_SIZE.toFloat() / newImage.width
+        val scaleFactor =
+            if (landscape) IMAGE_SIZE.toFloat() / newImage.height else IMAGE_SIZE.toFloat() / newImage.width
         val matrix = Matrix()
         matrix.postScale(scaleFactor, scaleFactor)
 
@@ -142,5 +143,5 @@ class SyncMusic {
     var image2: Bitmap? = null
 
     val image: Bitmap?
-        get() = syncMusicController.images[imageId]
+        get() = smc.images[imageId]
 }

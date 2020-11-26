@@ -19,8 +19,7 @@ import kotlinx.android.synthetic.main.activity_splash_screen.*
 
 class SplashScreen : AppCompatActivity() {
 
-    private fun openMainActivity()
-    {
+    private fun openMainActivity() {
         Handler().postDelayed({
             // Init things here ?
             val myIntent: Intent = Intent(this@SplashScreen, MainActivity::class.java)
@@ -31,11 +30,14 @@ class SplashScreen : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if(grantResults[0] == PackageManager.PERMISSION_GRANTED
-                && grantResults[1] == PackageManager.PERMISSION_GRANTED) openMainActivity()
-        else Toast.makeText(baseContext,
-                "You cannot continue without authorizations !",
-                Toast.LENGTH_LONG).show()
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED
+            && grantResults[1] == PackageManager.PERMISSION_GRANTED
+        ) openMainActivity()
+        else Toast.makeText(
+            baseContext,
+            "You cannot continue without authorizations !",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +47,8 @@ class SplashScreen : AppCompatActivity() {
         ll_auth.visibility = View.INVISIBLE
 
         if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            || ContextCompat.checkSelfPermission(this, RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+        ) {
             val a: Animation = object : Animation() {
                 override fun applyTransformation(interpolatedTime: Float, t: Transformation?) {
                     val splashLayout = splashIcon.layoutParams as ConstraintLayout.LayoutParams
@@ -64,12 +67,10 @@ class SplashScreen : AppCompatActivity() {
             a.fillAfter = true
             splashIcon.startAnimation(a)
             ll_auth.visibility = View.VISIBLE
-        }
-        else openMainActivity()
+        } else openMainActivity()
     }
 
-    fun request(v: View)
-    {
+    fun request(v: View) {
         ActivityCompat.requestPermissions(this, arrayOf(READ_EXTERNAL_STORAGE, RECORD_AUDIO), 0)
     }
 }

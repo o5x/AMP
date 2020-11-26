@@ -2,14 +2,7 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
-            <gradient
-                android:type="radial"
-                android:startColor="#192431"
-                android:endColor="#090a0f"
-                android:gradientRadius="150%"
-                android:centerX="50%"
-                android:centerY="100%"
-                />
+            <gradient android:centerX="50%" android:centerY="100%" android:endColor="#090a0f" android:gradientRadius="150%" android:startColor="#192431" android:type="radial" />
         </shape>
     </item>
 </selector>

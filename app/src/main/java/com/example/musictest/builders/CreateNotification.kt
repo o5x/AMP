@@ -11,7 +11,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.text.HtmlCompat
 import com.example.musictest.R
 import com.example.musictest.activities.MusicControllerActivity
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 import com.example.musictest.services.NotificationActionService
 
 object CreateNotification {
@@ -44,43 +44,46 @@ object CreateNotification {
         val pendingIntentNext = PendingIntent.getBroadcast(context, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT)
         val pendingIntentStop = PendingIntent.getBroadcast(context, 0, intentStop, PendingIntent.FLAG_UPDATE_CURRENT)
 
-        val contentIntent = PendingIntent.getActivity(context, 0,
-                Intent(context, MusicControllerActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT)
+        val contentIntent = PendingIntent.getActivity(
+            context, 0,
+            Intent(context, MusicControllerActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT
+        )
 
         // Setup elements
-        val track = syncMusicController.currentMusic
-        val bmp = if (track.image != null) track.image else BitmapFactory.decodeResource(context.resources, R.drawable.music)
-        val playButton = if (syncMusicController.isMusicPlaying) R.drawable.ic_pause2 else R.drawable.ic_play2
-        val likeButton = if (syncMusicController.isCurrentMusicLiked()) R.drawable.ic_favourite else R.drawable.ic_addfavourite
+        val track = smc.currentMusic
+        val bmp =
+            if (track.image != null) track.image else BitmapFactory.decodeResource(context.resources, R.drawable.music)
+        val playButton = if (smc.isMusicPlaying) R.drawable.ic_pause2 else R.drawable.ic_play2
+        val likeButton = if (smc.isCurrentMusicLiked()) R.drawable.ic_favourite else R.drawable.ic_addfavourite
 
         val mediaStyle = androidx.media.app.NotificationCompat.DecoratedMediaCustomViewStyle()
-                .setShowActionsInCompactView(1, 2, 3)
-                .setMediaSession(syncMusicController.mediaSessionCompat.sessionToken)
+            .setShowActionsInCompactView(1, 2, 3)
+            .setMediaSession(smc.mediaSessionCompat.sessionToken)
 
         // Setup title
-        val html = "Playing from <b>${syncMusicController.playingFrom}</b>"
+        val html = "Playing from <b>${smc.playingFrom}</b>"
 
         // Create notification
         notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.appiconrot)
-                .setContentTitle(track.title)
-                .setSubText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY))
-                .setContentText(track.artist)
-                .setLargeIcon(bmp)
-                .setShowWhen(false)
-                .setColorized(true)
-                .setContentIntent(contentIntent)
-                .setNotificationSilent()
-                .addAction(likeButton, "Like", pendingIntentLike)
-                .addAction(R.drawable.ic_prev, "Previous", pendingIntentPrev)
-                .addAction(playButton, "Play", pendingIntentPlay)
-                .addAction(R.drawable.ic_next, "Next", pendingIntentNext)
-                .addAction(R.drawable.ic_close, "Stop", pendingIntentStop)
-                .setStyle(mediaStyle)
-                .setOngoing(true)
-                .setDeleteIntent(pendingIntentStop)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .build()
+            .setSmallIcon(R.drawable.appiconrot)
+            .setContentTitle(track.title)
+            .setSubText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY))
+            .setContentText(track.artist)
+            .setLargeIcon(bmp)
+            .setShowWhen(false)
+            .setColorized(true)
+            .setContentIntent(contentIntent)
+            .setNotificationSilent()
+            .addAction(likeButton, "Like", pendingIntentLike)
+            .addAction(R.drawable.ic_prev, "Previous", pendingIntentPrev)
+            .addAction(playButton, "Play", pendingIntentPlay)
+            .addAction(R.drawable.ic_next, "Next", pendingIntentNext)
+            .addAction(R.drawable.ic_close, "Stop", pendingIntentStop)
+            .setStyle(mediaStyle)
+            .setOngoing(true)
+            .setDeleteIntent(pendingIntentStop)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .build()
 
         val notificationManagerCompat = NotificationManagerCompat.from(context)
         notificationManagerCompat.notify(CHANNEL_NID, notification)

@@ -1,7 +1,6 @@
 package com.example.musictest.activities
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -27,8 +26,6 @@ import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.Compose
 import io.github.jeffshee.visualizer.painters.modifier.Scale
 import kotlinx.android.synthetic.main.activity_music_controller.*
-import kotlinx.android.synthetic.main.fragment_lister_recycler.*
-
 
 class MusicControllerActivity : AppCompatActivity() {
 
@@ -46,28 +43,25 @@ class MusicControllerActivity : AppCompatActivity() {
 
         textViewTitle.isSelected = true
         textViewArtist.isSelected = true
-        //volumeBar = findViewById(R.id.volumeBar)
 
         // Position Bar
         positionBar.setOnSeekBarChangeListener(
-                object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(
-                            seekBar: SeekBar?,
-                            progress: Int,
-                            fromUser: Boolean,
-                    ) {
-                        if (fromUser) {
-                            currentSeek = progress
-                        }
-                    }
-
-                    override fun onStartTrackingTouch(p0: SeekBar?) {
-                    }
-
-                    override fun onStopTrackingTouch(p0: SeekBar?) {
-                        syncMusicController.player.seekTo(currentSeek)
-                    }
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    seekBar: SeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    if (fromUser) currentSeek = progress
                 }
+
+                override fun onStartTrackingTouch(p0: SeekBar?) {
+                }
+
+                override fun onStopTrackingTouch(p0: SeekBar?) {
+                    smc.player.seekTo(currentSeek)
+                }
+            }
         )
 
         val pagerAdapter = ScreenSlidePagerAdapter(this)
@@ -86,14 +80,14 @@ class MusicControllerActivity : AppCompatActivity() {
              }
          })*/
 
-        pager.setCurrentItem(syncMusicController.currentQueueId, false)
+        pager.setCurrentItem(smc.currentQueueId, false)
 
         // Thread
         Thread(Runnable(fun() {
             while (true) {
                 try {
                     val msg = Message()
-                    msg.what = syncMusicController.player.currentPosition
+                    msg.what = smc.player.currentPosition
                     handler.sendMessage(msg)
                     Thread.sleep(100)
                 } catch (e: InterruptedException) {
@@ -104,16 +98,16 @@ class MusicControllerActivity : AppCompatActivity() {
 
         imageButtonMore.setOnClickListener {
 
-            val music = syncMusicController.currentMusic
+            val music = smc.currentMusic
 
-            if(music.valid) {
+            if (music.valid) {
 
                 val popup = PopupMenu(applicationContext, imageButtonMore)
 
                 val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
-                val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+                val playlists = smc.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
                 for (i in 0 until playlists.list.size)
-                    sm.add(0, i + 10, i + 10, syncMusicController.getList(playlists.list[i]).name)
+                    sm.add(0, i + 10, i + 10, smc.getList(playlists.list[i]).name)
 
                 popup.menu.add(0, 2, 2, "View Album")
                 popup.menu.add(0, 3, 3, "View Artist")
@@ -122,8 +116,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
                 popup.setOnMenuItemClickListener { item ->
 
-                    when(item.itemId)
-                    {
+                    when (item.itemId) {
                         1 -> {
                         }
                         2 -> {
@@ -146,7 +139,7 @@ class MusicControllerActivity : AppCompatActivity() {
                             i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                             startActivity(i)
                         }
-                        4 -> {
+                        /*4 -> {
 
                             val builder1 = AlertDialog.Builder(applicationContext)
                             builder1.setTitle(music.title)
@@ -156,10 +149,14 @@ class MusicControllerActivity : AppCompatActivity() {
                             builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
                             val alert11 = builder1.create()
                             alert11.show()
-                        }
+                        }*/
                         in 10..(playlists.list.size + 10) -> {
-                            syncMusicController.addIdToList(syncMusicController.currentMusicId, playlists.list[item.itemId - 10])
-                            Toast.makeText(applicationContext, "Adding ${music.title} to " + item.title, Toast.LENGTH_SHORT).show()
+                            smc.addIdToList(smc.currentMusicId, playlists.list[item.itemId - 10])
+                            Toast.makeText(
+                                applicationContext,
+                                "Adding ${music.title} to " + item.title,
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                         //else -> {Toast.makeText(lrf.context, "Saving song to ${item.itemId}" + item.title , Toast.LENGTH_SHORT).show()}
                     }
@@ -176,9 +173,9 @@ class MusicControllerActivity : AppCompatActivity() {
 
     // Build carousel
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
-        override fun getItemCount(): Int = syncMusicController.getList(ListId.ID_MUSIC_QUEUE).list.size
+        override fun getItemCount(): Int = smc.getList(ListId.ID_MUSIC_QUEUE).list.size
         override fun createFragment(position: Int): Fragment = Image_music.newInstance(
-                position
+            position
         )
     }
 
@@ -191,38 +188,42 @@ class MusicControllerActivity : AppCompatActivity() {
     private fun updateInterface() {
         // Update visualizer
         var bitmap = BitmapFactory.decodeResource(resources, R.drawable.music)
-        if (syncMusicController.currentMusic.image != null)
-            bitmap = syncMusicController.currentMusic.image
+        if (smc.currentMusic.image != null)
+            bitmap = smc.currentMusic.image
 
-        visual.setup(syncMusicController.helper, Scale(Compose(FftCLine(),
-                Scale(Icon(Icon.getCircledBitmap(bitmap)), scaleX = 1.2f, scaleY = 1.2f)
-        ), scaleX = 1.3f, scaleY = 1.3f)
+        visual.setup(
+            smc.helper, Scale(
+                Compose(
+                    FftCLine(),
+                    Scale(Icon(Icon.getCircledBitmap(bitmap)), scaleX = 1.2f, scaleY = 1.2f)
+                ), scaleX = 1.3f, scaleY = 1.3f
+            )
         )
 
         // playing from
-        playingFrom.text = syncMusicController.playingFrom
+        playingFrom.text = smc.playingFrom
         playingFrom.isSelected = true
 
         // Update metadata
-        if (textViewTitle.text != syncMusicController.currentMusic.title) // avoid reset scroll position
-            textViewTitle.text = syncMusicController.currentMusic.title
-        if (textViewArtist.text != syncMusicController.currentMusic.artist)
-            textViewArtist.text = syncMusicController.currentMusic.artist
+        if (textViewTitle.text != smc.currentMusic.title) // avoid reset scroll position
+            textViewTitle.text = smc.currentMusic.title
+        if (textViewArtist.text != smc.currentMusic.artist)
+            textViewArtist.text = smc.currentMusic.artist
 
-        val totalTime = syncMusicController.player.duration
+        val totalTime = smc.player.duration
         positionBar.max = totalTime
         remainingTimeLabel.text = createTimeLabel(totalTime)
 
         // Update Play button
-        if (syncMusicController.isMusicPlaying) playBtn.setBackgroundResource(R.drawable.ic_pause)
+        if (smc.isMusicPlaying) playBtn.setBackgroundResource(R.drawable.ic_pause)
         else playBtn.setBackgroundResource(R.drawable.ic_play)
 
         // Update shuffle
-        if (syncMusicController.shuffleMode) buttonShuffle.setColorFilter(R.color.th)
+        if (smc.shuffleMode) buttonShuffle.setColorFilter(R.color.th)
         else buttonShuffle.colorFilter = null
 
         // update repeat mode
-        when (syncMusicController.repeatMode) {
+        when (smc.repeatMode) {
             Repeat.None -> {
                 buttonRepeat.colorFilter = null
                 buttonRepeat.setImageResource(R.drawable.ic_repeat)
@@ -238,12 +239,12 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // Update shuffle
-        if (syncMusicController.shuffleMode) buttonShuffle.setColorFilter(R.color.th)
+        if (smc.shuffleMode) buttonShuffle.setColorFilter(R.color.th)
         else buttonShuffle.colorFilter = null
 
         // Update favourites
 
-        if (syncMusicController.isCurrentMusicLiked()) {
+        if (smc.isCurrentMusicLiked()) {
             favBtn.setColorFilter(R.color.th)
             favBtn.setImageResource(R.drawable.ic_favourite)
         } else {
@@ -252,9 +253,9 @@ class MusicControllerActivity : AppCompatActivity() {
         }
 
         // update background cover
-        if (pager.currentItem != syncMusicController.currentQueueId) {
+        if (pager.currentItem != smc.currentQueueId) {
             ignoreFirst = true
-            pager.currentItem = syncMusicController.currentQueueId
+            pager.currentItem = smc.currentQueueId
         }
     }
 
@@ -286,25 +287,24 @@ class MusicControllerActivity : AppCompatActivity() {
     }
 
     // Button click actions
-
     fun playBtnClick(v: View) {
-        syncMusicController.togglePlay()
+        smc.togglePlay()
     }
 
     fun nextBtnClick(v: View) {
-        syncMusicController.next()
+        smc.next()
     }
 
     fun prevBtnClick(v: View) {
-        syncMusicController.prev()
+        smc.prev()
     }
 
     fun shuffleClick(v: View) {
-        syncMusicController.toggleShuffle()
+        smc.toggleShuffle()
     }
 
     fun repeatClick(v: View) {
-        syncMusicController.toggleRepeat()
+        smc.toggleRepeat()
     }
 
     fun backClick(v: View) {
@@ -312,18 +312,18 @@ class MusicControllerActivity : AppCompatActivity() {
     }
 
     fun favouriteClick(v: View) {
-        syncMusicController.toggleCurrentMusicLiked()
+        smc.toggleCurrentMusicLiked()
     }
 
     fun playlistClick(v: View) {
-        if(syncMusicController.currentMusic.valid){
-            val cid = syncMusicController.currentMusicId
-            val cur = syncMusicController.currentMusic
+        if (smc.currentMusic.valid) {
+            val cid = smc.currentMusicId
+            val cur = smc.currentMusic
 
             val popup = PopupMenu(applicationContext, v)
-            syncMusicController.addPlaylistMenu(popup.menu)
+            smc.addPlaylistMenu(popup.menu)
             popup.setOnMenuItemClickListener { item ->
-                syncMusicController.processPlaylistMenu(v.context, cid, cur, item)
+                smc.processPlaylistMenu(v.context, cid, cur, item)
                 updateInterface()
                 return@setOnMenuItemClickListener true
             }
@@ -334,10 +334,5 @@ class MusicControllerActivity : AppCompatActivity() {
     fun showlistClick(v: View) {
         intent = Intent(this, QueueActivity::class.java)
         startActivity(intent)
-    }
-
-    override fun onDestroy() {
-
-        super.onDestroy()
     }
 }

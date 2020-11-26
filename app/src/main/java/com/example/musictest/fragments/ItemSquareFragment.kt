@@ -43,8 +43,8 @@ class ItemSquare : Fragment() {
     }
 
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?,
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View? {
         return inflater.inflate(R.layout.fragment_item_square, container, false)
     }
@@ -53,11 +53,20 @@ class ItemSquare : Fragment() {
         callback = f
     }
 
-    private fun dpToPx(dp: Float): Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics).toInt()
+    private fun dpToPx(dp: Float): Int =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.displayMetrics).toInt()
 
     companion object {
 
-        fun addItem(fm: FragmentManager?, layout_id: Int, name: String, description: String, img_id: Int, first: Boolean, size: Float = 110f): ItemSquare {
+        fun addItem(
+            fm: FragmentManager?,
+            layout_id: Int,
+            name: String,
+            description: String,
+            img_id: Int,
+            first: Boolean,
+            size: Float = 110f
+        ): ItemSquare {
             val ft = fm!!.beginTransaction()
             val fragOne = ItemSquare()
             ft.add(layout_id, fragOne)

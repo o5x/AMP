@@ -7,15 +7,15 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
 import com.example.musictest.musics.ListId
 import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
 import com.example.musictest.musics.SyncMusicController.Companion.isVideoFile
 
 
-class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
-    : RecyclerView.Adapter<MovieViewHolder>() {
+class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment) :
+    RecyclerView.Adapter<MovieViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -26,11 +26,9 @@ class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
         holder.bind(listerRecyclerFragment)
     }
 
-    fun selectMode(layoutManager: RecyclerView.LayoutManager, visibility: Int)
-    {
+    fun selectMode(layoutManager: RecyclerView.LayoutManager, visibility: Int) {
         listerRecyclerFragment.checkboxVisibility = visibility
-        for (i in 0 until layoutManager.childCount)
-        {
+        for (i in 0 until layoutManager.childCount) {
             val cb = layoutManager.getChildAt(i)!!.findViewById<CheckBox>(R.id.list_checkBox)
             cb.visibility = visibility
         }
@@ -45,7 +43,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     var mYearView: TextView? = null
     var mImageView: ImageView? = null
     var mCheckBox: CheckBox? = null
-    var imageButtonMore : ImageButton? = null
+    var imageButtonMore: ImageButton? = null
 
     init {
         mTitleView = itemView.findViewById(R.id.list_title)
@@ -57,7 +55,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
     fun bind(lrf: ListerRecyclerFragment) {
 
-        if(adapterPosition >= lrf.childSelected.size) return
+        if (adapterPosition >= lrf.childSelected.size) return
         mCheckBox?.isEnabled = false
         mCheckBox?.visibility = lrf.checkboxVisibility
         mCheckBox?.isChecked = lrf.childSelected[adapterPosition]
@@ -68,7 +66,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
             lrf.clickCallback(adapterPosition)
         }
 
-        when(lrf.listerMode) {
+        when (lrf.listerMode) {
 
             ListerMode.ListFiles -> {
 
@@ -81,8 +79,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                     onclick = {
                         lrf.replaceFragment(
-                                ListerRecyclerFragment().initFile(file.absolutePath),
-                                true
+                            ListerRecyclerFragment().initFile(file.absolutePath),
+                            true
                         )
                     }
                 }
@@ -96,11 +94,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         mImageView?.setImageResource(R.drawable.music)
 
                         onclick = {
-                            syncMusicController.setQueueFiles(lrf.files, lrf.folderPath, adapterPosition)
+                            smc.setQueueFiles(lrf.files, lrf.folderPath, adapterPosition)
                         }
-                    }
-                    else if(isVideoFile(file))
-                    {
+                    } else if (isVideoFile(file)) {
                         mImageView?.setImageResource(R.drawable.video)
                     }
                 }
@@ -111,7 +107,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                     mCheckBox?.isEnabled = true
 
-                    val music = syncMusicController.getMusic(lrf.syncList!!.list[adapterPosition])
+                    val music = smc.getMusic(lrf.syncList!!.list[adapterPosition])
 
                     mTitleView?.text = music.title
                     mYearView?.text = music.artist
@@ -123,7 +119,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         val popup = PopupMenu(lrf.context, imageButtonMore)
 
                         val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
-                        syncMusicController.addPlaylistMenu(sm)
+                        smc.addPlaylistMenu(sm)
                         popup.menu.add(0, 2, 2, "View Album")
                         popup.menu.add(0, 3, 3, "View Artist")
                         popup.menu.add(0, 4, 4, "Info")
@@ -155,7 +151,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     val alert11 = builder1.create()
                                     alert11.show()
                                 }
-                                else -> syncMusicController.processPlaylistMenu(
+                                else -> smc.processPlaylistMenu(
                                     lrf.requireContext(),
                                     lrf.syncList!!.list[adapterPosition],
                                     music,
@@ -172,13 +168,13 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     if (music.image != null) mImageView?.setImageBitmap(music.image)
 
                     onclick = {
-                        syncMusicController.setQueue(lrf.syncList!!.list, lrf.syncListId, adapterPosition, true)
+                        smc.setQueue(lrf.syncList!!.list, lrf.syncListId, adapterPosition, true)
                     }
 
 
                 } else if (lrf.syncList!!.listType == ListContent.ListOfLists) {
 
-                    val sublist = syncMusicController.getList(lrf.syncList!!.list[adapterPosition])
+                    val sublist = smc.getList(lrf.syncList!!.list[adapterPosition])
 
                     mTitleView?.text = sublist.name
 
@@ -202,7 +198,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
 
                         popup.setOnMenuItemClickListener { item ->
-                            val list = syncMusicController.getList(lrf.syncList!!.list[adapterPosition])
+                            val list = smc.getList(lrf.syncList!!.list[adapterPosition])
                             when (item.itemId) {
                                 1 -> {
                                     lrf.replaceFragment(
@@ -211,7 +207,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     )
                                 }
                                 2 -> {
-                                    syncMusicController.setQueue(
+                                    smc.setQueue(
                                         list.list,
                                         lrf.syncList!!.list[adapterPosition],
                                         0,
@@ -219,7 +215,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     )
                                 }
                                 3 -> {
-                                    syncMusicController.deletePlaylist(lrf.syncList!!.list[adapterPosition])
+                                    smc.deletePlaylist(lrf.syncList!!.list[adapterPosition])
                                     Toast.makeText(lrf.context, "Playlist deleted", Toast.LENGTH_SHORT).show()
                                     lrf.reload()
                                 }

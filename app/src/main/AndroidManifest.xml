@@ -35,7 +35,8 @@
             android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity
             android:name=".activities.MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"/>
+            android:configChanges="keyboardHidden|orientation|screenSize" />
+
         <receiver android:name=".services.RemoteControlService">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
@@ -43,8 +44,10 @@
             </intent-filter>
         </receiver>
         <receiver android:name=".services.NotificationActionService" />
+
         <service android:name=".services.OnClearFromRecentService" />
-        <service android:name=".services.MediaPlaybackService"
+        <service
+            android:name=".services.MediaPlaybackService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />

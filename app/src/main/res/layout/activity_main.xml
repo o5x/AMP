@@ -84,13 +84,13 @@
                 android:id="@+id/listerTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Music Title"
                 android:ellipsize="marquee"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:marqueeRepeatLimit="marquee_forever"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
+                android:text="Music Title"
                 android:textColor="@color/white"
                 android:textSize="18sp" />
 
@@ -102,9 +102,9 @@
                 android:focusable="true"
                 android:focusableInTouchMode="true"
                 android:marqueeRepeatLimit="marquee_forever"
-                android:text="by Arrol"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
+                android:text="by Arrol"
                 android:textColor="@color/white" />
         </LinearLayout>
 
@@ -134,7 +134,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#111111"
-            android:onClick="HomeClick"
+            android:onClick="homeClick"
             app:srcCompat="@drawable/ic_home" />
 
         <ImageButton
@@ -143,7 +143,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#111111"
-            android:onClick="SearchClick"
+            android:onClick="searchClick"
             app:srcCompat="@drawable/ic_search" />
 
         <ImageButton
@@ -152,7 +152,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#111111"
-            android:onClick="ColectionClick"
+            android:onClick="collectionClick"
             app:srcCompat="@drawable/ic_collection" />
     </LinearLayout>
 

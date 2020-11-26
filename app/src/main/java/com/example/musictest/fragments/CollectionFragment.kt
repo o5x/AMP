@@ -13,7 +13,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
-import com.example.musictest.activities.syncMusicController
 import com.example.musictest.musics.ListId.Companion.ID_MUSIC_USER_PLAYLISTS
 import kotlinx.android.synthetic.main.fragment_collection.*
 
@@ -31,13 +30,13 @@ class CollectionFragment : Fragment() {
 
         // init with all ids
         ListerRecyclerFragment().addItem(fm, R.id.collectionPlaylists)
-                .initSyncListById(ID_MUSIC_USER_PLAYLISTS, false)
-                //.initPlaylistList(syncMusicController.getPlaylistsIds())
+            .initSyncListById(ID_MUSIC_USER_PLAYLISTS, false)
+        //.initPlaylistList(syncMusicController.getPlaylistsIds())
     }
 
     override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?,
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?,
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_collection, container, false)
@@ -45,8 +44,7 @@ class CollectionFragment : Fragment() {
 
     private fun download(url: String) {
 
-        if(URLUtil.isValidUrl(url))
-        {
+        if (URLUtil.isValidUrl(url)) {
             Toast.makeText(context, "Downloading file", Toast.LENGTH_SHORT).show();
             val request = DownloadManager.Request(Uri.parse(url))
             request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
@@ -62,9 +60,7 @@ class CollectionFragment : Fragment() {
 
             val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             manager.enqueue(request)
-        }
-        else
-        {
+        } else {
             Toast.makeText(context, "CANNOT download file", Toast.LENGTH_SHORT).show();
         }
     }

@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import androidx.media.MediaBrowserServiceCompat
 import com.example.musictest.R
-import com.example.musictest.activities.syncMusicController
+import com.example.musictest.activities.smc
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
 
@@ -14,8 +14,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onCreate() {
         super.onCreate()
-        if (syncMusicController.initialized) {
-            val mediaSession = syncMusicController.mediaSessionCompat
+        if (smc.initialized) {
+            val mediaSession = smc.mediaSessionCompat
             sessionToken = mediaSession.sessionToken
             mediaSession.isActive = true
         }
