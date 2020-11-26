@@ -60,14 +60,11 @@ object CreateNotification {
             .setShowActionsInCompactView(1, 2, 3)
             .setMediaSession(smc.mediaSessionCompat.sessionToken)
 
-        // Setup title
-        val html = "Playing from <b>${smc.playingFrom}</b>"
-
         // Create notification
         notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.appiconrot)
             .setContentTitle(track.title)
-            .setSubText(HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY))
+            .setSubText(HtmlCompat.fromHtml("Playing <b>${smc.playingFrom}</b>", HtmlCompat.FROM_HTML_MODE_LEGACY))
             .setContentText(track.artist)
             .setLargeIcon(bmp)
             .setShowWhen(false)

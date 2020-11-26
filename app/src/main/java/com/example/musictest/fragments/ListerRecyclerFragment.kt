@@ -15,16 +15,13 @@ import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
+import com.example.musictest.musics.SortMode
 import com.example.musictest.musics.SyncList
 import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 import java.io.File
 
 enum class ListerMode {
-    None, ListMusicId, ListPlaylists, ListFiles, syncList
-}
-
-enum class SortMode {
-    Id, IdR, Name, NameR, Random, Date, DateR, Played, PlayedR
+    None, ListFiles, syncList
 }
 
 class ListerRecyclerFragment : Fragment() {
@@ -36,9 +33,6 @@ class ListerRecyclerFragment : Fragment() {
 
     var showHeader = false
 
-    //var title: String = ""
-    //var listIds: ArrayList<Int> = ArrayList()
-    //var listIdsOrigin : Int? = null; //undefined
     var folderPath: String = ""
     var listerMode: ListerMode = ListerMode.None
     var files: ArrayList<File> = ArrayList()
@@ -50,7 +44,7 @@ class ListerRecyclerFragment : Fragment() {
 
     var checkboxVisibility = View.GONE
 
-    var sortMode: SortMode = SortMode.DateR
+    var sortMode: SortMode = SortMode.Date
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,10 +62,11 @@ class ListerRecyclerFragment : Fragment() {
         }
     }
 
-    fun initSyncList(sl: SyncList, header: Boolean = true) {
+    fun initSyncList(sl: SyncList, header: Boolean = true, sortBy : SortMode = SortMode.Date) {
         syncList = sl
         listerMode = ListerMode.syncList
         showHeader = header
+        sortMode = sortBy
     }
 
     fun reload() {
@@ -110,22 +105,22 @@ class ListerRecyclerFragment : Fragment() {
         listerOptions.visibility = View.GONE
         ll_options.visibility = View.GONE
         listerTitle.visibility = View.GONE
+        btn_sort.visibility = View.GONE
+        btn_playall.visibility = View.GONE
 
         btn_sort.setOnClickListener {
             val popup = PopupMenu(context, btn_sort)
-            popup.menu.add(0, 1, 1, "Add id desc")
-            popup.menu.add(0, 2, 2, "Add id asc")
-            popup.menu.add(0, 3, 3, "Alphabetical desc")
-            popup.menu.add(0, 4, 4, "Alphabetical asc")
-            popup.menu.add(0, 5, 5, "Add date desc")
-            popup.menu.add(0, 6, 6, "Add date asc")
-            //popup.menu.add(0, 7, 7, "Most listened desc")
-            //popup.menu.add(0, 8, 8, "Most listened asc")
-            popup.menu.add(0, 9, 9, "Random")
+            //popup.menu.add(0, 1, 1, "Add id desc")
+            //popup.menu.add(0, 2, 2, "Add id asc")
+            popup.menu.add(0, 3, 3, "\uD835\uDC00\uD835\uDC33  Name ▼")
+            popup.menu.add(0, 4, 4, "\uD835\uDC00\uD835\uDC33  Name ▲")
+            popup.menu.add(0, 5, 5, "\uD83D\uDD50  Date ▼")
+            popup.menu.add(0, 6, 6, "\uD83D\uDD50  Date ▲")
+            popup.menu.add(0, 7, 7, "⭐  Favourites ▼")
+            popup.menu.add(0, 8, 8, "⭐  Favourites ▲")
+            popup.menu.add(0, 9, 9, "\uD83D\uDD00  Random")
             popup.setOnMenuItemClickListener { item ->
                 sortMode = when (item.itemId) {
-                    1 -> SortMode.Id
-                    2 -> SortMode.IdR
                     3 -> SortMode.Name
                     4 -> SortMode.NameR
                     5 -> SortMode.Date
@@ -147,7 +142,7 @@ class ListerRecyclerFragment : Fragment() {
         apply()
     }
 
-    fun apply() {
+    private fun apply() {
 
         btn_sort.text = "Sort by " + when (sortMode) {
             SortMode.Id -> "id ▼"
@@ -233,49 +228,18 @@ class ListerRecyclerFragment : Fragment() {
                         iv_list.setImageBitmap(syncList!!.image)
                         tv_title.visibility = View.VISIBLE
                         tv_title.text = syncList!!.name
-                    }
 
-                    if (syncList!!.listType == ListContent.ListOfMusics) {
-
-                        // show play options
                         if (!disableSort) {
                             ll_options.visibility = View.VISIBLE
-
-
-                            // SORT LIST
-                            val cp = smc.musics
-                            when (sortMode) {
-                                SortMode.Id -> {
-                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy { it }))
-                                }
-                                SortMode.IdR -> {
-                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending { it }))
-                                }
-                                SortMode.Name -> {
-                                    syncList!!.list =
-                                        ArrayList(syncList!!.list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
-                                }
-                                SortMode.NameR -> {
-                                    syncList!!.list =
-                                        ArrayList(syncList!!.list.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
-                                }
-                                SortMode.Date -> {
-                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy {
-                                        syncList!!.date[syncList!!.list.indexOf(it)]
-                                    }))
-                                    syncList!!.date = ArrayList(syncList!!.date.sortedWith(compareBy { it }))
-                                }
-                                SortMode.DateR -> {
-                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending {
-                                        syncList!!.date[syncList!!.list.indexOf(it)]
-                                    }))
-                                    syncList!!.date = ArrayList(syncList!!.date.sortedWith(compareByDescending { it }))
-                                }
-                                SortMode.Random -> {
-                                    syncList!!.list.shuffle()
-                                }
-                            }
+                            syncList!!.sort(sortMode)
+                            btn_sort.visibility = View.VISIBLE
+                            btn_playall.visibility = View.VISIBLE
                         }
+                    }
+
+                    if(syncList!!.listContent == ListContent.ListOfLists)
+                    {
+                        btn_playall.visibility = View.GONE
                     }
 
                     childSelected.clear()

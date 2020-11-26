@@ -38,12 +38,13 @@ todo bug fixes :
 todo add :
 - manage multi selection files
 - update interface on lists changed
-- add date to music (last played) + added + play count + time spent on this music ? - musicstats table ?
+- add date to music (last played) + added + play count + time spent on this music ? - music stats table ?
 - show recently played (liked albums playlists, artists)
 - improve sort by name, date, songs count
+- remove musics / playlists from lists
 
 todo optional :
-- make visualizer facultative ?
+- make visualizer facilitative ?
 - add go to album artist on track
 - change search screen to have albums / artist s
 - image lazy load

@@ -51,6 +51,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
             android:paddingTop="10dp"
             android:paddingBottom="20dp">
 
@@ -59,8 +61,9 @@
                 android:id="@+id/btn_playall"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_marginHorizontal="20dp"
                 android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:background="@drawable/rounded_corners"
                 android:paddingHorizontal="20dp"
                 android:text="Play all" />
@@ -69,8 +72,9 @@
                 android:id="@+id/btn_sort"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_marginRight="20dp"
                 android:layout_weight="1"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:background="@drawable/rounded_corners"
                 android:paddingHorizontal="20dp"
                 android:text="Sort by Artist" />

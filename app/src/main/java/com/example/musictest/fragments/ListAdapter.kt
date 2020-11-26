@@ -103,7 +103,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
             }
 
             ListerMode.syncList -> {
-                if (lrf.syncList!!.listType == ListContent.ListOfMusics) {
+                if (lrf.syncList!!.listContent == ListContent.ListOfMusics) {
 
                     mCheckBox?.isEnabled = true
 
@@ -172,13 +172,13 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     }
 
 
-                } else if (lrf.syncList!!.listType == ListContent.ListOfLists) {
+                } else if (lrf.syncList!!.listContent == ListContent.ListOfLists) {
 
                     val sublist = smc.getList(lrf.syncList!!.list[adapterPosition])
 
                     mTitleView?.text = sublist.name
 
-                    if (sublist.listType == ListContent.ListOfMusics) mYearView?.text =
+                    if (sublist.listContent == ListContent.ListOfMusics) mYearView?.text =
                         sublist.list.size.toString() + " Songs"
                     else mYearView?.text = sublist.list.size.toString() + " Lists"
 
@@ -222,7 +222,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                 4 -> {
                                     val builder1 = AlertDialog.Builder(lrf.context)
                                     builder1.setTitle(list.name)
-                                    builder1.setMessage("\nName : ${list.name}\n\nType : ${list.listType}\n\nContains : ${list.list.size} elements")
+                                    builder1.setMessage("\nName : ${list.name}\n\nType : ${list.listContent}\n\nContains : ${list.list.size} elements")
                                     builder1.setCancelable(true)
                                     builder1.setIcon(R.drawable.ic_list)
                                     builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }

@@ -3,40 +3,111 @@ package com.example.musictest.musics
 import android.database.Cursor
 import android.graphics.Bitmap
 import com.example.musictest.activities.smc
+import com.example.musictest.fragments.ListerMode
+
+enum class SortMode {
+    Id, IdR, Name, NameR, Random, Date, DateR, Played, PlayedR
+}
+
+/*
+class ListElement{
+    var target : Int = 0
+    var date: String = ""
+    var count : Int = 0
+}*/
 
 class SyncList {
     var name: String = "Invalid list"
+
+    //var elts: ArrayList<ListElement> = ArrayList()
+
     var list: ArrayList<Int> = ArrayList()
-    var listType = ListContent.ListOfMusics
+    private var listOrigin: ArrayList<Int> = ArrayList()
+    var listContent = ListContent.ListOfMusics
     var valid = false
     var date: ArrayList<String> = ArrayList()
+    var count: ArrayList<Int> = ArrayList()
     var img_id: Int? = null
+
+    //private var dafaultSortMode : SortMode = SortMode.Date // TODO implement save
+
+    fun sort(sortMode: SortMode)
+    {
+        list = listOrigin
+
+        when (sortMode) {
+            SortMode.Name -> {
+                if(listContent == ListContent.ListOfMusics)
+                    list = ArrayList(list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { smc.getMusic(it).title.toString() }))
+                else if(listContent == ListContent.ListOfLists)
+                    list = ArrayList(list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { smc.getList(it).name }))
+            }
+            SortMode.NameR -> {
+                if(listContent == ListContent.ListOfMusics)
+                    list = ArrayList(list.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { smc.getMusic(it).title.toString() }))
+                else if(listContent == ListContent.ListOfLists)
+                    list = ArrayList(list.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { smc.getList(it).name }))
+            }
+            SortMode.Date -> {
+                list = ArrayList(list.sortedWith(compareBy {date[list.indexOf(it)] }))
+            }
+            SortMode.DateR -> {
+                list = ArrayList(list.sortedWith(compareByDescending {date[list.indexOf(it)] }))
+            }
+            SortMode.Played -> {
+                list = ArrayList(list.sortedWith(compareByDescending {count[list.indexOf(it)] }))
+            }
+            SortMode.PlayedR -> {
+                list = ArrayList(list.sortedWith(compareBy {count[list.indexOf(it)] }))
+            }
+            SortMode.Random -> {
+                list.shuffle()
+            }
+        }
+    }
 
     constructor(name_: String, listContent_: ListContent, list_: ArrayList<Int>) {
         list = list_
+        listOrigin = list
         name = name_
-        listType = listContent_
-
+        listContent = listContent_
         valid = true
     }
 
     constructor(name_: String, listContent_: ListContent, imid: Int) {
         list = ArrayList()
+        listOrigin = list
         name = name_
-        listType = listContent_
+        listContent = listContent_
         img_id = imid
         valid = true
     }
 
     constructor(name_: String, cursor: Cursor, listContent_: ListContent, imid: Int) {
         list = ArrayList()
+        listOrigin = list
         name = name_
-        listType = listContent_
+        listContent = listContent_
         valid = true
         img_id = imid
         for (i in 0 until cursor.count) {
             list.add(cursor.getInt(0))
-            date.add(cursor.getString(1))
+
+            if(listContent == ListContent.ListOfLists)
+            {
+                date.add(cursor.getString(1) + ":" +
+                        cursor.getInt(2).toString().padStart(6, '0'))
+                count.add(cursor.getInt(3))
+            }
+            else if (listContent == ListContent.ListOfMusics)
+            {
+                date.add(/*cursor.getString(1) + ":" +*/
+                        cursor.getString(1)+ ":" +
+                                cursor.getInt(2).toString().padStart(6, '0'))
+                count.add(cursor.getInt(3))
+            }
+
+            // to differentiate same time
             cursor.moveToNext()
         }
     }

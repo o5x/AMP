@@ -322,7 +322,7 @@ class MusicDB(private val context: Context) {
         if (list_id == ListId.ID_MUSIC_RECENT_LISTS) updateRecentList()
         if (list_id == ListId.ID_MUSIC_RECENT_MUSICS) updateRecentMusics()
         if (list_id == ListId.ID_MUSIC_MOST) updateMostMusics()
-        // get info from lists
+
         val columnsList = arrayOf(
             DBHelper.LIST_NAME,
             DBHelper.LIST_CONTENT,
@@ -341,17 +341,11 @@ class MusicDB(private val context: Context) {
         )
         cursorList.moveToFirst()
         if (cursorList.count == 0) return SyncList()
+
         val listName = cursorList.getString(0)
         val listContent: ListContent = ListContent.valueOf(cursorList.getString(1))
         //val listType: ListType = ListType.valueOf(cursorList.getString(2))
         val img_id = cursorList.getInt(3)
-
-        /*if(listType == ListType.Artist || listType == ListType.Album)
-        {
-            buildMiniature(list_id)
-        }*/
-
-
         if (img_id > 0 && smc.images[img_id] == null) {
             val columns2 = arrayOf(DBHelper.IMAGE_DATA)
             val where2 = DBHelper.IMAGE_ID + " = " + img_id
@@ -371,25 +365,37 @@ class MusicDB(private val context: Context) {
             }
         }
 
-        // get content from links
-        val columns = arrayOf(DBHelper.LINK_TARGET_ID, DBHelper.LINK_ADD_TIME)
-        val where = "${DBHelper.LINK_LIST_ID} = $list_id"
-        val cursor = database.query(
-            DBHelper.TABLE_LINK,
-            columns,
-            where,
-            null,
-            null,
-            null,
-            null
-        )
-        cursor.moveToFirst()
-        if (cursor.count > 0) {
-            val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
+        // SPLITTED CODE
+        if(listContent == ListContent.ListOfLists)
+        {
+            // get content from links
+
+            var request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN LISTS on target_id = LISTS.id" +
+                    " WHERE list_id = $list_id"
+
+            val cursor = database.rawQuery(request,null)
+            cursor.moveToFirst()
+            if (cursor.count > 0) {
+                val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
+                cursor.close()
+                return list
+            }
             cursor.close()
-            return list
+            return SyncList(listName, listContent, img_id)
         }
-        cursor.close()
+        else if(listContent == ListContent.ListOfMusics)
+        {
+            val request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN STATS on target_id = STATS" +
+                    ".music_id WHERE list_id = $list_id"
+
+            val cursor = database.rawQuery(request,null)
+            cursor.moveToFirst()
+            if (cursor.count > 0) {
+                val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
+                cursor.close()
+                return list
+            }
+        }
         return SyncList(listName, listContent, img_id)
     }
 
@@ -513,17 +519,8 @@ class MusicDB(private val context: Context) {
             contentValue.put(DBHelper.MUSIC_ARTIST_ID, artistId)
             contentValue.put(DBHelper.MUSIC_ALBUM_ID, albumId)
 
-
             val id = database.insert(DBHelper.TABLE_MUSIC, null, contentValue).toInt()
             smc.invalidateMusics()
-
-            /*setListImage(
-                artistId, BitmapFactory.decodeResource(
-                    context.resources,
-                    R.drawable.artist
-                )
-            )
-            setListImage(albumId, BitmapFactory.decodeResource(context.resources, R.drawable.album))*/
 
             addIdToListId(id, artistId)
             addIdToListId(id, albumId)
