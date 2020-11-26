@@ -2,7 +2,6 @@ package com.example.musictest.fragments
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
-import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
-import com.example.musictest.musics.ListType
+import com.example.musictest.musics.ListContent
 import com.example.musictest.musics.SyncList
-import kotlinx.android.synthetic.main.activity_music_controller.*
 import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 import java.io.File
 import java.lang.Exception
@@ -27,13 +25,17 @@ enum class ListerMode {
 }
 
 enum class SortMode {
-    Id, IdR, Name, NameR, Random//(alphabetical), Date, DateR(added), Played, PlayedR (mostplayed)
+    Id, IdR, Name, NameR, Random, Date, DateR, Played, PlayedR
 }
 
 class ListerRecyclerFragment : Fragment() {
 
     var syncList : SyncList? = null
     var syncListId : Int? = null
+
+    var disableSort = true
+
+    var showHeader = false
 
     //var title: String = ""
     //var listIds: ArrayList<Int> = ArrayList()
@@ -47,7 +49,7 @@ class ListerRecyclerFragment : Fragment() {
 
     var childSelected: ArrayList<Boolean> = ArrayList()
 
-    var sortMode: SortMode = SortMode.Id
+    var sortMode: SortMode = SortMode.DateR
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,41 +67,31 @@ class ListerRecyclerFragment : Fragment() {
         {
 
         }
-
-
     }
 
-    /*fun initMusicIdList(list: ArrayList<Int>): ListerRecyclerFragment {
-        listerMode = ListerMode.ListMusicId
-        listIds = list
-        return this
-    }*/
-
-    fun initSyncList(sl : SyncList){
+    fun initSyncList(sl : SyncList, header : Boolean = true){
         syncList = sl
         listerMode = ListerMode.syncList
+        showHeader = header
     }
 
-    fun initSyncListById(id : Int) : ListerRecyclerFragment{
+    fun reload()
+    {
+        if(listerMode == ListerMode.syncList)
+        {
+            syncList = syncMusicController.getList(syncListId!!)
+            apply()
+        }
+    }
+
+    fun initSyncListById(id : Int, header : Boolean = true) : ListerRecyclerFragment{
         syncList = syncMusicController.getList(id)
         listerMode = ListerMode.syncList
         syncListId = id
+        disableSort = false
+        showHeader = header
         return this
     }
-
-    /*fun initMusicIdList(origin : Int): ListerRecyclerFragment {
-        listerMode = ListerMode.ListMusicId
-        listIds = syncMusicController.getList(origin).list
-        listIdsOrigin = origin
-        return this
-    }
-
-    fun initPlaylistList(list: ArrayList<Int>) : ListerRecyclerFragment
-    {
-        listerMode = ListerMode.ListPlaylists
-        listIds = list
-        return this
-    }*/
 
     fun initFile(path: String) : ListerRecyclerFragment
     {
@@ -107,19 +99,6 @@ class ListerRecyclerFragment : Fragment() {
         folderPath = path
         return this
     }
-
-    fun setTitle(title: String) : ListerRecyclerFragment
-    {
-        //this.title = title
-        return this
-    }
-
-    /*private fun getSelection() : ArrayList<Int>
-    {
-        val selection: ArrayList<Int> = ArrayList()
-        for(i in 0 until childSelected.size) if(childSelected[i]) selection.add(i) // TODO GET THAT
-        return selection
-    }*/
 
     fun replaceFragment(fragment: Fragment, force : Boolean)
     {
@@ -139,20 +118,26 @@ class ListerRecyclerFragment : Fragment() {
 
         btn_sort.setOnClickListener {
             val popup = PopupMenu(context, btn_sort)
-            popup.menu.add(0, 1, 1, "Add date desc")
-            popup.menu.add(0, 2, 2, "Add date asc")
+            popup.menu.add(0, 1, 1, "Add id desc")
+            popup.menu.add(0, 2, 2, "Add id asc")
             popup.menu.add(0, 3, 3, "Alphabetical desc")
             popup.menu.add(0, 4, 4, "Alphabetical asc")
-            popup.menu.add(0, 5, 5, "Most listened desc")
-            popup.menu.add(0, 6, 6, "Most listened asc")
-            popup.menu.add(0, 7, 7, "Random")
+            popup.menu.add(0, 5, 5, "Add date desc")
+            popup.menu.add(0, 6, 6, "Add date asc")
+            //popup.menu.add(0, 7, 7, "Most listened desc")
+            //popup.menu.add(0, 8, 8, "Most listened asc")
+            popup.menu.add(0, 9, 9, "Random")
             popup.setOnMenuItemClickListener { item ->
                 sortMode = when (item.itemId) {
                     1 -> SortMode.Id
                     2 -> SortMode.IdR
                     3 -> SortMode.Name
                     4 -> SortMode.NameR
-                    7 -> SortMode.Random
+                    5 -> SortMode.Date
+                    6 -> SortMode.DateR
+                    7 -> SortMode.Played
+                    8 -> SortMode.PlayedR
+                    9 -> SortMode.Random
                     else -> SortMode.Id
                 }
                 apply()
@@ -167,17 +152,24 @@ class ListerRecyclerFragment : Fragment() {
         apply()
     }
 
-    private fun apply() {
+    fun apply() {
 
         btn_sort.text = "Sort by " + when(sortMode){
-            SortMode.Id -> "date ▼"
-            SortMode.IdR -> "date ▲"
+            SortMode.Id -> "id ▼"
+            SortMode.IdR -> "id ▲"
             SortMode.Name -> "name ▼"
             SortMode.NameR -> "name ▲"
+            SortMode.Date -> "date ▼"
+            SortMode.DateR -> "date ▲"
+            SortMode.Played -> "played ▼"
+            SortMode.PlayedR -> "played ▲"
             SortMode.Random-> "random"
         }
 
         val lra = this
+
+        iv_list.visibility = View.GONE
+        tv_title.visibility = View.GONE
 
         list_recycler_view.apply {
 
@@ -241,35 +233,47 @@ class ListerRecyclerFragment : Fragment() {
                 }
                 ListerMode.syncList -> {
 
-                    try {
-                        (activity as MainActivity).tv_title .text = syncList!!.name
-                    }catch (e : Exception){
-
+                    if(showHeader)
+                    {
+                        iv_list.visibility = View.VISIBLE
+                        iv_list.setImageBitmap(syncList!!.image)
+                        tv_title.visibility = View.VISIBLE
+                        tv_title.text = syncList!!.name
                     }
 
-
-                    if(syncList!!.listType == ListType.listOfMusics){
+                    if(syncList!!.listType == ListContent.ListOfMusics){
 
                         // show play options
-                        ll_options.visibility = View.VISIBLE
+                            if(!disableSort){
+                                ll_options.visibility = View.VISIBLE
 
-                        // SORT LIST
-                        val cp = syncMusicController.musics
-                        when (sortMode) {
-                            SortMode.Id -> {
-                                syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy { it }))
-                            }
-                            SortMode.IdR -> {
-                                syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending { it }))
-                            }
-                            SortMode.Name -> {
-                                syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
-                            }
-                            SortMode.NameR -> {
-                                syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
-                            }
-                            SortMode.Random -> {
-                                syncList!!.list.shuffle()
+
+                            // SORT LIST
+                            val cp = syncMusicController.musics
+                            when (sortMode) {
+                                SortMode.Id -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy { it }))
+                                }
+                                SortMode.IdR -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending { it }))
+                                }
+                                SortMode.Name -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
+                                }
+                                SortMode.NameR -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { cp[it]?.title.toString() }))
+                                }
+                                SortMode.Date -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareBy{ syncList!!.date[syncList!!.list.indexOf(it)] }))
+                                    syncList!!.date = ArrayList(syncList!!.date.sortedWith(compareBy{ it }))
+                                }
+                                SortMode.DateR -> {
+                                    syncList!!.list = ArrayList(syncList!!.list.sortedWith(compareByDescending { syncList!!.date[syncList!!.list.indexOf(it)] }))
+                                    syncList!!.date = ArrayList(syncList!!.date.sortedWith(compareByDescending { it }))
+                                }
+                                SortMode.Random -> {
+                                    syncList!!.list.shuffle()
+                                }
                             }
                         }
                     }
@@ -286,13 +290,18 @@ class ListerRecyclerFragment : Fragment() {
                     listerButtonAddTo.setOnClickListener {
                         val selection: ArrayList<Int> = ArrayList()
                         for(i in 0 until childSelected.size) if(childSelected[i]) selection.add(syncList!!.list[i])
-                        syncMusicController.addToPlaylistDialog(syncMusicController.c, selection)
+                        val popup = PopupMenu(context, listerButtonAddTo)
+                        syncMusicController.addPlaylistMenu(popup.menu)
+                        popup.setOnMenuItemClickListener { item ->
+                            syncMusicController.processPlaylistMenu(requireContext(),selection, item)
+                            return@setOnMenuItemClickListener true
+                        }
+                        popup.show();
                     }
 
                     btn_playall.setOnClickListener {
                         syncMusicController.setQueue(syncList!!.list, syncListId, 0, true)
                     }
-
                 }
                 else -> {
                     Toast.makeText(context, "ListerMode None !", Toast.LENGTH_SHORT).show()

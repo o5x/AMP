@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -15,8 +16,12 @@ import java.security.MessageDigest
 
 //data/data/com.example.musictest/databases/musics.db
 
+enum class ListContent {
+    None, ListOfLists, ListOfMusics
+}
+
 enum class ListType {
-    none, listOfLists, listOfMusics
+    None, System, Album, Artist, Playlist
 }
 
 class ListId{
@@ -27,13 +32,17 @@ class ListId{
         const val ID_MUSIC_QUEUE_ORIGINAL = 3
         const val ID_MUSIC_LIKED = 4
         const val ID_MUSIC_MOST = 5
-        const val ID_MUSIC_SUGGEST = 6
-        const val ID_MUSIC_DOWNLOAD = 7
+        const val ID_MUSIC_RECENT_MUSICS = 6
+        const val ID_MUSIC_RECENT_LISTS = 7
+        const val ID_MUSIC_SUGGEST = 8
+        const val ID_MUSIC_DOWNLOAD = 9
 
-        const val ID_MUSIC_ARTISTS = 8
-        const val ID_MUSIC_ALBUMS = 9
+        const val ID_MUSIC_ARTISTS = 10
+        const val ID_MUSIC_ALBUMS = 11
 
-        const val ID_MUSIC_USER_PLAYLISTS = 10
+        const val ID_MUSIC_USER_PLAYLISTS = 12
+
+        const val ID_MUSIC_MAXID = 13
     }
 }
 
@@ -74,7 +83,7 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
         const val STAT_PLAYED_COUNT = "played_count"
         const val STAT_PLAYED_LAST = "played_last"
         const val STAT_PLAYED_TIME = "played_time"
-        const val STAT_ADDED_TIME = "added_time"
+        const val STAT_ADDED_TIME = "added_time" // redundant with list link time in all
 
         // musics columns
         const val MUSIC_ID = "id"
@@ -83,12 +92,15 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
         const val MUSIC_ISVALID = "valid"
         const val MUSIC_TITLE = "title"
         const val MUSIC_ARTIST = "artist"
+        const val MUSIC_ARTIST_ID = "artist_id"
         const val MUSIC_ALBUM = "album"
+        const val MUSIC_ALBUM_ID = "album_id"
         const val MUSIC_IMAGE_ID = "image_id"
 
         // lists columns
         const val LIST_ID = "id"
         const val LIST_NAME = "name"
+        const val LIST_CONTENT = "content"
         const val LIST_TYPE = "type"
         const val LIST_PLAYED_COUNT = "played_count"
         const val LIST_PLAYED_LAST = "played_last"
@@ -120,13 +132,16 @@ class DBMusicHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null
                         " $MUSIC_ISVALID BOOLEAN," +
                         " $MUSIC_TITLE TEXT," +
                         " $MUSIC_ARTIST TEXT," +
+                        " $MUSIC_ARTIST_ID INTEGER," + // TODO INTEGER NOT NULL
                         " $MUSIC_ALBUM TEXT," +
+                        " $MUSIC_ALBUM_ID INTEGER," +
                         " $MUSIC_IMAGE_ID INTEGER);")
 
         const val CREATE_TABLE_LIST =
                 ("CREATE TABLE IF NOT EXISTS $TABLE_LIST(" +
                         "$LIST_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                         " $LIST_NAME TEXT NOT NULL," +
+                        " $LIST_CONTENT TEXT NOT NULL," +
                         " $LIST_TYPE TEXT NOT NULL," +
                         " $LIST_PLAYED_COUNT INTEGER DEFAULT 0," +
                         " $LIST_PLAYED_LAST DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
@@ -171,18 +186,36 @@ class MusicDB(private val context: Context) {
         // Initialize db with default playlists when created
         if(dbHelper.wasCreatedNow)
         {
-            addList("all", ListType.listOfMusics)
-            addList("queue", ListType.listOfMusics)
-            addList("originalQueue", ListType.listOfMusics)
-            addList("liked", ListType.listOfMusics)
-            addList("recent", ListType.listOfMusics)
-            addList("suggest", ListType.listOfMusics)
-            addList("download", ListType.listOfMusics)
+            addList("all", ListType.System, ListContent.ListOfMusics)
+            addList("queue", ListType.System,ListContent.ListOfMusics)
+            addList("originalQueue", ListType.System,ListContent.ListOfMusics)
+            addList("liked", ListType.System,ListContent.ListOfMusics)
+            addList("most played",ListType.System, ListContent.ListOfMusics)
+            addList("recent musics",ListType.System, ListContent.ListOfMusics)
+            addList("recent lists",ListType.System, ListContent.ListOfLists)
+            addList("suggest", ListType.System,ListContent.ListOfMusics)
+            addList("download",ListType.System, ListContent.ListOfMusics)
 
-            addList("artists", ListType.listOfLists)
-            addList("albums", ListType.listOfLists)
+            addList("artists",ListType.System, ListContent.ListOfLists)
+            addList("albums",ListType.System, ListContent.ListOfLists)
 
-            addList("userPlaylists", ListType.listOfLists)
+            addList("userPlaylists", ListType.System,ListContent.ListOfLists)
+
+            val res = context.resources
+            setListImage(ListId.ID_MUSIC_ALL, BitmapFactory.decodeResource(res, R.drawable.all))
+            setListImage(ListId.ID_MUSIC_QUEUE, BitmapFactory.decodeResource(res, R.drawable.queue))
+            setListImage(ListId.ID_MUSIC_QUEUE_ORIGINAL, BitmapFactory.decodeResource(res, R.drawable.queue))
+            setListImage(ListId.ID_MUSIC_LIKED, BitmapFactory.decodeResource(res, R.drawable.liked))
+            setListImage(ListId.ID_MUSIC_MOST, BitmapFactory.decodeResource(res, R.drawable.most))
+            setListImage(ListId.ID_MUSIC_RECENT_MUSICS, BitmapFactory.decodeResource(res, R.drawable.suggest))
+            setListImage(ListId.ID_MUSIC_RECENT_LISTS, BitmapFactory.decodeResource(res, R.drawable.suggest))
+            setListImage(ListId.ID_MUSIC_SUGGEST, BitmapFactory.decodeResource(res, R.drawable.suggest))
+            setListImage(ListId.ID_MUSIC_DOWNLOAD, BitmapFactory.decodeResource(res, R.drawable.download))
+
+            setListImage(ListId.ID_MUSIC_ARTISTS, BitmapFactory.decodeResource(res, R.drawable.artist))
+            setListImage(ListId.ID_MUSIC_ALBUMS, BitmapFactory.decodeResource(res, R.drawable.album))
+
+            setListImage(ListId.ID_MUSIC_USER_PLAYLISTS, BitmapFactory.decodeResource(res, R.drawable.playlist))
 
             addIdToListId(ListId.ID_MUSIC_QUEUE, ListId.ID_MUSIC_USER_PLAYLISTS)
             addIdToListId(ListId.ID_MUSIC_LIKED, ListId.ID_MUSIC_USER_PLAYLISTS)
@@ -199,18 +232,25 @@ class MusicDB(private val context: Context) {
     fun getAllMusicMaps() : HashMap<Int, SyncMusic>
     {
         val list = HashMap<Int, SyncMusic>()
-        val columns = arrayOf(DBMusicHelper.MUSIC_ID, DBMusicHelper.MUSIC_ISVALID, DBMusicHelper.MUSIC_PATH, DBMusicHelper.MUSIC_TITLE, DBMusicHelper.MUSIC_ARTIST, DBMusicHelper.MUSIC_ALBUM, DBMusicHelper.MUSIC_IMAGE_ID)
+        val columns = arrayOf(DBMusicHelper.MUSIC_ID,
+                DBMusicHelper.MUSIC_ISVALID,
+                DBMusicHelper.MUSIC_PATH,
+                DBMusicHelper.MUSIC_TITLE,
+                DBMusicHelper.MUSIC_ARTIST,
+                DBMusicHelper.MUSIC_ARTIST_ID,
+                DBMusicHelper.MUSIC_ALBUM,
+                DBMusicHelper.MUSIC_ALBUM_ID,
+                DBMusicHelper.MUSIC_IMAGE_ID)
 
         val cursor = database.query(DBMusicHelper.TABLE_MUSIC, columns, null, null, null, null, null)
         cursor.moveToFirst()
         for (i in 0 until cursor.count)
         {
-            ///*var ba : ByteArray?= null
-            val imgIndex = cursor.getInt(6)
+            val imgIndex = cursor.getInt(8)
             if(imgIndex > 0 && syncMusicController.images[imgIndex] == null)
             {
                 val columns2 = arrayOf(DBMusicHelper.IMAGE_DATA)
-                val where2 = DBMusicHelper.IMAGE_ID + " = " + cursor.getInt(6).toString()
+                val where2 = DBMusicHelper.IMAGE_ID + " = " + imgIndex
                 val cursor2 = database.query(DBMusicHelper.TABLE_IMAGE, columns2, where2, null, null, null, null)
                 cursor2.moveToFirst()
                 if(cursor2.count > 0)
@@ -218,7 +258,7 @@ class MusicDB(private val context: Context) {
                     val ba = cursor2.getBlob(0)
                     syncMusicController.images[imgIndex] = BitmapFactory.decodeByteArray(ba, 0, ba!!.size)
                 }
-            }//*/
+            }
 
             list[cursor.getInt(0)] = SyncMusic(cursor)
             cursor.moveToNext()
@@ -227,30 +267,78 @@ class MusicDB(private val context: Context) {
         return list
     }
 
+    private fun updateRecentList()
+    {
+        clearListId(ListId.ID_MUSIC_RECENT_LISTS)
+        database.execSQL("INSERT INTO LINKS (list_id,target_id) " +
+                "SELECT ${ListId.ID_MUSIC_RECENT_LISTS} ,id" +
+                "\t\tFROM LISTS " +
+                "\tWHERE played_count > 0" +
+                "\tAND id != ${ListId.ID_MUSIC_QUEUE}" +
+                "\tORDER BY played_last DESC")
+    }
+
+    private fun updateRecentMusics()
+    {
+        clearListId(ListId.ID_MUSIC_RECENT_MUSICS)
+        database.execSQL("INSERT INTO LINKS (list_id,target_id) \n" +
+                "SELECT ${ListId.ID_MUSIC_RECENT_MUSICS} ,music_id\n" +
+                "\t\tFROM STATS \n" +
+                "\tWHERE played_last is not null\n" +
+                "\tORDER BY played_last DESC")
+    }
+
+    private fun updateMostMusics()
+    {
+        clearListId(ListId.ID_MUSIC_MOST)
+        database.execSQL("INSERT INTO LINKS (list_id,target_id) \n" +
+                "SELECT ${ListId.ID_MUSIC_MOST} ,music_id\n" +
+                "\t\tFROM STATS \n" +
+                "\tWHERE played_time > 0\n" +
+                "\tORDER BY played_time DESC")
+    }
+
     fun getListFromId(list_id: Int) : SyncList?
     {
+        if(list_id == ListId.ID_MUSIC_RECENT_LISTS) updateRecentList()
+        if(list_id == ListId.ID_MUSIC_RECENT_MUSICS) updateRecentMusics()
+        if(list_id == ListId.ID_MUSIC_MOST) updateMostMusics()
         // get info from lists
-        val columnsList = arrayOf(DBMusicHelper.LIST_NAME,DBMusicHelper.LIST_TYPE)
+        val columnsList = arrayOf(DBMusicHelper.LIST_NAME,DBMusicHelper.LIST_CONTENT,DBMusicHelper.LIST_IMAGE_ID)
         val whereList = "${DBMusicHelper.LIST_ID} = $list_id"
         val cursorList = database.query(DBMusicHelper.TABLE_LIST, columnsList, whereList, null, null, null, null)
         cursorList.moveToFirst()
         if(cursorList.count == 0) return SyncList()
         val listName = cursorList.getString(0)
-        val listType: ListType = ListType.valueOf(cursorList.getString(1))
+        val listContent: ListContent = ListContent.valueOf(cursorList.getString(1))
+        val img_id = cursorList.getInt(2)
+
+        if(img_id > 0 && syncMusicController.images[img_id] == null)
+        {
+            val columns2 = arrayOf(DBMusicHelper.IMAGE_DATA)
+            val where2 = DBMusicHelper.IMAGE_ID + " = " + img_id
+            val cursor2 = database.query(DBMusicHelper.TABLE_IMAGE, columns2, where2, null, null, null, null)
+            cursor2.moveToFirst()
+            if(cursor2.count > 0)
+            {
+                val ba = cursor2.getBlob(0)
+                syncMusicController.images[img_id] = BitmapFactory.decodeByteArray(ba, 0, ba!!.size)
+            }
+        }
 
         // get content from links
-        val columns = arrayOf(DBMusicHelper.LINK_TARGET_ID)
+        val columns = arrayOf(DBMusicHelper.LINK_TARGET_ID,DBMusicHelper.LINK_ADD_TIME)
         val where = "${DBMusicHelper.LINK_LIST_ID} = $list_id"
         val cursor = database.query(DBMusicHelper.TABLE_LINK, columns, where, null, null, null, null)
         cursor.moveToFirst()
         if(cursor.count > 0)
         {
-            val list = SyncList(listName, cursor, listType)
+            val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
             cursor.close()
             return list
         }
         cursor.close()
-        return SyncList(listName, listType)
+        return SyncList(listName, listContent, img_id)
     }
 
     // adders
@@ -292,6 +380,9 @@ class MusicDB(private val context: Context) {
                 " ${DBMusicHelper.STAT_PLAYED_LAST} = CURRENT_TIMESTAMP," +
                 " ${DBMusicHelper.STAT_PLAYED_TIME} = ${DBMusicHelper.STAT_PLAYED_TIME} + ${if(playedTime < 0) 0 else playedTime}" +
                 " WHERE ${DBMusicHelper.STAT_MUSIC_ID} = $music_id")
+
+        syncMusicController.invalidateList(ListId.ID_MUSIC_RECENT_MUSICS)
+        syncMusicController.invalidateList(ListId.ID_MUSIC_MOST)
     }
 
     fun updateStatForList(list_id : Int, playedCounter: Int)
@@ -300,6 +391,19 @@ class MusicDB(private val context: Context) {
                 "${DBMusicHelper.LIST_PLAYED_COUNT} = ${DBMusicHelper.LIST_PLAYED_COUNT} + ${if (playedCounter < 1) 0 else 1}," +
                 " ${DBMusicHelper.LIST_PLAYED_LAST} = CURRENT_TIMESTAMP" +
                 " WHERE ${DBMusicHelper.LIST_ID} = $list_id")
+
+        syncMusicController.invalidateList(ListId.ID_MUSIC_RECENT_LISTS)
+    }
+
+    fun setListImage(list_id: Int, bitmap: Bitmap) : Int
+    {
+        val id = addImageToDB(bitmap)
+        val where = DBMusicHelper.LIST_ID + " = " + list_id
+        val contentValue = ContentValues()
+        contentValue.put(DBMusicHelper.LIST_IMAGE_ID, id)
+        database.update(DBMusicHelper.TABLE_LIST,contentValue,where,null)
+
+        return -1
     }
 
     fun addMusicByPath(f: File) : Array<Int>
@@ -329,14 +433,25 @@ class MusicDB(private val context: Context) {
             val id = database.insert(DBMusicHelper.TABLE_MUSIC, null, contentValue).toInt()
             syncMusicController.invalidateMusics()
 
+            val aid = addIdToListNameTypeContent(id, music.artist.toString(), ListType.Artist,  ListContent.ListOfMusics)
+            val abid = addIdToListNameTypeContent(id, music.album.toString(), ListType.Album, ListContent.ListOfMusics)
+
+
+            addIdToListId(aid, ListId.ID_MUSIC_ARTISTS)
+            addIdToListId(abid, ListId.ID_MUSIC_ALBUMS)
+
+            setListImage(aid, BitmapFactory.decodeResource(context.resources, R.drawable.artist))
+            setListImage(abid, BitmapFactory.decodeResource(context.resources, R.drawable.album))
+
+            database.execSQL("UPDATE ${DBMusicHelper.TABLE_MUSIC} SET " +
+                    "${DBMusicHelper.MUSIC_ALBUM_ID} = $abid," +
+                    " ${DBMusicHelper.MUSIC_ARTIST_ID} = $aid " +
+                    "WHERE ${DBMusicHelper.MUSIC_ID} = $id")
+
             if(music.valid)
             {
                 // add to all musics
                 addIdToListId(id, ListId.ID_MUSIC_ALL)
-                val aid = addIdToListNameType(id, music.artist.toString(), ListType.listOfMusics)
-                val abid = addIdToListNameType(id, music.album.toString(), ListType.listOfMusics)
-                addIdToListId(aid, ListId.ID_MUSIC_ARTISTS)
-                addIdToListId(abid, ListId.ID_MUSIC_ALBUMS)
 
                 // create music stat
                 val contentValueStat = ContentValues()
@@ -345,7 +460,6 @@ class MusicDB(private val context: Context) {
 
                 return arrayOf(id, 1)
             }
-
             return arrayOf(-1)
         }
         cursor.moveToFirst()
@@ -376,15 +490,16 @@ class MusicDB(private val context: Context) {
 
     //////////////////////////////////////////////////////////////// INSERTS
 
-    private fun addList(name: String, listType: ListType) : Int
+    fun addList(name: String, listType: ListType, listContent: ListContent) : Int
     {
         val columns = arrayOf(DBMusicHelper.LIST_ID)
-        val where = " ${DBMusicHelper.LIST_TYPE} = '$listType' AND ${DBMusicHelper.LIST_NAME} = '${name.replace("'", "''")}' "
+        val where = " ${DBMusicHelper.LIST_CONTENT} = '$listContent' AND ${DBMusicHelper.LIST_NAME} = '${name.replace("'", "''")}' "
         val cursor = database.query(DBMusicHelper.TABLE_LIST, columns, where, null, null, null, null)
         if(cursor.count == 0)
         {
             val contentValue = ContentValues()
             contentValue.put(DBMusicHelper.LIST_NAME, name)
+            contentValue.put(DBMusicHelper.LIST_CONTENT, listContent.toString())
             contentValue.put(DBMusicHelper.LIST_TYPE, listType.toString())
             val c = database.insert(DBMusicHelper.TABLE_LIST, null, contentValue)
             //Log.d("MusicDB", c.toString())
@@ -415,9 +530,9 @@ class MusicDB(private val context: Context) {
 
     //////////////////////////////////////// LIST FUNCTIONS music scan add
 
-    private fun addIdToListNameType(id: Int, listName: String, listType: ListType) : Int
+    private fun addIdToListNameTypeContent(id: Int, listName: String, listType: ListType, listContent: ListContent) : Int
     {
-        val list_id = addList(listName, listType)
+        val list_id = addList(listName,listType, listContent)
 
         if(!isIdInListId(id, list_id))
         {
@@ -452,6 +567,13 @@ class MusicDB(private val context: Context) {
     {
         database.delete(DBMusicHelper.TABLE_LINK, DBMusicHelper.LINK_LIST_ID + "=" + list_id, null);
         syncMusicController.invalidateList(list_id)
+    }
+
+    fun deleteListId(list_id: Int)
+    {
+        database.delete(DBMusicHelper.TABLE_LIST, DBMusicHelper.LIST_ID + "=" + list_id, null);
+        syncMusicController.invalidateList(list_id)
+        //syncMusicController.invalidateList(MOS)
     }
 
     /////////////////////////////////////////////////// clear

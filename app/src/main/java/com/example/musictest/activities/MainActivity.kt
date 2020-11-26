@@ -2,11 +2,14 @@ package com.example.musictest.activities
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.support.v4.media.MediaBrowserCompat
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.ImageButton
@@ -20,16 +23,14 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
 import com.example.musictest.R
 import com.example.musictest.builders.CreateNotification
-import com.example.musictest.fragments.CollectionFragment
-import com.example.musictest.fragments.HomeFragment
-import com.example.musictest.fragments.SearchFragment
-import com.example.musictest.fragments.SettingsFragment
+import com.example.musictest.fragments.*
 import com.example.musictest.musics.SyncMusicController
 import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
 import com.example.musictest.services.MediaPlaybackService
 import com.example.musictest.services.OnClearFromRecentService
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
+import java.util.*
 
 /*
 todo bug fixes :
@@ -63,6 +64,8 @@ class MainActivity : AppCompatActivity() {
 
     private val CHANNEL_ID = "channel2"
     private val CHANNEL_NID = 2
+
+    private var backToMusicControllerActivity = false
 
     private var notificationManager: NotificationManager? = null
 
@@ -134,6 +137,24 @@ class MainActivity : AppCompatActivity() {
 
 
 
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        val b = intent?.extras
+        if (b != null)
+        {
+            if(b.getBoolean("showList"))
+            {
+                replaceFragment(
+                        ListerRecyclerFragment().initSyncListById(b.getInt("listId")),
+                        true)
+                backToMusicControllerActivity = true
+            }
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -203,8 +224,12 @@ class MainActivity : AppCompatActivity() {
         else
             imageView_cover.setImageBitmap(syncMusicController.currentMusic.image)
 
-        listerTitle.text = syncMusicController.currentMusic.title
-        textView_artist.text = syncMusicController.currentMusic.artist
+        // do not break the scroll unless name changed
+        if(listerTitle.text != syncMusicController.currentMusic.title)
+            listerTitle.text = syncMusicController.currentMusic.title
+
+        if(textView_artist.text != syncMusicController.currentMusic.artist)
+            textView_artist.text = syncMusicController.currentMusic.artist
 
         if (syncMusicController.isQueuePlaying && syncMusicController.isNotificationShown)
             CreateNotification.createNotification(this)
@@ -278,7 +303,7 @@ class MainActivity : AppCompatActivity() {
 
     fun openMusicController(v: View) {
         val intent = Intent(this, MusicControllerActivity::class.java)
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        //intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         startActivityIfNeeded(intent, 0);
     }
@@ -287,15 +312,24 @@ class MainActivity : AppCompatActivity() {
         onBackPressed();
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if(currentfragment is ListerRecyclerFragment)
+        {
+            (currentfragment as ListerRecyclerFragment).reload()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (supportFragmentManager.backStackEntryCount == 0)
-            HomeClick(findViewById<View>(android.R.id.content).getRootView())
+            HomeClick(findViewById<View>(android.R.id.content).rootView)
     }
 
     fun getPrevVisibleFragment(): Fragment? {
         val fragmentManager: FragmentManager = this@MainActivity.supportFragmentManager
-        val fragments: List<Fragment> = fragmentManager.getFragments()
+        val fragments: List<Fragment> = fragmentManager.fragments
         var prevFrag: Fragment? = null
 
         for (fragment in fragments) {
@@ -307,11 +341,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        super.onBackPressed()
-        if (supportFragmentManager.backStackEntryCount == 0) {
-            moveTaskToBack(true)
+
+        if(backToMusicControllerActivity)
+        {
+            openMusicController(View(applicationContext))
+            backToMusicControllerActivity = false
+            Handler().postDelayed({
+                super.onBackPressed()
+            }, 100)
+
         }
-        currentfragment = getPrevVisibleFragment()
+        else{
+            super.onBackPressed()
+            if (supportFragmentManager.backStackEntryCount == 0) {
+                moveTaskToBack(true)
+            }
+            currentfragment = getPrevVisibleFragment()
+        }
     }
 
     fun HomeClick(v: View) {

@@ -31,9 +31,13 @@ class SyncMusic {
         get() = if (field == null) "Unknown artist" else field
         private set
 
+    var artistId: Int? = null
+
     var album: String? = null
         get() = if (field == null) "Unknown album" else field
         private set
+
+    var albumId: Int? = null
 
     private var imageId: Int? = null
 
@@ -126,8 +130,10 @@ class SyncMusic {
         this.path = cursor.getString(2)
         this.title = cursor.getString(3)
         this.artist = cursor.getString(4)
-        this.album = cursor.getString(5)
-        this.imageId = cursor.getInt(6)
+        this.artistId = cursor.getInt(5)
+        this.album = cursor.getString(6)
+        this.albumId = cursor.getInt(7)
+        this.imageId = cursor.getInt(8)
     }
 
     constructor()

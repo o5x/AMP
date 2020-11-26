@@ -9,8 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.musics.ListId
-import com.example.musictest.musics.ListType
+import com.example.musictest.musics.ListContent
 import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
+import com.example.musictest.musics.SyncMusicController.Companion.isVideoFile
 
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment)
@@ -59,6 +60,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     fun bind(visibility: Int, lrf: ListerRecyclerFragment) {
 
         if(adapterPosition >= lrf.childSelected.size) return
+        mCheckBox?.isEnabled = false
 
         imageButtonMore?.visibility = View.GONE
 
@@ -70,7 +72,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
             ListerMode.ListFiles -> {
 
-                mCheckBox?.isEnabled = false
+
                 val file = lrf.files[adapterPosition]
                 mTitleView?.text = file.name
 
@@ -98,17 +100,22 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                             syncMusicController.setQueueFiles(lrf.files, lrf.folderPath, adapterPosition)
                         }
                     }
+                    else if(isVideoFile(file))
+                    {
+                        mImageView?.setImageResource(R.drawable.video)
+                    }
                 }
             }
 
             ListerMode.syncList -> {
-                if (lrf.syncList!!.listType == ListType.listOfMusics) {
+                if (lrf.syncList!!.listType == ListContent.ListOfMusics) {
+
+                    mCheckBox?.isEnabled = true
 
                     val music = syncMusicController.getMusic(lrf.syncList!!.list[adapterPosition])
 
                     mTitleView?.text = music.title
                     mYearView?.text = music.artist
-
 
                     // menu options
                     imageButtonMore?.visibility = View.VISIBLE
@@ -117,21 +124,26 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         val popup = PopupMenu(lrf.context, imageButtonMore)
 
                         val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
-                        sm.add(0, 11, 1, "liked ")
-                        for (i in 1 until 7)
-                            sm.add(0, 11 + i, i + 1, "playlist $i")
-
+                        syncMusicController.addPlaylistMenu(sm)
                         popup.menu.add(0, 2, 2, "View Album")
                         popup.menu.add(0, 3, 3, "View Artist")
                         popup.menu.add(0, 4, 4, "Info")
-                        popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
+                        //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
 
                         popup.setOnMenuItemClickListener { item ->
-                            when(item.itemId)
-                            {
-                                1 -> {}
-                                2 -> {Toast.makeText(lrf.context, "Go album ", Toast.LENGTH_SHORT).show()}
-                                3 -> {Toast.makeText(lrf.context, "Go artist ", Toast.LENGTH_SHORT).show()}
+                            when (item.itemId) {
+                                1 -> {
+                                }
+                                2 -> {
+                                    lrf.replaceFragment(
+                                            ListerRecyclerFragment().initSyncListById(music.albumId!!),
+                                            true)
+                                }
+                                3 -> {
+                                    lrf.replaceFragment(
+                                            ListerRecyclerFragment().initSyncListById(music.artistId!!),
+                                            true)
+                                }
                                 4 -> {
                                     val builder1 = AlertDialog.Builder(lrf.context)
                                     builder1.setTitle(music.title)
@@ -141,16 +153,14 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
                                     val alert11 = builder1.create()
                                     alert11.show()
-
                                 }
-                                in 11..50 -> {Toast.makeText(lrf.context, "Saving song to " + item.title , Toast.LENGTH_SHORT).show()}
+                                else -> syncMusicController.processPlaylistMenu(lrf.requireContext(),lrf.syncList!!.list[adapterPosition] , music, item)
                             }
 
                             return@setOnMenuItemClickListener true
                         }
                         popup.show();
                     }
-
 
                     mImageView?.setImageResource(R.drawable.music)
                     if (music.image != null) mImageView?.setImageBitmap(music.image)
@@ -160,19 +170,63 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     }
 
 
-                } else if (lrf.syncList!!.listType == ListType.listOfLists) {
+                } else if (lrf.syncList!!.listType == ListContent.ListOfLists) {
 
                     val sublist = syncMusicController.getList(lrf.syncList!!.list[adapterPosition])
 
                     mTitleView?.text = sublist.name
 
-                    if(sublist.listType == ListType.listOfMusics)mYearView?.text = sublist.list.size.toString() + " Songs"
+                    if (sublist.listType == ListContent.ListOfMusics) mYearView?.text = sublist.list.size.toString() + " Songs"
                     else mYearView?.text = sublist.list.size.toString() + " Lists"
 
-                    when (lrf.syncList!!.list[adapterPosition]) {
-                        ListId.ID_MUSIC_LIKED -> mImageView?.setImageResource(R.drawable.liked)
-                        ListId.ID_MUSIC_QUEUE -> mImageView?.setImageResource(R.drawable.queue)
-                        else -> mImageView?.setImageResource(R.drawable.playlist)
+                    if (lrf.syncList!!.list[adapterPosition] >= ListId.ID_MUSIC_MAXID) {
+                        imageButtonMore?.visibility = View.VISIBLE
+                    }
+
+                    if (sublist.image != null) mImageView?.setImageBitmap(sublist.image)
+
+                    imageButtonMore?.setOnClickListener {
+                        val popup = PopupMenu(lrf.context, imageButtonMore)
+
+
+                        popup.menu.add(0, 1, 1, "View")
+                        popup.menu.add(0, 2, 2, "Play")
+                        popup.menu.add(0, 3, 3, "Delete playlist")
+                        popup.menu.add(0, 4, 4, "Info")
+                        //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
+
+                        popup.setOnMenuItemClickListener { item ->
+                            val list = syncMusicController.getList(lrf.syncList!!.list[adapterPosition])
+                            when (item.itemId) {
+                                1 -> {
+                                    lrf.replaceFragment(
+                                            ListerRecyclerFragment().initSyncListById(lrf.syncList!!.list[adapterPosition]),
+                                            true)
+                                }
+                                2 -> {
+                                    syncMusicController.setQueue(list.list,lrf.syncList!!.list[adapterPosition],0,true)
+                                }
+                                3 -> {
+                                    syncMusicController.deletePlaylist(lrf.syncList!!.list[adapterPosition])
+                                    Toast.makeText(lrf.context, "Playlist deleted" , Toast.LENGTH_SHORT).show()
+                                    lrf.reload()
+                                }
+                                4 -> {
+                                    val builder1 = AlertDialog.Builder(lrf.context)
+                                    builder1.setTitle(list.name)
+                                    builder1.setMessage("\nName : ${list.name}\n\nType : ${list.listType}\n\nContains : ${list.list.size} elements")
+                                    builder1.setCancelable(true)
+                                    builder1.setIcon(R.drawable.ic_list)
+                                    builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
+                                    val alert11 = builder1.create()
+                                    alert11.show()
+                                }
+                                //else -> {Toast.makeText(lrf.context, "Saving song to ${item.itemId}" + item.title , Toast.LENGTH_SHORT).show()}
+                            }
+
+                            return@setOnMenuItemClickListener true
+                        }
+                        popup.show();
                     }
 
                     onclick = {

@@ -14,6 +14,8 @@ import com.example.musictest.musics.ListId
 
 class HomeFragment : Fragment() {
 
+    lateinit var lrf : ListerRecyclerFragment
+
     override fun onResume() {
         super.onResume()
 
@@ -37,7 +39,7 @@ class HomeFragment : Fragment() {
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_LIKED)) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initFile(Environment.getExternalStorageDirectory().toString() + "/Music")) },
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_MOST)) },
-                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_SUGGEST)) }
+                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_RECENT_MUSICS)) }
         )
 
         for (i in tabFav.indices)
@@ -48,8 +50,8 @@ class HomeFragment : Fragment() {
         val tabFav2_i = arrayOf(R.drawable.all, R.drawable.album, R.drawable.artist, R.drawable.download)
         val tabFav2_c = arrayOf(
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_ALL))},
-                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_ALBUMS).setTitle("All albums")) },
-                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_ARTISTS).setTitle("All Artists")) },
+                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_ALBUMS))},
+                { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_ARTISTS))},
                 { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_DOWNLOAD))}
         )
 
@@ -58,8 +60,17 @@ class HomeFragment : Fragment() {
         }
 
         // FILL suggested
-        ListerRecyclerFragment().addItem(fm, R.id.layout_recent).initSyncListById(ListId.ID_MUSIC_USER_PLAYLISTS)
+        lrf = ListerRecyclerFragment().addItem(fm, R.id.layout_recent).initSyncListById(ListId.ID_MUSIC_RECENT_LISTS,false)
     }
+
+    override fun onStart() {
+        super.onStart()
+        lrf.reload()
+    }
+
+
+
+
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,

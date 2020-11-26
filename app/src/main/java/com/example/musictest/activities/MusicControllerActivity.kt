@@ -27,6 +27,7 @@ import io.github.jeffshee.visualizer.painters.misc.Icon
 import io.github.jeffshee.visualizer.painters.modifier.Compose
 import io.github.jeffshee.visualizer.painters.modifier.Scale
 import kotlinx.android.synthetic.main.activity_music_controller.*
+import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 
 
 class MusicControllerActivity : AppCompatActivity() {
@@ -103,48 +104,70 @@ class MusicControllerActivity : AppCompatActivity() {
 
         imageButtonMore.setOnClickListener {
 
-            val popup = PopupMenu(applicationContext, imageButtonMore)
+            val music = syncMusicController.currentMusic
 
-            val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
-            sm.add(0, 11, 1, "liked ")
-            for (i in 1 until 7)
-                sm.add(0, 11 + i, i + 1, "playlist $i")
+            if(music.valid) {
 
-            popup.menu.add(0, 2, 2, "View Album")
-            popup.menu.add(0, 3, 3, "View Artist")
-            popup.menu.add(0, 4, 4, "Info")
-            popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
+                val popup = PopupMenu(applicationContext, imageButtonMore)
 
-            popup.setOnMenuItemClickListener { item ->
+                val sm = popup.menu.addSubMenu(0, 1, 1, "Add to playlist")
+                val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+                for (i in 0 until playlists.list.size)
+                    sm.add(0, i + 10, i + 10, syncMusicController.getList(playlists.list[i]).name)
 
-                when(item.itemId)
-                {
-                    1 -> {}
-                    2 -> {
-                        Toast.makeText(applicationContext, "Go album ", Toast.LENGTH_SHORT).show()}
-                    3 -> {
-                        Toast.makeText(applicationContext, "Go artist ", Toast.LENGTH_SHORT).show()}
-                    4 -> {
-                        val builder1 = AlertDialog.Builder(applicationContext)
-                        builder1.setTitle(syncMusicController.currentMusic.title)
-                        builder1.setMessage("\nName : ${syncMusicController.currentMusic.title}\n\n" +
-                                "Album : ${syncMusicController.currentMusic.album}\n\n" +
-                                "Artist : ${syncMusicController.currentMusic.artist}\n\n" +
-                                "Path : ${syncMusicController.currentMusic.path}")
-                        builder1.setCancelable(true)
-                        builder1.setIcon(R.drawable.ic_music)
-                        builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
-                        val alert11 = builder1.create()
-                        alert11.show()
+                popup.menu.add(0, 2, 2, "View Album")
+                popup.menu.add(0, 3, 3, "View Artist")
+                //popup.menu.add(0, 4, 4, "Info")
+                //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
 
+                popup.setOnMenuItemClickListener { item ->
+
+                    when(item.itemId)
+                    {
+                        1 -> {
+                        }
+                        2 -> {
+                            val i = Intent(this, MainActivity::class.java)
+                            val b = Bundle()
+                            b.putBoolean("showList", true)
+                            b.putInt("listId", music.albumId!!)
+                            i.putExtras(b)
+                            i.action = Intent.ACTION_MAIN
+                            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                            startActivity(i)
+                        }
+                        3 -> {
+                            val i = Intent(this, MainActivity::class.java)
+                            val b = Bundle()
+                            b.putBoolean("showList", true)
+                            b.putInt("listId", music.artistId!!)
+                            i.putExtras(b)
+                            i.action = Intent.ACTION_MAIN
+                            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                            startActivity(i)
+                        }
+                        4 -> {
+
+                            val builder1 = AlertDialog.Builder(applicationContext)
+                            builder1.setTitle(music.title)
+                            builder1.setMessage("\nName : ${music.title}\n\nAlbum : ${music.album}\n\nArtist : ${music.artist}\n\nPath : ${music.path}")
+                            builder1.setCancelable(true)
+                            builder1.setIcon(R.drawable.ic_music)
+                            builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
+                            val alert11 = builder1.create()
+                            alert11.show()
+                        }
+                        in 10..(playlists.list.size + 10) -> {
+                            syncMusicController.addIdToList(syncMusicController.currentMusicId, playlists.list[item.itemId - 10])
+                            Toast.makeText(applicationContext, "Adding ${music.title} to " + item.title, Toast.LENGTH_SHORT).show()
+                        }
+                        //else -> {Toast.makeText(lrf.context, "Saving song to ${item.itemId}" + item.title , Toast.LENGTH_SHORT).show()}
                     }
-                    in 11..50 -> {
-                        Toast.makeText(applicationContext, "Saving song to " + item.title , Toast.LENGTH_SHORT).show()}
-                }
 
-                return@setOnMenuItemClickListener true
+                    return@setOnMenuItemClickListener true
+                }
+                popup.show();
             }
-            popup.show();
         }
 
         // update interface before showing
@@ -293,12 +316,19 @@ class MusicControllerActivity : AppCompatActivity() {
     }
 
     fun playlistClick(v: View) {
-        if (syncMusicController.currentMusicId < 0) return
-        val ids = ArrayList<Int>()
-        ids.add(syncMusicController.currentMusicId)
-        syncMusicController.addToPlaylistDialog(this, ids, onSuccess = {
-            updateInterface()
-        })
+        if(syncMusicController.currentMusic.valid){
+            val cid = syncMusicController.currentMusicId
+            val cur = syncMusicController.currentMusic
+
+            val popup = PopupMenu(applicationContext, v)
+            syncMusicController.addPlaylistMenu(popup.menu)
+            popup.setOnMenuItemClickListener { item ->
+                syncMusicController.processPlaylistMenu(v.context, cid, cur, item)
+                updateInterface()
+                return@setOnMenuItemClickListener true
+            }
+            popup.show();
+        }
     }
 
     fun showlistClick(v: View) {

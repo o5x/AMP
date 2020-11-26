@@ -14,9 +14,14 @@ import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.text.InputType
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
 import android.widget.Toast
 import androidx.preference.PreferenceManager
+import com.example.musictest.R
 import com.example.musictest.activities.syncMusicController
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
@@ -157,12 +162,19 @@ class SyncMusicController : Application() {
         db.clearListId(id)
     }
 
-    private fun addIdToList(music_id: Int, list_id: Int) {
+    fun addIdToList(music_id: Int, list_id: Int) {
         db.addIdToListId(music_id, list_id)
     }
 
     private fun removeIdFromList(music_id: Int, list_id: Int) {
         db.removeIdFromListId(music_id, list_id)
+    }
+
+    fun createPlaylist(name : String) : Int{
+        val id = db.addList(name,ListType.Playlist, ListContent.ListOfMusics)
+        db.addIdToListId(id, ListId.ID_MUSIC_USER_PLAYLISTS)
+        db.setListImage(id, BitmapFactory.decodeResource(c.resources, R.drawable.playlist))
+        return id
     }
 
 
@@ -183,6 +195,17 @@ class SyncMusicController : Application() {
                     || f.name.endsWith(".mid")
                     || f.name.endsWith(".ogg")
                     || f.name.endsWith(".mkv"))
+        }
+
+        fun isVideoFile(f: File): Boolean {
+            return f.isFile
+                    && (f.name.endsWith(".mp4")
+                    || f.name.endsWith(".avi")
+                    || f.name.endsWith(".webm")
+                    || f.name.endsWith(".mpeg")
+                    || f.name.endsWith(".mpv")
+                    || f.name.endsWith(".mov")
+                    || f.name.endsWith(".flv"))
         }
     }
     ///////////////////////////////////////// Context init
@@ -611,9 +634,84 @@ class SyncMusicController : Application() {
         return getMusic(getList(ListId.ID_MUSIC_QUEUE).list[queueId])
     }
 
-
-    fun addMusicIdsToPlaylistName(selection: ArrayList<Int>, text: String)
+    fun addPlaylistMenu(sm : Menu)
     {
+        sm.add(0, 9, 9, "Create new playlist")
+        val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+        for (i in 0 until playlists.list.size)
+            sm.add(0, i + 10, i + 10, syncMusicController.getList(playlists.list[i]).name)
+    }
+
+    fun processPlaylistMenu(context: Context,msuciIs : Int, music : SyncMusic, menuid : MenuItem)
+    {
+        if(menuid.itemId == 9){
+
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("New Playlist")
+
+            val input = EditText(context)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
+
+
+            builder.setPositiveButton("Save") { dialog, _ ->
+                val newPlaylistName = input.text.toString()
+                if(newPlaylistName.length < 2)
+                {
+                    Toast.makeText(context, "Playlist name too short", Toast.LENGTH_SHORT).show()
+                }
+                else
+                {
+                    val id = syncMusicController.createPlaylist(newPlaylistName)
+                    syncMusicController.addIdToList(msuciIs, id)
+                    Toast.makeText(context, "Adding ${music.title} to " + newPlaylistName, Toast.LENGTH_SHORT).show()
+                }
+            }
+            builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
+
+            builder.show()
+        }else{
+            val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+            syncMusicController.addIdToList(msuciIs, playlists.list[menuid.itemId - 10])
+            Toast.makeText(context, "Adding ${music.title} to " + menuid.title, Toast.LENGTH_SHORT).show()
+        }
+
+    }
+
+    fun processPlaylistMenu(context: Context,msuciIs : ArrayList<Int>, menuid : MenuItem)
+    {
+        if(menuid.itemId == 9){
+
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("New Playlist")
+
+            val input = EditText(context)
+            input.inputType = InputType.TYPE_CLASS_TEXT
+            builder.setView(input)
+
+
+            builder.setPositiveButton("Save") { dialog, _ ->
+                val newPlaylistName = input.text.toString()
+                if(newPlaylistName.length < 2)
+                {
+                    Toast.makeText(context, "Playlist name too short", Toast.LENGTH_SHORT).show()
+                }
+                else
+                {
+                    val id = syncMusicController.createPlaylist(newPlaylistName)
+
+                    for (mid in msuciIs) addIdToList(mid, id)
+                    Toast.makeText(context, "Adding ${msuciIs.size} songs to " + newPlaylistName, Toast.LENGTH_SHORT).show()
+                }
+            }
+            builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
+
+            builder.show()
+        }else{
+            val playlists = syncMusicController.getList(ListId.ID_MUSIC_USER_PLAYLISTS)
+            for (mid in msuciIs) addIdToList(mid, playlists.list[menuid.itemId - 10])
+            Toast.makeText(context, "Adding ${msuciIs.size} songs to " + menuid.title, Toast.LENGTH_SHORT).show()
+        }
 
     }
 
@@ -662,7 +760,7 @@ class SyncMusicController : Application() {
                     Toast.LENGTH_LONG
             ).show()
 
-            for (s in selection) addIdToList(s, i)
+            for (s in selection) addIdToList(s, playlistIds[i])
 
             dialogInterface.dismiss()
             onSuccess()
@@ -670,6 +768,13 @@ class SyncMusicController : Application() {
 
         val mDialog = mBuilder.create()
         mDialog.show()
+    }
+
+    fun deletePlaylist(id : Int)
+    {
+        db.clearListId(id)
+        db.deleteListId(id)
+        db.removeIdFromListId(id,ListId.ID_MUSIC_USER_PLAYLISTS)
     }
 
     fun setQueueFiles(files: ArrayList<File>, from: String, idToPlay: Int = -2)

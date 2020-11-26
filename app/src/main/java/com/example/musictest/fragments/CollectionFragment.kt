@@ -31,7 +31,7 @@ class CollectionFragment : Fragment() {
 
         // init with all ids
         ListerRecyclerFragment().addItem(fm, R.id.collectionPlaylists)
-                .initSyncListById(ID_MUSIC_USER_PLAYLISTS)
+                .initSyncListById(ID_MUSIC_USER_PLAYLISTS, false)
                 //.initPlaylistList(syncMusicController.getPlaylistsIds())
     }
 

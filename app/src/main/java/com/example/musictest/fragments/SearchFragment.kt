@@ -13,6 +13,8 @@ import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.syncMusicController
 import com.example.musictest.musics.ListId
+import com.example.musictest.musics.ListContent
+import com.example.musictest.musics.SyncList
 import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -70,8 +72,8 @@ class SearchFragment : Fragment() {
                     view.findViewById<LinearLayout>(R.id.searchResultLayout).removeAllViews()
                     tab = newTab
 
-                    //if (tab.size > 0)
-                        //addListItem(fm, R.id.searchResultLayout).initMusicIdList(tab) // TODO RESTORE
+                    if (tab.size > 0)
+                        addListItem(fm, R.id.searchResultLayout).initSyncList(SyncList("Search", ListContent.ListOfMusics, tab))
                 }
             }
         })
