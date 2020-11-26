@@ -275,6 +275,7 @@ class MusicDB(private val context: Context) {
                         ba!!.size
                     )
                 }
+                cursor2.close()
             }
 
             list[cursor.getInt(0)] = SyncMusic(cursor)
@@ -345,10 +346,10 @@ class MusicDB(private val context: Context) {
         val listName = cursorList.getString(0)
         val listContent: ListContent = ListContent.valueOf(cursorList.getString(1))
         //val listType: ListType = ListType.valueOf(cursorList.getString(2))
-        val img_id = cursorList.getInt(3)
-        if (img_id > 0 && smc.images[img_id] == null) {
+        val imgId = cursorList.getInt(3)
+        if (imgId > 0 && smc.images[imgId] == null) {
             val columns2 = arrayOf(DBHelper.IMAGE_DATA)
-            val where2 = DBHelper.IMAGE_ID + " = " + img_id
+            val where2 = DBHelper.IMAGE_ID + " = " + imgId
             val cursor2 = database.query(
                 DBHelper.TABLE_IMAGE,
                 columns2,
@@ -361,27 +362,29 @@ class MusicDB(private val context: Context) {
             cursor2.moveToFirst()
             if (cursor2.count > 0) {
                 val ba = cursor2.getBlob(0)
-                smc.images[img_id] = BitmapFactory.decodeByteArray(ba, 0, ba!!.size)
+                smc.images[imgId] = BitmapFactory.decodeByteArray(ba, 0, ba!!.size)
             }
+            cursor2.close()
         }
+        cursorList.close()
 
         // SPLITTED CODE
         if(listContent == ListContent.ListOfLists)
         {
             // get content from links
 
-            var request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN LISTS on target_id = LISTS.id" +
+            val request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN LISTS on target_id = LISTS.id" +
                     " WHERE list_id = $list_id"
 
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
             if (cursor.count > 0) {
-                val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
+                val list = SyncList(listName, cursor, listContent, imgId) // add image_id1
                 cursor.close()
                 return list
             }
             cursor.close()
-            return SyncList(listName, listContent, img_id)
+            return SyncList(listName, listContent, imgId)
         }
         else if(listContent == ListContent.ListOfMusics)
         {
@@ -391,12 +394,12 @@ class MusicDB(private val context: Context) {
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
             if (cursor.count > 0) {
-                val list = SyncList(listName, cursor, listContent, img_id) // add image_id1
+                val list = SyncList(listName, cursor, listContent, imgId) // add image_id1
                 cursor.close()
                 return list
             }
         }
-        return SyncList(listName, listContent, img_id)
+        return SyncList(listName, listContent, imgId)
     }
 
     // adders
@@ -434,7 +437,9 @@ class MusicDB(private val context: Context) {
             return database.insert(DBHelper.TABLE_IMAGE, null, values).toInt()
         }
         cursor.moveToFirst()
-        return cursor.getInt(0)
+        val ret= cursor.getInt(0)
+        cursor.close()
+        return ret
     }
 
     fun updateStatForMusic(music_id: Int, playedCounter: Int, playedTime: Int) {
@@ -633,12 +638,12 @@ class MusicDB(private val context: Context) {
     }
 
     fun clearListId(list_id: Int) {
-        database.delete(DBHelper.TABLE_LINK, DBHelper.LINK_LIST_ID + "=" + list_id, null);
+        database.delete(DBHelper.TABLE_LINK, DBHelper.LINK_LIST_ID + "=" + list_id, null)
         smc.invalidateList(list_id)
     }
 
     fun deleteListId(list_id: Int) {
-        database.delete(DBHelper.TABLE_LIST, DBHelper.LIST_ID + "=" + list_id, null);
+        database.delete(DBHelper.TABLE_LIST, DBHelper.LIST_ID + "=" + list_id, null)
         smc.invalidateList(list_id)
         //syncMusicController.invalidateList(MOS)
     }
@@ -646,6 +651,6 @@ class MusicDB(private val context: Context) {
     /////////////////////////////////////////////////// clear
 
     private fun clear() {
-        context.deleteDatabase(DBHelper.DB_NAME);
+        context.deleteDatabase(DBHelper.DB_NAME)
     }
 }

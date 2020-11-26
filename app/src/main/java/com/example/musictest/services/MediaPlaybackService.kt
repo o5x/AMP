@@ -22,6 +22,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
-        result.sendResult(null);
+        result.sendResult(null)
     }
 }

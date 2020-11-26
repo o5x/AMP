@@ -102,7 +102,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 }
             }
 
-            ListerMode.syncList -> {
+            ListerMode.SyncList -> {
                 if (lrf.syncList!!.listContent == ListContent.ListOfMusics) {
 
                     mCheckBox?.isEnabled = true
@@ -158,7 +158,6 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     item
                                 )
                             }
-
                             return@setOnMenuItemClickListener true
                         }
                         popup.show();
@@ -185,7 +184,6 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     if (lrf.syncList!!.list[adapterPosition] >= ListId.ID_MUSIC_MAX_ID)
                         imageButtonMore?.visibility = View.VISIBLE
 
-
                     if (sublist.image != null) mImageView?.setImageBitmap(sublist.image)
 
                     imageButtonMore?.setOnClickListener {
@@ -207,12 +205,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     )
                                 }
                                 2 -> {
-                                    smc.setQueue(
-                                        list.list,
-                                        lrf.syncList!!.list[adapterPosition],
-                                        0,
-                                        true
-                                    )
+                                    smc.setQueue( list.list,lrf.syncList!!.list[adapterPosition],0,true)
                                 }
                                 3 -> {
                                     smc.deletePlaylist(lrf.syncList!!.list[adapterPosition])
@@ -231,10 +224,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                 }
                                 //else -> {Toast.makeText(lrf.context, "Saving song to ${item.itemId}" + item.title , Toast.LENGTH_SHORT).show()}
                             }
-
                             return@setOnMenuItemClickListener true
                         }
-                        popup.show();
+                        popup.show()
                     }
 
                     onclick = {
@@ -243,12 +235,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                             true
                         )
                     }
-
                 }
             }
-            else -> {
-
-            }
+            else -> { }
         }
 
         itemView.setOnClickListener {

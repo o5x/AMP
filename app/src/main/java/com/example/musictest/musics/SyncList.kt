@@ -3,7 +3,6 @@ package com.example.musictest.musics
 import android.database.Cursor
 import android.graphics.Bitmap
 import com.example.musictest.activities.smc
-import com.example.musictest.fragments.ListerMode
 
 enum class SortMode {
     Id, IdR, Name, NameR, Random, Date, DateR, Played, PlayedR
@@ -25,9 +24,9 @@ class SyncList {
     private var listOrigin: ArrayList<Int> = ArrayList()
     var listContent = ListContent.ListOfMusics
     var valid = false
-    var date: ArrayList<String> = ArrayList()
-    var count: ArrayList<Int> = ArrayList()
-    var img_id: Int? = null
+    private var date: ArrayList<String> = ArrayList()
+    private var count: ArrayList<Int> = ArrayList()
+    private var imgId: Int? = null
 
     //private var dafaultSortMode : SortMode = SortMode.Date // TODO implement save
 
@@ -63,6 +62,7 @@ class SyncList {
             SortMode.Random -> {
                 list.shuffle()
             }
+            else -> {}
         }
     }
 
@@ -79,7 +79,7 @@ class SyncList {
         listOrigin = list
         name = name_
         listContent = listContent_
-        img_id = imid
+        imgId = imid
         valid = true
     }
 
@@ -89,7 +89,7 @@ class SyncList {
         name = name_
         listContent = listContent_
         valid = true
-        img_id = imid
+        imgId = imid
         for (i in 0 until cursor.count) {
             list.add(cursor.getInt(0))
 
@@ -113,7 +113,7 @@ class SyncList {
     }
 
     val image: Bitmap?
-        get() = smc.images[img_id]
+        get() = smc.images[imgId]
 
     constructor()
 }

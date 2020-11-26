@@ -21,7 +21,7 @@ import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 import java.io.File
 
 enum class ListerMode {
-    None, ListFiles, syncList
+    None, ListFiles, SyncList
 }
 
 class ListerRecyclerFragment : Fragment() {
@@ -29,9 +29,9 @@ class ListerRecyclerFragment : Fragment() {
     var syncList: SyncList? = null
     var syncListId: Int? = null
 
-    var disableSort = true
+    private var disableSort = true
 
-    var showHeader = false
+    private var showHeader = false
 
     var folderPath: String = ""
     var listerMode: ListerMode = ListerMode.None
@@ -44,7 +44,7 @@ class ListerRecyclerFragment : Fragment() {
 
     var checkboxVisibility = View.GONE
 
-    var sortMode: SortMode = SortMode.Date
+    private var sortMode: SortMode = SortMode.Date
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,13 +64,13 @@ class ListerRecyclerFragment : Fragment() {
 
     fun initSyncList(sl: SyncList, header: Boolean = true, sortBy : SortMode = SortMode.Date) {
         syncList = sl
-        listerMode = ListerMode.syncList
+        listerMode = ListerMode.SyncList
         showHeader = header
         sortMode = sortBy
     }
 
     fun reload() {
-        if (listerMode == ListerMode.syncList) {
+        if (listerMode == ListerMode.SyncList) {
             syncList = smc.getList(syncListId!!)
             apply()
         }
@@ -78,7 +78,7 @@ class ListerRecyclerFragment : Fragment() {
 
     fun initSyncListById(id: Int, header: Boolean = true): ListerRecyclerFragment {
         syncList = smc.getList(id)
-        listerMode = ListerMode.syncList
+        listerMode = ListerMode.SyncList
         syncListId = id
         disableSort = false
         showHeader = header
@@ -133,7 +133,7 @@ class ListerRecyclerFragment : Fragment() {
                 apply()
                 return@setOnMenuItemClickListener true
             }
-            popup.show();
+            popup.show()
         }
 
         //if (title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
@@ -221,7 +221,7 @@ class ListerRecyclerFragment : Fragment() {
                     childSelected.clear()
                     for (i in 0 until files.size) childSelected.add(false)
                 }
-                ListerMode.syncList -> {
+                ListerMode.SyncList -> {
 
                     if (showHeader) {
                         iv_list.visibility = View.VISIBLE
@@ -243,7 +243,7 @@ class ListerRecyclerFragment : Fragment() {
                     }
 
                     childSelected.clear()
-                    for (i in 0 until syncList!!.list.size) childSelected.add(false);
+                    for (i in 0 until syncList!!.list.size) childSelected.add(false)
 
                     listerButtonPlay.setOnClickListener {
                         val selection: ArrayList<Int> = ArrayList()
@@ -260,7 +260,7 @@ class ListerRecyclerFragment : Fragment() {
                             smc.processPlaylistMenu(requireContext(), selection, item)
                             return@setOnMenuItemClickListener true
                         }
-                        popup.show();
+                        popup.show()
                     }
 
                     btn_playall.setOnClickListener {

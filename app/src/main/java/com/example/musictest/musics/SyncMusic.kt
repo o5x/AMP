@@ -18,7 +18,7 @@ class SyncMusic {
 
     val id: Int = 0
 
-    val IMAGE_SIZE = 500
+    private val IMAGE_SIZE = 500
 
     var hash: ByteArray? = null
         private set
@@ -39,7 +39,7 @@ class SyncMusic {
 
     var albumId: Int? = null
 
-    var imageId: Int? = null
+    private var imageId: Int? = null
 
     var valid = false
         private set
@@ -70,7 +70,7 @@ class SyncMusic {
 
 
     private fun createThumbnail(byteArray: ByteArray): Bitmap {
-        val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray!!.size)
+        val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
         val newImage = Bitmap.createBitmap(bmp)
 
         val landscape: Boolean = newImage.width > newImage.height

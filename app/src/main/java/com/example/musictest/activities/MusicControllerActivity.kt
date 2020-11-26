@@ -31,7 +31,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
     private var currentSeek: Int = 0
 
-    var ignoreFirst: Boolean = true
+    private var ignoreFirst: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,30 +117,19 @@ class MusicControllerActivity : AppCompatActivity() {
                 popup.setOnMenuItemClickListener { item ->
 
                     when (item.itemId) {
-                        1 -> {
-                        }
-                        2 -> {
+                        1 -> { }
+                        in 2..3 -> {
                             val i = Intent(this, MainActivity::class.java)
                             val b = Bundle()
                             b.putBoolean("showList", true)
-                            b.putInt("listId", music.albumId!!)
-                            i.putExtras(b)
-                            i.action = Intent.ACTION_MAIN
-                            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-                            startActivity(i)
-                        }
-                        3 -> {
-                            val i = Intent(this, MainActivity::class.java)
-                            val b = Bundle()
-                            b.putBoolean("showList", true)
-                            b.putInt("listId", music.artistId!!)
+                            if(item.itemId == 2) b.putInt("listId", music.albumId!!)
+                            else b.putBoolean("showList", true)
                             i.putExtras(b)
                             i.action = Intent.ACTION_MAIN
                             i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                             startActivity(i)
                         }
                         /*4 -> {
-
                             val builder1 = AlertDialog.Builder(applicationContext)
                             builder1.setTitle(music.title)
                             builder1.setMessage("\nName : ${music.title}\n\nAlbum : ${music.album}\n\nArtist : ${music.artist}\n\nPath : ${music.path}")
@@ -163,7 +152,7 @@ class MusicControllerActivity : AppCompatActivity() {
 
                     return@setOnMenuItemClickListener true
                 }
-                popup.show();
+                popup.show()
             }
         }
 
@@ -331,7 +320,7 @@ class MusicControllerActivity : AppCompatActivity() {
         }
     }
 
-    fun showlistClick(v: View) {
+    fun showListClick(v: View) {
         intent = Intent(this, QueueActivity::class.java)
         startActivity(intent)
     }

@@ -23,7 +23,7 @@ class CollectionFragment : Fragment() {
 
         imageButtonDownload.setOnClickListener {
             //download("https://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3");
-            download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac");
+            download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac")
         }
 
         val fm = childFragmentManager
@@ -45,7 +45,7 @@ class CollectionFragment : Fragment() {
     private fun download(url: String) {
 
         if (URLUtil.isValidUrl(url)) {
-            Toast.makeText(context, "Downloading file", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Downloading file", Toast.LENGTH_SHORT).show()
             val request = DownloadManager.Request(Uri.parse(url))
             request.setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
 
@@ -61,7 +61,7 @@ class CollectionFragment : Fragment() {
             val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             manager.enqueue(request)
         } else {
-            Toast.makeText(context, "CANNOT download file", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "CANNOT download file", Toast.LENGTH_SHORT).show()
         }
     }
 

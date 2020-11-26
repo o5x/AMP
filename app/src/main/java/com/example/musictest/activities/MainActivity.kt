@@ -33,7 +33,7 @@ import java.io.File
 
 /*
 todo bug fixes :
-- is this an empty bug flx list ?
+- is this an empty bug fix list ?
 
 todo add :
 - manage multi selection files
@@ -42,6 +42,7 @@ todo add :
 - show recently played (liked albums playlists, artists)
 - improve sort by name, date, songs count
 - remove musics / playlists from lists
+- playlist show time, songs count, year, artist
 
 todo optional :
 - make visualizer facilitative ?
@@ -93,8 +94,6 @@ class MainActivity : AppCompatActivity() {
         var totalScanfilesCount = 0
 
         fun recursiveMusicScan(path: File) {
-            //Log.w("fileScan", "scanning " + path.path)
-
             val listAllFiles = path.listFiles()
             if (listAllFiles != null && listAllFiles.isNotEmpty()) {
                 for (currentFile in listAllFiles) {

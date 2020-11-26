@@ -22,7 +22,7 @@ class SplashScreen : AppCompatActivity() {
     private fun openMainActivity() {
         Handler().postDelayed({
             // Init things here ?
-            val myIntent: Intent = Intent(this@SplashScreen, MainActivity::class.java)
+            val myIntent = Intent(this@SplashScreen, MainActivity::class.java)
             this@SplashScreen.startActivity(myIntent)
         }, 1)
     }
