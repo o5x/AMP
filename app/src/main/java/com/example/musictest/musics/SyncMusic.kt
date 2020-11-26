@@ -39,7 +39,7 @@ class SyncMusic {
 
     var albumId: Int? = null
 
-    private var imageId: Int? = null
+    var imageId: Int? = null
 
     var valid = false
         private set
@@ -126,14 +126,15 @@ class SyncMusic {
 
     constructor(cursor: Cursor) {
         //id = cursor.getInt(0)
-        this.valid = cursor.getInt(1) > 0
-        this.path = cursor.getString(2)
-        this.title = cursor.getString(3)
-        this.artist = cursor.getString(4)
+        this.path = cursor.getString(1)
+        //hash = 2
+        this.valid = cursor.getInt(3) > 0
+        this.title = cursor.getString(4)
         this.artistId = cursor.getInt(5)
-        this.album = cursor.getString(6)
-        this.albumId = cursor.getInt(7)
-        this.imageId = cursor.getInt(8)
+        this.albumId = cursor.getInt(6)
+        this.imageId = cursor.getInt(7)
+        this.artist = cursor.getString(8)
+        this.album = cursor.getString(9)
     }
 
     constructor()

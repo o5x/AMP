@@ -171,7 +171,7 @@ class SyncMusicController : Application() {
     }
 
     fun createPlaylist(name : String) : Int{
-        val id = db.addList(name,ListType.Playlist, ListContent.ListOfMusics)
+        val id = db.addList(name,ListType.Playlist, ListContent.ListOfMusics, ImageId.ID_IMAGE_PLAYLIST)
         db.addIdToListId(id, ListId.ID_MUSIC_USER_PLAYLISTS)
         db.setListImage(id, BitmapFactory.decodeResource(c.resources, R.drawable.playlist))
         return id

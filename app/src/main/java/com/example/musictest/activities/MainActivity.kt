@@ -30,23 +30,17 @@ import com.example.musictest.services.MediaPlaybackService
 import com.example.musictest.services.OnClearFromRecentService
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
-import java.util.*
 
 /*
 todo bug fixes :
-- Can select folder and files
-- wrong selection on recyclerview sometimes
+- is this an empty bug flx list ?
 
 todo add :
 - manage multi selection files
 - update interface on lists changed
 - add date to music (last played) + added + play count + time spent on this music ? - musicstats table ?
 - show recently played (liked albums playlists, artists)
-- sort by name, date, songs count
-- Add 3 dots next to the name in musiconttroller
-- fix ordering queue
-
-
+- improve sort by name, date, songs count
 
 todo optional :
 - make visualizer facultative ?
@@ -55,7 +49,7 @@ todo optional :
 - image lazy load
 - add date in local structures
 - manage file removed skip ? (is it managed ?)
- */
+*/
 
 // global MusicController
 var syncMusicController = SyncMusicController();
@@ -236,7 +230,7 @@ class MainActivity : AppCompatActivity() {
         else
             CreateNotification.cancelNotification(this)
 
-        if (syncMusicController.isQueuePlaying)
+        if (syncMusicController.isQueuePlaying && syncMusicController.currentMusic.valid)
             linearLayoutControl.visibility = View.VISIBLE
         else
             linearLayoutControl.visibility = View.GONE

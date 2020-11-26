@@ -49,6 +49,8 @@ class ListerRecyclerFragment : Fragment() {
 
     var childSelected: ArrayList<Boolean> = ArrayList()
 
+    var checkboxVisibility = View.GONE
+
     var sortMode: SortMode = SortMode.DateR
 
     override fun onCreate(savedInstanceState: Bundle?) {
