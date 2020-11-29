@@ -25,13 +25,12 @@ class SearchFragment : Fragment() {
         fm: androidx.fragment.app.FragmentManager?,
         layout_id: Int,
     ): ListerRecyclerFragment {
-        val fragOne: Fragment = ListerRecyclerFragment()
+        val fragOne = ListerRecyclerFragment()
         val tr = fm!!.beginTransaction()
         tr.add(layout_id, fragOne)
         tr.commitAllowingStateLoss()
         tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-
-        return fragOne as ListerRecyclerFragment
+        return fragOne
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -74,16 +73,11 @@ class SearchFragment : Fragment() {
 
                     if (tab.size > 0)
                         addListItem(fm, R.id.searchResultLayout).initSyncList(
-                            SyncList(
-                                "Search",
-                                ListContent.ListOfMusics,
-                                tab
-                            )
+                            SyncList("Search", ListContent.ListOfMusics, tab), header = false
                         )
                 }
             }
         })
-
     }
 
     override fun onCreateView(
@@ -97,11 +91,11 @@ class SearchFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         (activity as MainActivity).apply {
-            tv_title.text = "Search"
-            btn_home.colorFilter = null
-            btn_search.setColorFilter(R.color.th)
-            btn_collection.colorFilter = null
-            btn_back.visibility = View.INVISIBLE
+            tvTitle.text = "Search"
+            btnHome.colorFilter = null
+            btnSearch.setColorFilter(R.color.th)
+            btnColleceion.colorFilter = null
+            btnBack.visibility = View.INVISIBLE
         }
     }
 }

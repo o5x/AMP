@@ -1,6 +1,9 @@
 package com.example.musictest.fragments
 
 import android.app.AlertDialog
+import android.graphics.Color
+import android.graphics.Paint
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,8 +13,10 @@ import com.example.musictest.R
 import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
 import com.example.musictest.musics.ListId
+import com.example.musictest.musics.ListType
 import com.example.musictest.musics.SyncMusicController.Companion.isMusicFile
 import com.example.musictest.musics.SyncMusicController.Companion.isVideoFile
+import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 
 
 class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment) :
@@ -26,14 +31,6 @@ class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment) :
         holder.bind(listerRecyclerFragment)
     }
 
-    fun selectMode(layoutManager: RecyclerView.LayoutManager, visibility: Int) {
-        listerRecyclerFragment.checkboxVisibility = visibility
-        for (i in 0 until layoutManager.childCount) {
-            val cb = layoutManager.getChildAt(i)!!.findViewById<CheckBox>(R.id.list_checkBox)
-            cb.visibility = visibility
-        }
-    }
-
     override fun getItemCount(): Int = listerRecyclerFragment.childSelected.size
 }
 
@@ -44,6 +41,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
     var mImageView: ImageView? = null
     var mCheckBox: CheckBox? = null
     var imageButtonMore: ImageButton? = null
+    var imageButtonLiked: ImageButton? = null
 
     init {
         mTitleView = itemView.findViewById(R.id.list_title)
@@ -51,6 +49,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         mImageView = itemView.findViewById(R.id.list_image)
         mCheckBox = itemView.findViewById(R.id.list_checkBox)
         imageButtonMore = itemView.findViewById(R.id.imageButtonMore)
+        imageButtonLiked = itemView.findViewById(R.id.btn_fav2)
     }
 
     fun bind(lrf: ListerRecyclerFragment) {
@@ -61,9 +60,10 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         mCheckBox?.isChecked = lrf.childSelected[adapterPosition]
 
         imageButtonMore?.visibility = View.GONE
+        imageButtonLiked?.visibility = View.GONE
 
         var onclick = {
-            lrf.clickCallback(adapterPosition)
+            //lrf.clickCallback(adapterPosition)
         }
 
         when (lrf.listerMode) {
@@ -73,13 +73,16 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                 val file = lrf.files[adapterPosition]
                 mTitleView?.text = file.name
 
+                val len = Environment.getExternalStorageDirectory().toString().length
+                val fileNewPath = file.path.substring(len)
+
                 if (file.isDirectory) {
                     mYearView?.text = "directory"
                     mImageView?.setImageResource(R.drawable.folder)
 
                     onclick = {
                         lrf.replaceFragment(
-                            ListerRecyclerFragment().initFile(file.absolutePath),
+                            ListerRecyclerFragment().initFile(fileNewPath),
                             true
                         )
                     }
@@ -103,11 +106,54 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
             }
 
             ListerMode.SyncList -> {
+
                 if (lrf.syncList!!.listContent == ListContent.ListOfMusics) {
 
                     mCheckBox?.isEnabled = true
 
-                    val music = smc.getMusic(lrf.syncList!!.list[adapterPosition])
+                    val musicId = lrf.syncList!!.list[adapterPosition]
+                    val music = smc.getMusic(musicId)
+
+                    imageButtonLiked?.visibility = View.VISIBLE
+
+                    if (smc.isMusicLiked(musicId)) {
+                        imageButtonLiked?.setColorFilter(R.color.th)
+                        imageButtonLiked?.setImageResource(R.drawable.ic_favourite)
+                    } else {
+                        imageButtonLiked?.colorFilter = null
+                        imageButtonLiked?.setImageResource(R.drawable.ic_addfavourite)
+                    }
+
+                    imageButtonLiked?.setOnClickListener {
+                        if (!smc.isMusicLiked(musicId))
+                            smc.toggleMusicLiked(musicId)
+                        else Toast.makeText(lrf.context,"Long press to remove from liked", Toast.LENGTH_SHORT).show()
+                    }
+
+                    imageButtonLiked?.setOnLongClickListener {
+                        if (smc.isMusicLiked(musicId))
+                        {
+                            smc.toggleMusicLiked(musicId)
+                            return@setOnLongClickListener true
+                        }
+                        return@setOnLongClickListener false
+                    }
+
+                    if (musicId == smc.currentMusicId && lrf.syncListId == smc.playingFromId) {
+                        mTitleView?.setTextColor(Color.parseColor("#FFBB86FC"))
+                        //mTitleView?.paintFlags = mTitleView?.paintFlags!! or Paint.UNDERLINE_TEXT_FLAG
+                        //mTitleView?.isSelected = true
+                        onclick = {
+                            smc.togglePlay()
+                        }
+                    } else {
+                        mTitleView?.setTextColor(Color.WHITE)
+                        //mTitleView?.paintFlags = mTitleView?.paintFlags!! and Paint.UNDERLINE_TEXT_FLAG.inv()
+                        //mTitleView?.isSelected = false
+                        onclick = {
+                            smc.setQueue(lrf.syncList!!.list, lrf.syncListId, adapterPosition, true)
+                        }
+                    }
 
                     mTitleView?.text = music.title
                     mYearView?.text = music.artist
@@ -166,23 +212,44 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     mImageView?.setImageResource(R.drawable.music)
                     if (music.image != null) mImageView?.setImageBitmap(music.image)
 
-                    onclick = {
-                        smc.setQueue(lrf.syncList!!.list, lrf.syncListId, adapterPosition, true)
+                }
+                else if (lrf.syncList!!.listContent == ListContent.ListOfLists) {
+
+                    val sublistId = lrf.syncList!!.list[adapterPosition]
+                    val sublist = smc.getList(sublistId)
+
+                    if (sublistId == smc.playingFromId) {
+                        mTitleView?.setTextColor(Color.parseColor("#FFBB86FC"))
+                    } else {
+                        mTitleView?.setTextColor(Color.WHITE)
                     }
 
+                    if(sublist.listType in arrayOf(ListType.Artist, ListType.Album))
+                    {
+                        imageButtonLiked?.visibility = View.VISIBLE
 
-                } else if (lrf.syncList!!.listContent == ListContent.ListOfLists) {
+                        if (smc.isListLiked(sublistId)) {
+                            imageButtonLiked?.setColorFilter(R.color.th)
+                            imageButtonLiked?.setImageResource(R.drawable.ic_favourite)
+                        } else {
+                            imageButtonLiked?.colorFilter = null
+                            imageButtonLiked?.setImageResource(R.drawable.ic_addfavourite)
+                        }
 
-                    val sublist = smc.getList(lrf.syncList!!.list[adapterPosition])
+                        imageButtonLiked?.setOnClickListener {
+                            smc.toggleListLiked(sublistId)
+                        }
+                    }
 
                     mTitleView?.text = sublist.name
 
                     if (sublist.listContent == ListContent.ListOfMusics) mYearView?.text =
-                        sublist.list.size.toString() + " Songs"
-                    else mYearView?.text = sublist.list.size.toString() + " Lists"
+                        if (sublist.author_id != null && sublist.listType == ListType.Album) sublist.author
+                        else sublist.list.size.toString() + " Song" + if(sublist.list.size == 1) "" else "s"
+                    else mYearView?.text = sublist.list.size.toString() + " List" + if(sublist.list.size == 1) "" else "s"
 
-                    if (lrf.syncList!!.list[adapterPosition] >= ListId.ID_MUSIC_MAX_ID)
-                        imageButtonMore?.visibility = View.VISIBLE
+                    //if (lrf.syncList!!.list[adapterPosition] >= ListId.ID_MUSIC_MAX_ID)
+                    imageButtonMore?.visibility = View.VISIBLE
 
                     if (sublist.image != null) mImageView?.setImageBitmap(sublist.image)
 
@@ -191,7 +258,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                         popup.menu.add(0, 1, 1, "View")
                         popup.menu.add(0, 2, 2, "Play")
-                        popup.menu.add(0, 3, 3, "Delete playlist")
+                        if(sublist.deletable)
+                            popup.menu.add(0, 3, 3, "Delete playlist")
                         popup.menu.add(0, 4, 4, "Info")
                         //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
 
@@ -205,7 +273,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     )
                                 }
                                 2 -> {
-                                    smc.setQueue( list.list,lrf.syncList!!.list[adapterPosition],0,true)
+                                    smc.setQueue(list.list, lrf.syncList!!.list[adapterPosition], 0, true)
                                 }
                                 3 -> {
                                     smc.deletePlaylist(lrf.syncList!!.list[adapterPosition])

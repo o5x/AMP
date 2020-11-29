@@ -36,6 +36,8 @@ todo bug fixes :
 - is this an empty bug fix list ?
 
 todo add :
+- in artists, put albums instead of musics ? or both ?
+- Save Artist / album
 - manage multi selection files
 - update interface on lists changed
 - add date to music (last played) + added + play count + time spent on this music ? - music stats table ?
@@ -68,13 +70,13 @@ class MainActivity : AppCompatActivity() {
     lateinit var mBuilder: NotificationCompat.Builder
     lateinit var mNotifyManager: NotificationManagerCompat
 
-    lateinit var btn_back: ImageButton
-    lateinit var btn_settings: ImageButton
-    lateinit var tv_title: TextView
+    lateinit var btnBack: ImageButton
+    lateinit var btnSettings: ImageButton
+    lateinit var tvTitle: TextView
 
-    lateinit var btn_home: ImageButton
-    lateinit var btn_collection: ImageButton
-    lateinit var btn_search: ImageButton
+    lateinit var btnHome: ImageButton
+    lateinit var btnColleceion: ImageButton
+    lateinit var btnSearch: ImageButton
 
     var currentfragment: Fragment? = null
 
@@ -138,12 +140,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
 
         // enable auto text scroll
-        listerTitle.isSelected = true
+        tv_path.isSelected = true
         textView_artist.isSelected = true
 
         // init context
@@ -152,13 +155,20 @@ class MainActivity : AppCompatActivity() {
 
         startService(Intent(this@MainActivity, MediaPlaybackService::class.java))
 
-        tv_title = Apptitle
-        btn_back = imageButtonBack
-        btn_settings = imageButtonSettings
+        tvTitle = Apptitle
+        btnBack = imageButtonBack
+        btnSettings = imageButtonSettings
+        btnHome = imageButtonHome
+        btnSearch = imageButtonSearch
+        btnColleceion = imageButtonCollection
 
-        btn_home = imageButtonHome
-        btn_search = imageButtonSearch
-        btn_collection = imageButtonCollection
+        Thread.currentThread().uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ ->
+            object : Thread() {
+                override fun run() {
+                    CreateNotification.cancelNotification(applicationContext)
+                }
+            }.start()
+        }
 
         // Notification controller
         createNotificationChannel(CreateNotification.CHANNEL_ID, "Playback")
@@ -181,8 +191,8 @@ class MainActivity : AppCompatActivity() {
         else imageView_cover.setImageBitmap(smc.currentMusic.image)
 
         // do not break the scroll unless name changed
-        if (listerTitle.text != smc.currentMusic.title)
-            listerTitle.text = smc.currentMusic.title
+        if (tv_path.text != smc.currentMusic.title)
+            tv_path.text = smc.currentMusic.title
 
         if (textView_artist.text != smc.currentMusic.artist)
             textView_artist.text = smc.currentMusic.artist

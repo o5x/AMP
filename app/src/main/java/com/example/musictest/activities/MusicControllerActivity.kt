@@ -123,7 +123,7 @@ class MusicControllerActivity : AppCompatActivity() {
                             val b = Bundle()
                             b.putBoolean("showList", true)
                             if(item.itemId == 2) b.putInt("listId", music.albumId!!)
-                            else b.putBoolean("showList", true)
+                            if(item.itemId == 3) b.putInt("listId", music.artistId!!)
                             i.putExtras(b)
                             i.action = Intent.ACTION_MAIN
                             i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
@@ -234,11 +234,11 @@ class MusicControllerActivity : AppCompatActivity() {
         // Update favourites
 
         if (smc.isCurrentMusicLiked()) {
-            favBtn.setColorFilter(R.color.th)
-            favBtn.setImageResource(R.drawable.ic_favourite)
+            btn_fav.setColorFilter(R.color.th)
+            btn_fav.setImageResource(R.drawable.ic_favourite)
         } else {
-            favBtn.colorFilter = null
-            favBtn.setImageResource(R.drawable.ic_addfavourite)
+            btn_fav.colorFilter = null
+            btn_fav.setImageResource(R.drawable.ic_addfavourite)
         }
 
         // update background cover

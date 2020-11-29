@@ -115,7 +115,7 @@ class SyncMusic {
 
             hash = fileToSHA(path)
 
-            metaRetriever.close()
+            //metaRetriever.close()
 
             this.valid = true
 

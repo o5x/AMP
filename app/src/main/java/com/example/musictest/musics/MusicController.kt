@@ -26,11 +26,9 @@ import com.example.musictest.activities.smc
 import io.github.jeffshee.visualizer.utils.VisualizerHelper
 import java.io.File
 
-
 enum class Repeat {
     None, All, Once
 }
-
 
 private val callback = object : MediaSessionCompat.Callback() {
     override fun onPlay() {
@@ -121,6 +119,11 @@ class SyncMusicController : Application() {
             field = value
         }
 
+    var playingFromId : Int = -1
+        set(value) {
+            sharedPref.edit().putInt("playingFromId", value).apply()
+            field = value
+        }
     lateinit var mediaSessionCompat: MediaSessionCompat
 
     ///////////////////////////////////////// Musics operations
@@ -170,7 +173,9 @@ class SyncMusicController : Application() {
     }
 
     private fun createPlaylist(name: String): Int {
-        val id = db.addList(name, ListType.Playlist, ListContent.ListOfMusics, ImageId.ID_IMAGE_PLAYLIST)
+        val id = db.addList(name, ListType.Playlist, ListContent.ListOfMusics, ImageId.ID_IMAGE_PLAYLIST,
+                readonly = false, deletable = true, sortMode = SortMode.Date, sortLocked = false, authorId = ListId
+                .ID_MUSIC_USER_PLAYLISTS)
         db.addIdToListId(id, ListId.ID_MUSIC_USER_PLAYLISTS)
         db.setListImage(id, BitmapFactory.decodeResource(c.resources, R.drawable.playlist))
         return id
@@ -259,6 +264,7 @@ class SyncMusicController : Application() {
         val r = sharedPref.getString("repeatMode", repeatMode.toString())
         if (r != null && r.isNotEmpty()) repeatMode = Repeat.valueOf(r)
         playingFrom = sharedPref.getString("playingFrom", playingFrom).toString()
+        playingFromId = sharedPref.getInt("playingFromId", playingFromId)
 
         if (currentQueueId >= 0) {
             prepare(currentQueueId)
@@ -468,7 +474,6 @@ class SyncMusicController : Application() {
         updateRequired()
     }
 
-
     fun togglePlay() {
         if (currentMusicId < 0) return
         if (filterInput()) return
@@ -480,33 +485,27 @@ class SyncMusicController : Application() {
         updateRequired()
     }
 
-
     fun play() {
         if (currentMusicId < 0) return
-        //if(filterInput()) return
-
         if (getAudioFocus()) {
             player.start()
             isQueuePlaying = true
             isNotificationShown = true
             updateRequired()
         }
-
     }
 
     fun pause() {
         if (currentMusicId < 0) return
-        //if(filterInput()) return
         player.pause()
         updateRequired()
     }
 
     fun stop() {
-        //if(currentMusicId < 0) return
         if (filterInput()) return
         player.pause()
-        updateRequired()
         isNotificationShown = false
+        updateRequired()
     }
 
     fun prev() {
@@ -539,20 +538,37 @@ class SyncMusicController : Application() {
 
     ///////////////////////////////////////// current music interactions
 
-    fun isCurrentMusicLiked(): Boolean {
-        if (currentMusicId < 0) return false
-        return currentMusicId in getList(ListId.ID_MUSIC_LIKED).list
+    fun isListLiked(currentListId :Int): Boolean {
+        if (currentListId < 0) return false
+        return currentListId in getList(ListId.ID_MUSIC_LIST_LIKED).list
     }
 
-    fun toggleCurrentMusicLiked() {
-        if (currentMusicId < 0) return
-
-        if (isCurrentMusicLiked()) removeIdFromList(currentMusicId, ListId.ID_MUSIC_LIKED)
-        else addIdToList(currentMusicId, ListId.ID_MUSIC_LIKED)
-
+    fun toggleListLiked(currentListId :Int) {
+        if (currentListId < 0) return
+        if (isListLiked(currentListId)) removeIdFromList(currentListId, ListId.ID_MUSIC_LIST_LIKED)
+        else addIdToList(currentListId, ListId.ID_MUSIC_LIST_LIKED)
         updateRequired()
     }
 
+    fun isMusicLiked(currentListId :Int): Boolean {
+        if (currentListId < 0) return false
+        return currentListId in getList(ListId.ID_MUSIC_LIKED).list
+    }
+
+    fun toggleMusicLiked(currentListId :Int) {
+        if (currentListId < 0) return
+        if (isMusicLiked(currentListId)) removeIdFromList(currentListId, ListId.ID_MUSIC_LIKED)
+        else addIdToList(currentListId, ListId.ID_MUSIC_LIKED)
+        updateRequired()
+    }
+
+    fun isCurrentMusicLiked(): Boolean {
+        return isMusicLiked(currentMusicId)
+    }
+
+    fun toggleCurrentMusicLiked() {
+        return toggleMusicLiked(currentMusicId)
+    }
 
     private fun startShuffle() {
         val currentMusic = getList(ListId.ID_MUSIC_QUEUE).list[currentQueueId]
@@ -592,6 +608,7 @@ class SyncMusicController : Application() {
 
     fun setQueue(ids: ArrayList<Int>, from: Int?, idToPlay: Int, playNow: Boolean) {
         playingFrom = if (from != null) {
+            playingFromId = from
             addListPlayed(from)
             getList(from).name
         } else "Search"
@@ -696,6 +713,7 @@ class SyncMusicController : Application() {
 
     fun setQueueFiles(files: ArrayList<File>, from: String, idToPlay: Int = -2) {
         playingFrom = from
+        playingFromId = -1
         var id = 0
         var nextQueueId = 0
 

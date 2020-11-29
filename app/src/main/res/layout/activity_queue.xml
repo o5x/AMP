@@ -12,15 +12,6 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/listerTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Songs in queue :"
-            android:textColor="@color/white"
-            android:textSize="24sp" />
-
         <LinearLayout
             android:id="@+id/listerLayout"
             android:layout_width="match_parent"

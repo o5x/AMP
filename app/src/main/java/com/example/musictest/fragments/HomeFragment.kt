@@ -18,12 +18,15 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
+        val th = this
+
         (activity as MainActivity).apply {
-            tv_title.text = "Home"
-            btn_home.setColorFilter(R.color.th)
-            btn_search.colorFilter = null
-            btn_collection.colorFilter = null
-            btn_back.visibility = View.INVISIBLE
+            tvTitle.text = "Home"
+            btnHome.setColorFilter(R.color.th)
+            btnSearch.colorFilter = null
+            btnColleceion.colorFilter = null
+            btnBack.visibility = View.INVISIBLE
+            currentfragment = th
         }
     }
 
@@ -32,19 +35,20 @@ class HomeFragment : Fragment() {
         val fm = childFragmentManager
 
         // FILL FAVOURITES
-        val tabFav = arrayOf("Liked Songs", "Local Files", "Most Listened", "Suggested")
-        val tabFav_i = arrayOf(R.drawable.liked, R.drawable.folder, R.drawable.most, R.drawable.suggest)
+        val tabFav = arrayOf("Liked Songs", "Liked lists", "Local Files", "Most Listened")
+        val tabFav_i = arrayOf(R.drawable.liked, R.drawable.suggest, R.drawable.folder, R.drawable.most)
         val tabFav_c = arrayOf(
             { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_LIKED)) },
+            { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_LIST_LIKED)
+            ) },
             {
                 (activity as MainActivity).replaceFragment(
                     ListerRecyclerFragment().initFile(
-                        Environment.getExternalStorageDirectory().toString() + "/Music"
+                        "/Music"
                     )
                 )
             },
-            { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_MOST)) },
-            { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_RECENT_MUSICS)) }
+            { (activity as MainActivity).replaceFragment(ListerRecyclerFragment().initSyncListById(ListId.ID_MUSIC_MOST)) }
         )
 
         for (i in tabFav.indices)

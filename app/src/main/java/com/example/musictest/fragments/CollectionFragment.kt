@@ -69,11 +69,11 @@ class CollectionFragment : Fragment() {
         super.onResume()
 
         (activity as MainActivity).apply {
-            tv_title.text = "Collection"
-            btn_home.colorFilter = null
-            btn_search.colorFilter = null
-            btn_collection.setColorFilter(R.color.th)
-            btn_back.visibility = View.INVISIBLE
+            tvTitle.text = "Collection"
+            btnHome.colorFilter = null
+            btnSearch.colorFilter = null
+            btnColleceion.setColorFilter(R.color.th)
+            btnBack.visibility = View.INVISIBLE
         }
     }
 

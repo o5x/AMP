@@ -2,7 +2,13 @@ package com.example.musictest.fragments
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.Paint
 import android.os.Bundle
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +21,7 @@ import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
+import com.example.musictest.musics.ListType
 import com.example.musictest.musics.SortMode
 import com.example.musictest.musics.SyncList
 import kotlinx.android.synthetic.main.fragment_lister_recycler.*
@@ -29,8 +36,6 @@ class ListerRecyclerFragment : Fragment() {
     var syncList: SyncList? = null
     var syncListId: Int? = null
 
-    private var disableSort = true
-
     private var showHeader = false
 
     var folderPath: String = ""
@@ -38,13 +43,14 @@ class ListerRecyclerFragment : Fragment() {
     var files: ArrayList<File> = ArrayList()
 
     var callbackCheckBox: (id: Int) -> Unit = {}
-    var clickCallback: (id: Int) -> Unit = {}
+    //var clickCallback: (id: Int) -> Unit = {}
 
     var childSelected: ArrayList<Boolean> = ArrayList()
-
     var checkboxVisibility = View.GONE
 
-    private var sortMode: SortMode = SortMode.Date
+    var refreshCallback = {}
+
+    private var sortMode: SortMode = SortMode.None
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,20 +59,17 @@ class ListerRecyclerFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
         try {
             if ((activity as MainActivity).currentfragment == this)
-                (activity as MainActivity).btn_back.visibility = View.VISIBLE
+                (activity as MainActivity).btnBack.visibility = View.VISIBLE
         } catch (e: Exception) {
-
         }
     }
 
-    fun initSyncList(sl: SyncList, header: Boolean = true, sortBy : SortMode = SortMode.Date) {
+    fun initSyncList(sl: SyncList, header: Boolean = true) {
         syncList = sl
         listerMode = ListerMode.SyncList
         showHeader = header
-        sortMode = sortBy
     }
 
     fun reload() {
@@ -80,7 +83,6 @@ class ListerRecyclerFragment : Fragment() {
         syncList = smc.getList(id)
         listerMode = ListerMode.SyncList
         syncListId = id
-        disableSort = false
         showHeader = header
         return this
     }
@@ -98,26 +100,18 @@ class ListerRecyclerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Global init
-        listerButtonAddTo.isEnabled = false
-        listerButtonPlay.isEnabled = false
-
-        listerOptions.visibility = View.GONE
-        ll_options.visibility = View.GONE
-        listerTitle.visibility = View.GONE
-        btn_sort.visibility = View.GONE
-        btn_playall.visibility = View.GONE
+        // setup default sort mode
+        if(syncList != null)
+            sortMode = syncList!!.sortMode
 
         btn_sort.setOnClickListener {
             val popup = PopupMenu(context, btn_sort)
-            //popup.menu.add(0, 1, 1, "Add id desc")
-            //popup.menu.add(0, 2, 2, "Add id asc")
             popup.menu.add(0, 3, 3, "\uD835\uDC00\uD835\uDC33  Name ▼")
             popup.menu.add(0, 4, 4, "\uD835\uDC00\uD835\uDC33  Name ▲")
             popup.menu.add(0, 5, 5, "\uD83D\uDD50  Date ▼")
             popup.menu.add(0, 6, 6, "\uD83D\uDD50  Date ▲")
-            popup.menu.add(0, 7, 7, "⭐  Favourites ▼")
-            popup.menu.add(0, 8, 8, "⭐  Favourites ▲")
+            //popup.menu.add(0, 7, 7, "⭐  Favourites ▼")
+            //popup.menu.add(0, 8, 8, "⭐  Favourites ▲")
             popup.menu.add(0, 9, 9, "\uD83D\uDD00  Random")
             popup.setOnMenuItemClickListener { item ->
                 sortMode = when (item.itemId) {
@@ -128,7 +122,7 @@ class ListerRecyclerFragment : Fragment() {
                     7 -> SortMode.Played
                     8 -> SortMode.PlayedR
                     9 -> SortMode.Random
-                    else -> SortMode.Id
+                    else -> SortMode.Name
                 }
                 apply()
                 return@setOnMenuItemClickListener true
@@ -136,42 +130,48 @@ class ListerRecyclerFragment : Fragment() {
             popup.show()
         }
 
-        //if (title.isNotEmpty()) listerTitle.text = "$title (${listIds.size})"
-        //else listerTitle.visibility = View.GONE
-
         apply()
+        activity?.registerReceiver(broadcastReceiver3, IntentFilter("com.example.musictest.Update_Music"))
+    }
+
+    private var broadcastReceiver3: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            refreshCallback()
+        }
     }
 
     private fun apply() {
 
-        btn_sort.text = "Sort by " + when (sortMode) {
-            SortMode.Id -> "id ▼"
-            SortMode.IdR -> "id ▲"
-            SortMode.Name -> "name ▼"
-            SortMode.NameR -> "name ▲"
-            SortMode.Date -> "date ▼"
-            SortMode.DateR -> "date ▲"
-            SortMode.Played -> "played ▼"
-            SortMode.PlayedR -> "played ▲"
-            SortMode.Random -> "random"
-        }
+        if(listerButtonAddTo == null) return
+        // Global init
+        listerButtonAddTo.isEnabled = false
+        listerButtonPlay.isEnabled = false
+
+        listerOptions.visibility = View.GONE
+
+        ll_options.visibility = View.GONE
+        ll_header.visibility = View.GONE
+        tv_path.visibility = View.GONE
+
+        btn_sort.visibility = View.GONE
+        btn_playall.visibility = View.GONE
+        btn_fav.visibility = View.GONE
 
         val lra = this
-
-        iv_list.visibility = View.GONE
-        tv_title.visibility = View.GONE
 
         list_recycler_view.apply {
 
             layoutManager = LinearLayoutManager(activity)
 
+            refreshCallback = {
+                (adapter as ListAdapter).notifyDataSetChanged()
+            }
+
             lra.callbackCheckBox = {
                 var count = 0
-                for (i in 0 until childSelected.size) {
-                    if (childSelected[i]) count++
-                }
+                for (i in 0 until childSelected.size)  if (childSelected[i]) count++
                 if (count > 0) {
-                    (adapter as ListAdapter).selectMode(layoutManager!!, View.VISIBLE)
+                    checkboxVisibility = View.VISIBLE
                     listerOptions.visibility = View.VISIBLE
                     listerButtonAddTo.isEnabled = true
                     listerButtonPlay.isEnabled = true
@@ -179,11 +179,8 @@ class ListerRecyclerFragment : Fragment() {
                         .alpha(1f)
                         .setDuration(100)
                         .setListener(null)
-
-
                 } else {
-                    (adapter as ListAdapter).selectMode(layoutManager!!, View.GONE)
-
+                    checkboxVisibility = View.GONE
                     listerButtonAddTo.isEnabled = false
                     listerButtonPlay.isEnabled = false
                     listerOptions.animate()
@@ -195,20 +192,20 @@ class ListerRecyclerFragment : Fragment() {
                             }
                         })
                 }
+                refreshCallback()
             }
 
             // MODES
-
             when (listerMode) {
                 ListerMode.ListFiles -> {
 
-                    (activity as MainActivity).tv_title.text = "Files"
-                    listerTitle.visibility = View.VISIBLE
-                    listerTitle.text = folderPath
+                    (activity as MainActivity).tvTitle.text = "Files"
+                    tv_path.visibility = View.VISIBLE
+                    tv_path.text = folderPath
 
                     files.clear()
 
-                    val directory = File(folderPath)
+                    val directory = File(Environment.getExternalStorageDirectory().toString() + folderPath)
                     val filesList: Array<File> = directory.listFiles()!!
 
                     for (file in filesList) {
@@ -223,22 +220,99 @@ class ListerRecyclerFragment : Fragment() {
                 }
                 ListerMode.SyncList -> {
 
-                    if (showHeader) {
-                        iv_list.visibility = View.VISIBLE
-                        iv_list.setImageBitmap(syncList!!.image)
-                        tv_title.visibility = View.VISIBLE
-                        tv_title.text = syncList!!.name
+                    // Sort Button
 
-                        if (!disableSort) {
-                            ll_options.visibility = View.VISIBLE
-                            syncList!!.sort(sortMode)
-                            btn_sort.visibility = View.VISIBLE
-                            btn_playall.visibility = View.VISIBLE
+                    if (!syncList!!.sortLocked) {
+                        btn_sort.visibility = View.VISIBLE
+
+                        btn_sort.text = "Sort by " + when (sortMode) {
+                            SortMode.None -> "None"
+                            SortMode.Name -> "name ▼"
+                            SortMode.NameR -> "name ▲"
+                            SortMode.Date -> "date ▼"
+                            SortMode.DateR -> "date ▲"
+                            SortMode.Played -> "played ▼"
+                            SortMode.PlayedR -> "played ▲"
+                            SortMode.Random -> "random"
                         }
+
+                        syncList!!.sort(sortMode)
                     }
 
-                    if(syncList!!.listContent == ListContent.ListOfLists)
-                    {
+                    if (showHeader) {
+
+                        ll_options.visibility = if (syncList?.list!!.isNotEmpty()) View.VISIBLE else View.GONE
+
+                        ll_header.visibility = View.VISIBLE
+                        iv_list.setImageBitmap(syncList!!.image)
+                        tv_title.text = syncList!!.name
+
+                        // Favourite btn
+                        if (syncList!!.listType in arrayOf(ListType.Album, ListType.Artist)) {
+                            btn_fav.visibility = View.VISIBLE
+
+                            if (smc.isListLiked(syncListId!!)) {
+                                btn_fav.setColorFilter(R.color.th)
+                                btn_fav.setImageResource(R.drawable.ic_favourite)
+                            } else {
+                                btn_fav.colorFilter = null
+                                btn_fav.setImageResource(R.drawable.ic_addfavourite)
+                            }
+
+                            btn_fav.setOnClickListener {
+                                smc.toggleListLiked(syncListId!!)
+                                if (smc.isListLiked(syncListId!!)) {
+                                    btn_fav.setColorFilter(R.color.th)
+                                    btn_fav.setImageResource(R.drawable.ic_favourite)
+                                } else {
+                                    btn_fav.colorFilter = null
+                                    btn_fav.setImageResource(R.drawable.ic_addfavourite)
+                                }
+                            }
+                        }
+
+                        if (syncList!!.author_id != null) {
+                            tv_subtitle.paintFlags = tv_subtitle.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+                            tv_subtitle.setOnClickListener {
+                                replaceFragment(
+                                    ListerRecyclerFragment().initSyncListById(syncList!!.author_id!!),
+                                    true
+                                )
+                            }
+                        }
+
+                        tv_subtitle.text =
+                            when (syncList!!.listType) {
+                                ListType.Album -> "Album" + if (syncList!!.author != null) " by " + syncList!!.author else ""
+                                ListType.Artist -> "Artist"
+                                ListType.System -> {
+                                    tv_subtitle.visibility = View.GONE
+                                    ""
+                                }
+                                ListType.Playlist -> "Playlist" + if (syncList!!.author != null) " by " + syncList!!.author
+                                else ""
+                                ListType.None -> "Not valid"
+                            }
+
+                        val size = syncList!!.list.size
+
+                        tv_subsubtitle.text =
+                            when (syncList!!.listContent) {
+                                ListContent.ListOfLists -> {
+                                    size.toString() + when (syncList!!.listType) {
+                                        ListType.Artist -> " Artist"
+                                        ListType.Album -> " Album"
+                                        else -> " Playlist"
+                                    } + if (size == 1) "" else "s"
+                                }
+                                ListContent.ListOfMusics -> size.toString() + " Music" + if (size == 1) "" else "s"
+                                ListContent.None -> "Not valid"
+                            }
+                        btn_playall.visibility = View.VISIBLE
+
+                    }
+
+                    if (syncList!!.listContent == ListContent.ListOfLists) {
                         btn_playall.visibility = View.GONE
                     }
 
@@ -264,7 +338,8 @@ class ListerRecyclerFragment : Fragment() {
                     }
 
                     btn_playall.setOnClickListener {
-                        smc.setQueue(syncList!!.list, syncListId, 0, true)
+                        if (syncList!!.list.isNotEmpty())
+                            smc.setQueue(syncList!!.list, syncListId, 0, true)
                     }
                 }
                 else -> {
@@ -292,9 +367,6 @@ class ListerRecyclerFragment : Fragment() {
         tr.add(layout_id, fragOne)
         tr.commitAllowingStateLoss()
         tr.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-
         return fragOne as ListerRecyclerFragment
     }
-
-
 }

@@ -15,16 +15,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
         (activity as MainActivity).apply {
-            tv_title.text = "Search"
-            btn_back.visibility = View.VISIBLE
-            btn_settings.visibility = View.INVISIBLE
+            tvTitle.text = "Search"
+            btnBack.visibility = View.VISIBLE
+            btnSettings.visibility = View.INVISIBLE
         }
     }
 
     override fun onPause() {
         super.onPause()
         (activity as MainActivity).apply {
-            btn_settings.visibility = View.VISIBLE
+            btnSettings.visibility = View.VISIBLE
         }
     }
 }

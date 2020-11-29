@@ -2,10 +2,19 @@ package com.example.musictest.musics
 
 import android.database.Cursor
 import android.graphics.Bitmap
+import androidx.core.database.getIntOrNull
 import com.example.musictest.activities.smc
 
 enum class SortMode {
-    Id, IdR, Name, NameR, Random, Date, DateR, Played, PlayedR
+    None, Name, NameR, Random, Date, DateR, Played, PlayedR
+}
+
+enum class ListContent {
+    None, ListOfLists, ListOfMusics
+}
+
+enum class ListType {
+    None, System, Album, Artist, Playlist
 }
 
 /*
@@ -16,19 +25,24 @@ class ListElement{
 }*/
 
 class SyncList {
+
+    val id : Int? = null
     var name: String = "Invalid list"
-
-    //var elts: ArrayList<ListElement> = ArrayList()
-
-    var list: ArrayList<Int> = ArrayList()
-    private var listOrigin: ArrayList<Int> = ArrayList()
-    var listContent = ListContent.ListOfMusics
-    var valid = false
-    private var date: ArrayList<String> = ArrayList()
-    private var count: ArrayList<Int> = ArrayList()
+    var listContent = ListContent.None
+    var listType = ListType.None
+    var playedLast = ""
     private var imgId: Int? = null
 
-    //private var dafaultSortMode : SortMode = SortMode.Date // TODO implement save
+    var valid = false
+
+    var list: ArrayList<Int> = ArrayList()
+
+    private var listOrigin: ArrayList<Int> = ArrayList()
+
+    private var date: ArrayList<String> = ArrayList()
+    private var count: ArrayList<Int> = ArrayList()
+
+    //var sortMode = SortMode.None// TODO implement save
 
     fun sort(sortMode: SortMode)
     {
@@ -83,13 +97,61 @@ class SyncList {
         valid = true
     }
 
-    constructor(name_: String, cursor: Cursor, listContent_: ListContent, imid: Int) {
+    var readonly = true
+    var deletable = false
+    var sortMode = SortMode.None
+    var sortLocked = true
+    var author_id : Int? = null
+
+    constructor(cursorList: Cursor, cursorData: Cursor) {
+
+        list = ArrayList()
+        valid = true
+
+        name = cursorList.getString(0)
+        listContent = ListContent.valueOf(cursorList.getString(1))
+        listType = ListType.valueOf(cursorList.getString(2))
+        imgId = cursorList.getInt(3)
+
+        readonly = cursorList.getInt(4) > 0
+        deletable = cursorList.getInt(5) > 0
+        sortMode = SortMode.valueOf(cursorList.getString(6))
+        sortLocked = cursorList.getInt(7) > 0
+        author_id = cursorList.getIntOrNull(8)
+
+        for (i in 0 until cursorData.count) {
+            list.add(cursorData.getInt(0))
+
+            if(listContent == ListContent.ListOfLists)
+            {
+                date.add(cursorData.getString(1) + ":" +
+                        cursorData.getInt(2).toString().padStart(6, '0'))
+                count.add(cursorData.getInt(3))
+            }
+            else if (listContent == ListContent.ListOfMusics)
+            {
+                date.add(/*cursor.getString(1) + ":" +*/
+                    cursorData.getString(1)+ ":" +
+                            cursorData.getInt(2).toString().padStart(6, '0'))
+                count.add(cursorData.getInt(3))
+            }
+
+            // to differentiate same time
+            cursorData.moveToNext()
+        }
+
+        listOrigin = list
+    }
+/*
+    constructor(name_: String, cursor: Cursor, listContent_: ListContent,listType_ : ListType, imid: Int) {
         list = ArrayList()
         listOrigin = list
         name = name_
         listContent = listContent_
+        listType = listType_
         valid = true
         imgId = imid
+
         for (i in 0 until cursor.count) {
             list.add(cursor.getInt(0))
 
@@ -110,10 +172,13 @@ class SyncList {
             // to differentiate same time
             cursor.moveToNext()
         }
-    }
+    }*/
 
     val image: Bitmap?
         get() = smc.images[imgId]
+
+    val author: String?
+        get() = author_id?.let { smc.getList(it).name }
 
     constructor()
 }

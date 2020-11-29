@@ -16,32 +16,25 @@ import java.security.MessageDigest
 
 //data/data/com.example.musictest/databases/musics.db
 
-enum class ListContent {
-    None, ListOfLists, ListOfMusics
-}
-
-enum class ListType {
-    None, System, Album, Artist, Playlist
-}
-
 class ListId {
     companion object {
         const val ID_MUSIC_ALL = 1
         const val ID_MUSIC_QUEUE = 2
         const val ID_MUSIC_QUEUE_ORIGINAL = 3
         const val ID_MUSIC_LIKED = 4
-        const val ID_MUSIC_MOST = 5
-        const val ID_MUSIC_RECENT_MUSICS = 6
-        const val ID_MUSIC_RECENT_LISTS = 7
-        const val ID_MUSIC_SUGGEST = 8
-        const val ID_MUSIC_DOWNLOAD = 9
+        const val ID_MUSIC_LIST_LIKED = 5
+        const val ID_MUSIC_MOST = 6
+        const val ID_MUSIC_RECENT_MUSICS = 7
+        const val ID_MUSIC_RECENT_LISTS = 8
+        const val ID_MUSIC_SUGGEST = 9
+        const val ID_MUSIC_DOWNLOAD = 10
 
-        const val ID_MUSIC_ARTISTS = 10
-        const val ID_MUSIC_ALBUMS = 11
+        const val ID_MUSIC_ARTISTS = 11
+        const val ID_MUSIC_ALBUMS = 12
 
-        const val ID_MUSIC_USER_PLAYLISTS = 12
+        const val ID_MUSIC_USER_PLAYLISTS = 13
 
-        const val ID_MUSIC_MAX_ID = 13
+        const val ID_MUSIC_MAX_ID = 14
     }
 }
 
@@ -108,7 +101,7 @@ class DBHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_
         const val MUSIC_ID = "id"
         const val MUSIC_PATH = "path"
         const val MUSIC_HASH = "hash"
-        const val MUSIC_ISVALID = "valid"
+        const val MUSIC_IS_VALID = "valid"
         const val MUSIC_TITLE = "title"
         const val MUSIC_ARTIST_ID = "artist_id"
         const val MUSIC_ALBUM_ID = "album_id"
@@ -119,8 +112,13 @@ class DBHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_
         const val LIST_NAME = "name"
         const val LIST_CONTENT = "content"
         const val LIST_TYPE = "type"
+        const val LIST_READONLY = "readonly"
+        const val LIST_DELETABLE = "deletable"
         const val LIST_PLAYED_COUNT = "played_count"
         const val LIST_PLAYED_LAST = "played_last"
+        const val LIST_SORT_MODE = "sort_mode"
+        const val LIST_SORT_LOCKED = "sort_locked"
+        const val LIST_AUTHOR_ID = "author_id" // points on another list containing author name // TODO this
         const val LIST_IMAGE_ID = "image_id"
 
         // links columns
@@ -146,7 +144,7 @@ class DBHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_
                     "$MUSIC_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                     " $MUSIC_PATH TEXT NOT NULL," +
                     " $MUSIC_HASH BLOB," +
-                    " $MUSIC_ISVALID BOOLEAN," +
+                    " $MUSIC_IS_VALID BOOLEAN," +
                     " $MUSIC_TITLE TEXT," +
                     " $MUSIC_ARTIST_ID INTEGER NOT NULL," +
                     " $MUSIC_ALBUM_ID INTEGER NOT NULL," +
@@ -158,8 +156,13 @@ class DBHelper(context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_
                     " $LIST_NAME TEXT NOT NULL," +
                     " $LIST_CONTENT TEXT NOT NULL," +
                     " $LIST_TYPE TEXT NOT NULL," +
-                    " $LIST_PLAYED_COUNT INTEGER DEFAULT 0," +
-                    " $LIST_PLAYED_LAST DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                    " $LIST_READONLY BOOLEAN NOT NULL DEFAULT 1," +
+                    " $LIST_DELETABLE BOOLEAN NOT NULL DEFAULT 1," +
+                    " $LIST_PLAYED_COUNT INTEGER NOT NULL DEFAULT 0," +
+                    " $LIST_PLAYED_LAST DATETIME," +
+                    " $LIST_SORT_MODE TEXT NOT NULL," +
+                    " $LIST_SORT_LOCKED BOOLEAN NOT NULL," +
+                    " $LIST_AUTHOR_ID BOOLEAN," +
                     " $LIST_IMAGE_ID INTEGER);")
 
         const val CREATE_TABLE_LINK =
@@ -220,20 +223,34 @@ class MusicDB(private val context: Context) {
             addImageToDB(BitmapFactory.decodeResource(res, R.drawable.suggest, options))
             addImageToDB(BitmapFactory.decodeResource(res, R.drawable.video, options))
 
-            addList("All Songs", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_ALL)
-            addList("Queue", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_QUEUE)
-            addList("OriginalQueue", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_QUEUE)
-            addList("Liked", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_LIKED)
-            addList("Most Played", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_MOST)
-            addList("Recent Musics", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_MOST)
-            addList("Recent Lists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_MOST)
-            addList("Suggested", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_SUGGEST)
-            addList("Downloads", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_DOWNLOAD)
+            addList("All Songs", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_ALL,
+                readonly = true, deletable = false, sortMode = SortMode.Date, sortLocked = false)
+            addList("Queue", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_QUEUE,
+                readonly = false, deletable = false, sortMode = SortMode.Date, sortLocked = true)
+            addList("OriginalQueue", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_QUEUE,
+                readonly = true, deletable = false, sortMode = SortMode.Date, sortLocked = true)
+            addList("Liked Musics", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_LIKED,
+                readonly = false, deletable = false, sortMode = SortMode.DateR, sortLocked = false)
+            addList("Liked Lists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_SUGGEST,
+                readonly = false, deletable = false, sortMode = SortMode.DateR, sortLocked = false)
+            addList("Most Played", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_MOST,
+                readonly = true, deletable = false, sortMode = SortMode.Date, sortLocked = true)
+            addList("Recent Musics", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_MOST,
+                readonly = true, deletable = false, sortMode = SortMode.DateR, sortLocked = true)
+            addList("Recent Lists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_MOST,
+                readonly = true, deletable = false, sortMode = SortMode.DateR, sortLocked = true)
+            addList("Suggested", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_SUGGEST,
+                readonly = true, deletable = false, sortMode = SortMode.Date, sortLocked = true)
+            addList("Downloads", ListType.System, ListContent.ListOfMusics, ImageId.ID_IMAGE_DOWNLOAD,
+                readonly = true, deletable = false, sortMode = SortMode.DateR, sortLocked = false)
 
-            addList("Artists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_ARTIST)
-            addList("Albums", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_ALBUM)
+            addList("Artists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_ARTIST,
+                readonly = true, deletable = false, sortMode = SortMode.Name, sortLocked = false)
+            addList("Albums", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_ALBUM,
+                readonly = true, deletable = false, sortMode = SortMode.Name, sortLocked = false)
 
-            addList("User Playlists", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_PLAYLIST)
+            addList("You", ListType.System, ListContent.ListOfLists, ImageId.ID_IMAGE_PLAYLIST,
+                readonly = true, deletable = false, sortMode = SortMode.Name, sortLocked = false)
 
             addIdToListId(ListId.ID_MUSIC_QUEUE, ListId.ID_MUSIC_USER_PLAYLISTS)
             addIdToListId(ListId.ID_MUSIC_LIKED, ListId.ID_MUSIC_USER_PLAYLISTS)
@@ -328,7 +345,12 @@ class MusicDB(private val context: Context) {
             DBHelper.LIST_NAME,
             DBHelper.LIST_CONTENT,
             DBHelper.LIST_TYPE,
-            DBHelper.LIST_IMAGE_ID
+            DBHelper.LIST_IMAGE_ID,
+            DBHelper.LIST_READONLY,
+            DBHelper.LIST_DELETABLE,
+            DBHelper.LIST_SORT_MODE,
+            DBHelper.LIST_SORT_LOCKED,
+            DBHelper.LIST_AUTHOR_ID
         )
         val whereList = "${DBHelper.LIST_ID} = $list_id"
         val cursorList = database.query(
@@ -344,9 +366,12 @@ class MusicDB(private val context: Context) {
         if (cursorList.count == 0) return SyncList()
 
         val listName = cursorList.getString(0)
-        val listContent: ListContent = ListContent.valueOf(cursorList.getString(1))
-        //val listType: ListType = ListType.valueOf(cursorList.getString(2))
+        val listContent = ListContent.valueOf(cursorList.getString(1))
+        val listType = ListType.valueOf(cursorList.getString(2))
         val imgId = cursorList.getInt(3)
+
+
+
         if (imgId > 0 && smc.images[imgId] == null) {
             val columns2 = arrayOf(DBHelper.IMAGE_DATA)
             val where2 = DBHelper.IMAGE_ID + " = " + imgId
@@ -366,7 +391,6 @@ class MusicDB(private val context: Context) {
             }
             cursor2.close()
         }
-        cursorList.close()
 
         // SPLITTED CODE
         if(listContent == ListContent.ListOfLists)
@@ -379,11 +403,12 @@ class MusicDB(private val context: Context) {
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
             if (cursor.count > 0) {
-                val list = SyncList(listName, cursor, listContent, imgId) // add image_id1
+                val list = SyncList(cursorList, cursor)//SyncList(listName, cursor, listContent,listType, imgId) // add image_id1
                 cursor.close()
                 return list
             }
             cursor.close()
+            cursorList.close()
             return SyncList(listName, listContent, imgId)
         }
         else if(listContent == ListContent.ListOfMusics)
@@ -394,8 +419,10 @@ class MusicDB(private val context: Context) {
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
             if (cursor.count > 0) {
-                val list = SyncList(listName, cursor, listContent, imgId) // add image_id1
+                val list = SyncList(cursorList, cursor)//SyncList(listName, cursor, listContent,listType, imgId) //
+                // add image_id1
                 cursor.close()
+                cursorList.close()
                 return list
             }
         }
@@ -495,7 +522,7 @@ class MusicDB(private val context: Context) {
             val contentValue = ContentValues()
             contentValue.put(DBHelper.MUSIC_PATH, music.path)
             contentValue.put(DBHelper.MUSIC_HASH, music.hash)
-            contentValue.put(DBHelper.MUSIC_ISVALID, music.valid)
+            contentValue.put(DBHelper.MUSIC_IS_VALID, music.valid)
             contentValue.put(DBHelper.MUSIC_TITLE, music.title)
 
             var artistImageId = ImageId.ID_IMAGE_ARTIST
@@ -508,18 +535,28 @@ class MusicDB(private val context: Context) {
                 albumImageId = imageId
             }
 
-            val albumId = addList(
-                music.album.toString(),
-                ListType.Album,
-                ListContent.ListOfMusics,
-                albumImageId
-            )
             val artistId = addList(
                 music.artist.toString(),
                 ListType.Artist,
                 ListContent.ListOfMusics,
-                artistImageId
+                artistImageId,
+                readonly = true,
+                deletable = false,
+                sortMode = SortMode.Date,
+                sortLocked = false
             )
+            val albumId = addList(
+                music.album.toString(),
+                ListType.Album,
+                ListContent.ListOfMusics,
+                albumImageId,
+                readonly = true,
+                deletable = false,
+                sortMode = SortMode.Date,
+                sortLocked = false,
+                artistId
+            )
+
 
             contentValue.put(DBHelper.MUSIC_ARTIST_ID, artistId)
             contentValue.put(DBHelper.MUSIC_ALBUM_ID, albumId)
@@ -573,7 +610,9 @@ class MusicDB(private val context: Context) {
 
     //////////////////////////////////////////////////////////////// INSERTS
 
-    fun addList(name: String, listType: ListType, listContent: ListContent, imageId: Int): Int {
+    fun addList(name: String, listType: ListType, listContent: ListContent, imageId: Int, readonly: Boolean, deletable:
+    Boolean, sortMode : SortMode, sortLocked: Boolean, authorId : Int? = null):
+            Int {
         val columns = arrayOf(DBHelper.LIST_ID)
         val where =
             " ${DBHelper.LIST_CONTENT} = '$listContent'" +
@@ -594,6 +633,14 @@ class MusicDB(private val context: Context) {
             contentValue.put(DBHelper.LIST_CONTENT, listContent.toString())
             contentValue.put(DBHelper.LIST_TYPE, listType.toString())
             contentValue.put(DBHelper.LIST_IMAGE_ID, imageId)
+
+            contentValue.put(DBHelper.LIST_READONLY, readonly)
+            contentValue.put(DBHelper.LIST_DELETABLE, deletable)
+            contentValue.put(DBHelper.LIST_AUTHOR_ID, authorId)
+
+            contentValue.put(DBHelper.LIST_SORT_MODE, sortMode.toString())
+            contentValue.put(DBHelper.LIST_SORT_LOCKED, sortLocked)
+
             val c = database.insert(DBHelper.TABLE_LIST, null, contentValue)
             //Log.d("MusicDB", c.toString())
             cursor.close()

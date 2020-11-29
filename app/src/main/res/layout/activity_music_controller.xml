@@ -165,7 +165,7 @@
             android:layout_marginBottom="20dp"
             android:background="@drawable/ic_play"
             android:onClick="playBtnClick"
-            app:layout_constraintBottom_toTopOf="@+id/favBtn"
+            app:layout_constraintBottom_toTopOf="@+id/btn_fav"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
 
@@ -198,7 +198,7 @@
             app:layout_constraintTop_toTopOf="@+id/playBtn" />
 
         <ImageButton
-            android:id="@+id/favBtn"
+            android:id="@+id/btn_fav"
             style="@style/Widget.AppCompat.ActionButton"
             android:layout_width="60dp"
             android:layout_height="60dp"
@@ -222,11 +222,11 @@
             android:scaleType="fitCenter"
 
             android:src="@drawable/ic_addplaylist"
-            app:layout_constraintBottom_toBottomOf="@+id/favBtn"
+            app:layout_constraintBottom_toBottomOf="@+id/btn_fav"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.67"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/favBtn" />
+            app:layout_constraintTop_toTopOf="@+id/btn_fav" />
 
         <ImageButton
             android:id="@+id/buttonShuffle"
