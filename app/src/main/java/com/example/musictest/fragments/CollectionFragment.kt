@@ -1,5 +1,6 @@
 package com.example.musictest.fragments
 
+import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
@@ -9,29 +10,102 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.URLUtil
-import android.widget.Toast
+import android.widget.*
 import androidx.fragment.app.Fragment
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.musics.ListId.Companion.ID_MUSIC_USER_PLAYLISTS
 import kotlinx.android.synthetic.main.fragment_collection.*
 
+
 class CollectionFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        imageButtonDownload.setOnClickListener {
-            //download("https://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3");
-            download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac")
+        val tabs = view.findViewById(R.id.tabHost) as TabHost
+        tabs.setup()
+
+        val playlistTab = tabs.newTabSpec("Playlists")
+        playlistTab.setContent(R.id.tab1)
+        playlistTab.setIndicator("Playlists")
+        tabs.addTab(playlistTab)
+
+        val homeTab = tabs.newTabSpec("Artists")
+        homeTab.setIndicator("Artists")
+        homeTab.setContent(R.id.tab2)
+        tabs.addTab(homeTab)
+
+        val faqTab = tabs.newTabSpec("Albums")
+        faqTab.setIndicator("Albums")
+        faqTab.setContent(R.id.tab3)
+        tabs.addTab(faqTab)
+
+        // Add FAB action
+        imageButtonTitle.setOnClickListener { view ->
+            val dialogBuilder: AlertDialog.Builder = AlertDialog.Builder(context)
+            val inflater = this.layoutInflater
+            val dialogView: View = inflater.inflate(R.layout.alert_add, null)
+            dialogBuilder.setView(dialogView)
+
+            val alertDialog: AlertDialog = dialogBuilder.create()
+            alertDialog.show()
+
+            val ib = dialogView.findViewById<Button>(R.id.imageButtonDownload)
+            ib.setOnClickListener {
+                //download("https://cdn.arrol.fr/music/Legendary - Welshly Arms.mp3");
+                download("https://cdn.arrol.fr/music/Kaleo%20-%20Way%20Down%20We%20Go.flac")
+                alertDialog.dismiss()
+            }
         }
+
+        /*fun  inFromRightAnimation() : Animation
+        {
+            val inFromRight = TranslateAnimation(
+                Animation.RELATIVE_TO_PARENT, +1.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f);
+            inFromRight.duration = 150;
+            inFromRight.interpolator = AccelerateInterpolator();
+            return inFromRight;
+        }
+
+        fun  outToRightAnimation() : Animation
+        {
+            val inFromRight = TranslateAnimation(
+                Animation.RELATIVE_TO_PARENT, -1.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f,
+                Animation.RELATIVE_TO_PARENT, 0.0f);
+            inFromRight.duration = 150;
+            inFromRight.interpolator = AccelerateInterpolator();
+            return inFromRight;
+        }
+
+        var currentTab = tabs.currentTab
+
+        tabs.setOnTabChangedListener(OnTabChangeListener {
+            val currentView: View = tabs.currentView
+            if (tabs.currentTab > currentTab) {
+                currentView.animation = inFromRightAnimation()
+            } else {
+                currentView.animation = outToRightAnimation()
+            }
+            currentTab = tabs.currentTab
+        })*/
 
         val fm = childFragmentManager
 
-        // init with all ids
-        ListerRecyclerFragment().addItem(fm, R.id.collectionPlaylists)
+        ListerRecyclerFragment().addItem(fm, R.id.tab1)
             .initSyncListById(ID_MUSIC_USER_PLAYLISTS, false)
-        //.initPlaylistList(syncMusicController.getPlaylistsIds())
+
+        /*ListerRecyclerFragment().addItem(fm, R.id.tab2)
+            .initSyncListById(ID_MUSIC_ARTISTS, false)
+
+        ListerRecyclerFragment().addItem(fm, R.id.tab3)
+            .initSyncListById(ID_MUSIC_ALBUMS, false)*/
+
     }
 
     override fun onCreateView(
@@ -69,11 +143,9 @@ class CollectionFragment : Fragment() {
         super.onResume()
 
         (activity as MainActivity).apply {
-            tvTitle.text = "Collection"
             btnHome.colorFilter = null
             btnSearch.colorFilter = null
             btnColleceion.setColorFilter(R.color.th)
-            btnBack.visibility = View.INVISIBLE
         }
     }
 

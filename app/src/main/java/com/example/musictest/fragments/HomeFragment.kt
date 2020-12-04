@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import com.example.musictest.R
 import com.example.musictest.activities.MainActivity
 import com.example.musictest.musics.ListId
+import kotlinx.android.synthetic.main.fragment_home.*
 
 class HomeFragment : Fragment() {
 
@@ -18,11 +19,9 @@ class HomeFragment : Fragment() {
         super.onResume()
 
         (activity as MainActivity).apply {
-            tvTitle.text = "Home"
             btnHome.setColorFilter(R.color.th)
             btnSearch.colorFilter = null
             btnColleceion.colorFilter = null
-            btnBack.visibility = View.INVISIBLE
             currentfragment = this@HomeFragment
         }
     }

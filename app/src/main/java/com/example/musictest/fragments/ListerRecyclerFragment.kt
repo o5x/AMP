@@ -60,11 +60,11 @@ class ListerRecyclerFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        try {
+        /*try {
             if ((activity as MainActivity).currentfragment == this)
-                (activity as MainActivity).btnBack.visibility = View.VISIBLE
+                //(activity as MainActivity).btnBack.visibility = View.VISIBLE
         } catch (e: Exception) {
-        }
+        }*/
     }
 
     fun initSyncList(sl: SyncList, header: Boolean = true) {
@@ -91,6 +91,7 @@ class ListerRecyclerFragment : Fragment() {
     fun initFile(path: String): ListerRecyclerFragment {
         listerMode = ListerMode.ListFiles
         folderPath = path
+        showHeader = true
         return this
     }
 
@@ -141,8 +142,7 @@ class ListerRecyclerFragment : Fragment() {
         }
     }
 
-    fun apply() {
-
+    private fun apply() {
 
         if(listerButtonAddTo == null) return
         // Global init
@@ -154,7 +154,6 @@ class ListerRecyclerFragment : Fragment() {
 
         ll_options.visibility = View.GONE
         ll_header.visibility = View.GONE
-        tv_path.visibility = View.GONE
 
         btn_sort.visibility = View.GONE
         btn_playall.visibility = View.GONE
@@ -179,13 +178,17 @@ class ListerRecyclerFragment : Fragment() {
                 (adapter as ListAdapter).notifyItemRemoved(position);
                 (adapter as ListAdapter).notifyItemRangeChanged(0, syncList!!.list.size);
                 childSelected.removeAt(position)
-
             }
 
             removeCallback =  {position : Int ->
                 rem(position)
                 syncList = smc.getList(syncListId!!) // not mandatory but we just make sure
                 callbackCheckBox(position)
+
+                if (!syncList!!.sortLocked) {
+                    syncList!!.sort(sortMode)
+                }
+
             }
 
             lra.callbackCheckBox = {
@@ -217,21 +220,39 @@ class ListerRecyclerFragment : Fragment() {
             when (listerMode) {
                 ListerMode.ListFiles -> {
 
-                    (activity as MainActivity).tvTitle.text = "Files"
-                    tv_path.visibility = View.VISIBLE
-                    tv_path.text = folderPath
+
+                    ll_header.visibility = View.VISIBLE
+                    iv_list.setImageResource(R.drawable.folder)
+                    tv_title.text = "Local Files"
+
+
+                    tv_subtitle.text = folderPath
+
+                    //(activity as MainActivity).tvTitle.text = "Files"
 
                     files.clear()
 
                     val directory = File(Environment.getExternalStorageDirectory().toString() + folderPath)
                     val filesList: Array<File> = directory.listFiles()!!
 
+                    var filecount = 0
+                    var foldercount = 0
+
                     for (file in filesList) {
-                        if (file.isDirectory) files.add(file)
+                        if (file.isDirectory){
+                            files.add(file)
+                            foldercount ++
+                        }
                     }
                     for (file in filesList) {
-                        if (file.isFile) files.add(file)
+                        if (file.isFile)
+                        {
+                            files.add(file)
+                            filecount ++
+                        }
                     }
+
+                    tv_subsubtitle.text = "$foldercount Folders, $filecount files" // todo manage s
 
                     childSelected.clear()
                     for (i in 0 until files.size) childSelected.add(false)
@@ -358,7 +379,12 @@ class ListerRecyclerFragment : Fragment() {
                             for ((i, v) in listToRemove.iterator().withIndex())
                                 rem(v-i)
 
+
                             syncList = smc.getList(syncListId!!)
+
+                            if (!syncList!!.sortLocked)
+                                syncList!!.sort(sortMode)
+
                             callbackCheckBox(0)
                         }
                     }

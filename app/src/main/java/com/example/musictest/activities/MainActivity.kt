@@ -72,9 +72,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var mBuilder: NotificationCompat.Builder
     lateinit var mNotifyManager: NotificationManagerCompat
 
-    lateinit var btnBack: ImageButton
+    /*lateinit var btnBack: ImageButton
     lateinit var btnSettings: ImageButton
-    lateinit var tvTitle: TextView
+    lateinit var tvTitle: TextView*/
 
     lateinit var btnHome: ImageButton
     lateinit var btnColleceion: ImageButton
@@ -157,9 +157,9 @@ class MainActivity : AppCompatActivity() {
 
         startService(Intent(this@MainActivity, MediaPlaybackService::class.java))
 
-        tvTitle = Apptitle
+       /* tvTitle = Apptitle
         btnBack = imageButtonBack
-        btnSettings = imageButtonSettings
+        btnSettings = imageButtonSettings*/
         btnHome = imageButtonHome
         btnSearch = imageButtonSearch
         btnColleceion = imageButtonCollection
@@ -281,7 +281,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
         if (currentfragment is ListerRecyclerFragment)
             (currentfragment as ListerRecyclerFragment).reload()
     }

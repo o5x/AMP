@@ -15,6 +15,7 @@ import com.example.musictest.activities.smc
 import com.example.musictest.musics.ListContent
 import com.example.musictest.musics.ListId
 import com.example.musictest.musics.SyncList
+import kotlinx.android.synthetic.main.fragment_home.*
 import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -91,11 +92,9 @@ class SearchFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         (activity as MainActivity).apply {
-            tvTitle.text = "Search"
             btnHome.colorFilter = null
             btnSearch.setColorFilter(R.color.th)
             btnColleceion.colorFilter = null
-            btnBack.visibility = View.INVISIBLE
         }
     }
 }

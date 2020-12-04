@@ -1,31 +1,26 @@
 package com.example.musictest.fragments
 
 import android.os.Bundle
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
 import android.view.View
-import androidx.preference.PreferenceFragmentCompat
+import android.view.ViewGroup
 import com.example.musictest.R
-import com.example.musictest.activities.MainActivity
 
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : Fragment() {
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.root_preferences, rootKey)
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
-    override fun onResume() {
-        super.onResume()
-        (activity as MainActivity).apply {
-            tvTitle.text = "Search"
-            btnBack.visibility = View.VISIBLE
-            btnSettings.visibility = View.INVISIBLE
-        }
-    }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-    override fun onPause() {
-        super.onPause()
-        (activity as MainActivity).apply {
-            btnSettings.visibility = View.VISIBLE
-        }
+
+
     }
 }
-
