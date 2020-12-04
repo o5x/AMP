@@ -33,26 +33,28 @@ import java.io.File
 
 /*
 todo bug fixes :
-- is this an empty bug fix list ?
+- nothing
 
 todo add :
-- in artists, put albums instead of musics ? or both ?
-- Save Artist / album
-- manage multi selection files
-- update interface on lists changed
-- add date to music (last played) + added + play count + time spent on this music ? - music stats table ?
-- show recently played (liked albums playlists, artists)
-- improve sort by name, date, songs count
-- remove musics / playlists from lists
-- playlist show time, songs count, year, artist
+- make db updatable ?
 
-todo optional :
+todo optional (or almost done) :
+- in artists, put albums instead of musics ? or both ?
 - make visualizer facilitative ?
-- add go to album artist on track
 - change search screen to have albums / artist s
 - image lazy load
-- add date in local structures
+- manage multi selection files
+- add date to music (last played) + added + play count + time spent on this music ? - music stats table ?
 - manage file removed skip ? (is it managed ?)
+- playlist show time, songs count, year, artist
+
+todo done (and / or improvable):
+- update interface on lists changed (remove liked live with scroll top)
+- add date in local structures
+- add go to album artist on track
+- remove musics / playlists from lists
+- improve sort by name, date, songs count
+
 */
 
 // global MusicController

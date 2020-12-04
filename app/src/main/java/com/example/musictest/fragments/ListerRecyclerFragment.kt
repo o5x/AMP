@@ -49,6 +49,7 @@ class ListerRecyclerFragment : Fragment() {
     var checkboxVisibility = View.GONE
 
     var refreshCallback = {}
+    var removeCallback = {i : Int ->}
 
     private var sortMode: SortMode = SortMode.None
 
@@ -140,12 +141,14 @@ class ListerRecyclerFragment : Fragment() {
         }
     }
 
-    private fun apply() {
+    fun apply() {
+
 
         if(listerButtonAddTo == null) return
         // Global init
-        listerButtonAddTo.isEnabled = false
-        listerButtonPlay.isEnabled = false
+        listerButtonAddTo.visibility = View.VISIBLE
+        listerButtonPlay.visibility = View.VISIBLE
+        listerButtonRemove.visibility = View.GONE
 
         listerOptions.visibility = View.GONE
 
@@ -164,25 +167,41 @@ class ListerRecyclerFragment : Fragment() {
             layoutManager = LinearLayoutManager(activity)
 
             refreshCallback = {
+                //for(i in 0 until childSelected.size)
+                 //   (adapter as ListAdapter).notifyItemChanged(i)
                 (adapter as ListAdapter).notifyDataSetChanged()
+            }
+
+            fun rem(position : Int)
+            {
+                smc.removeIdFromList(syncList!!.list[position], syncListId!!)
+                syncList!!.list.remove(syncList!!.list[position])
+                (adapter as ListAdapter).notifyItemRemoved(position);
+                (adapter as ListAdapter).notifyItemRangeChanged(0, syncList!!.list.size);
+                childSelected.removeAt(position)
+
+            }
+
+            removeCallback =  {position : Int ->
+                rem(position)
+                syncList = smc.getList(syncListId!!) // not mandatory but we just make sure
+                callbackCheckBox(position)
             }
 
             lra.callbackCheckBox = {
                 var count = 0
                 for (i in 0 until childSelected.size)  if (childSelected[i]) count++
                 if (count > 0) {
+                    if(checkboxVisibility == View.GONE) refreshCallback()
                     checkboxVisibility = View.VISIBLE
                     listerOptions.visibility = View.VISIBLE
-                    listerButtonAddTo.isEnabled = true
-                    listerButtonPlay.isEnabled = true
                     listerOptions.animate()
                         .alpha(1f)
                         .setDuration(100)
                         .setListener(null)
                 } else {
+                    if(checkboxVisibility == View.VISIBLE) refreshCallback()
                     checkboxVisibility = View.GONE
-                    listerButtonAddTo.isEnabled = false
-                    listerButtonPlay.isEnabled = false
                     listerOptions.animate()
                         .alpha(0f)
                         .setDuration(100)
@@ -192,7 +211,6 @@ class ListerRecyclerFragment : Fragment() {
                             }
                         })
                 }
-                refreshCallback()
             }
 
             // MODES
@@ -219,6 +237,9 @@ class ListerRecyclerFragment : Fragment() {
                     for (i in 0 until files.size) childSelected.add(false)
                 }
                 ListerMode.SyncList -> {
+
+                    if(syncListId != null && syncListId!! > 0)
+                        syncList = smc.getList(syncListId!!)
 
                     // Sort Button
 
@@ -323,6 +344,23 @@ class ListerRecyclerFragment : Fragment() {
                         val selection: ArrayList<Int> = ArrayList()
                         for (i in 0 until childSelected.size) if (childSelected[i]) selection.add(syncList!!.list[i])
                         smc.setQueue(selection, syncListId, 0, true)
+                    }
+
+                    if(!syncList!!.readonly)
+                    {
+                        listerButtonRemove.visibility = View.VISIBLE
+                        listerButtonRemove.setOnClickListener {
+
+                            val listToRemove = ArrayList<Int>()
+                            for (i in 0 until childSelected.size)
+                                if (childSelected[i])listToRemove.add(i)
+
+                            for ((i, v) in listToRemove.iterator().withIndex())
+                                rem(v-i)
+
+                            syncList = smc.getList(syncListId!!)
+                            callbackCheckBox(0)
+                        }
                     }
 
                     listerButtonAddTo.setOnClickListener {

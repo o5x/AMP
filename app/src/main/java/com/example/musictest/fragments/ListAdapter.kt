@@ -28,7 +28,7 @@ class ListAdapter(private val listerRecyclerFragment: ListerRecyclerFragment) :
     }
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
-        holder.bind(listerRecyclerFragment)
+        holder.bind(this, listerRecyclerFragment)
     }
 
     override fun getItemCount(): Int = listerRecyclerFragment.childSelected.size
@@ -52,7 +52,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
         imageButtonLiked = itemView.findViewById(R.id.btn_fav2)
     }
 
-    fun bind(lrf: ListerRecyclerFragment) {
+    fun bind(la : ListAdapter,lrf: ListerRecyclerFragment) {
 
         if (adapterPosition >= lrf.childSelected.size) return
         mCheckBox?.isEnabled = false
@@ -92,7 +92,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     mImageView?.setImageResource(R.drawable.file)
 
                     if (isMusicFile(file)) {
-                        mCheckBox?.isEnabled = true
+                        //mCheckBox?.isEnabled = true
                         mYearView?.text = "Music"
                         mImageView?.setImageResource(R.drawable.music)
 
@@ -125,8 +125,10 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                     }
 
                     imageButtonLiked?.setOnClickListener {
-                        if (!smc.isMusicLiked(musicId))
+                        if (!smc.isMusicLiked(musicId)){
                             smc.toggleMusicLiked(musicId)
+                            la.notifyItemChanged(adapterPosition)
+                        }
                         else Toast.makeText(lrf.context,"Long press to remove from liked", Toast.LENGTH_SHORT).show()
                     }
 
@@ -134,8 +136,10 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         if (smc.isMusicLiked(musicId))
                         {
                             smc.toggleMusicLiked(musicId)
+                            la.notifyItemChanged(adapterPosition)
                             return@setOnLongClickListener true
                         }
+                        la.notifyItemChanged(adapterPosition)
                         return@setOnLongClickListener false
                     }
 
@@ -169,7 +173,8 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         popup.menu.add(0, 2, 2, "View Album")
                         popup.menu.add(0, 3, 3, "View Artist")
                         popup.menu.add(0, 4, 4, "Info")
-                        //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
+                        popup.menu.add(0, 5, 5, "Remove from playlist")
+                            .isEnabled = !lrf.syncList!!.readonly
 
                         popup.setOnMenuItemClickListener { item ->
                             when (item.itemId) {
@@ -196,6 +201,12 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                                     builder1.setPositiveButton("Done") { dialog, _ -> dialog.cancel() }
                                     val alert11 = builder1.create()
                                     alert11.show()
+
+                                }
+                                5 -> {
+                                    //smc.removeIdFromList(musicId, lrf.syncListId!!)
+                                    //lrf.apply()
+                                    lrf.removeCallback(adapterPosition);
                                 }
                                 else -> smc.processPlaylistMenu(
                                     lrf.requireContext(),
@@ -211,7 +222,6 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                     mImageView?.setImageResource(R.drawable.music)
                     if (music.image != null) mImageView?.setImageBitmap(music.image)
-
                 }
                 else if (lrf.syncList!!.listContent == ListContent.ListOfLists) {
 
@@ -235,9 +245,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                             imageButtonLiked?.colorFilter = null
                             imageButtonLiked?.setImageResource(R.drawable.ic_addfavourite)
                         }
-
                         imageButtonLiked?.setOnClickListener {
                             smc.toggleListLiked(sublistId)
+                            la.notifyItemChanged(adapterPosition)
                         }
                     }
 
@@ -248,7 +258,6 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         else sublist.list.size.toString() + " Song" + if(sublist.list.size == 1) "" else "s"
                     else mYearView?.text = sublist.list.size.toString() + " List" + if(sublist.list.size == 1) "" else "s"
 
-                    //if (lrf.syncList!!.list[adapterPosition] >= ListId.ID_MUSIC_MAX_ID)
                     imageButtonMore?.visibility = View.VISIBLE
 
                     if (sublist.image != null) mImageView?.setImageBitmap(sublist.image)
@@ -258,8 +267,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                         popup.menu.add(0, 1, 1, "View")
                         popup.menu.add(0, 2, 2, "Play")
-                        if(sublist.deletable)
-                            popup.menu.add(0, 3, 3, "Delete playlist")
+                        popup.menu.add(0, 3, 3, "Delete playlist").isEnabled = sublist.deletable
                         popup.menu.add(0, 4, 4, "Info")
                         //popup.menu.add(0, 5, 5, "Delete music").isEnabled = false
 

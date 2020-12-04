@@ -2,7 +2,6 @@ package com.example.musictest.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,15 +17,13 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        val th = this
-
         (activity as MainActivity).apply {
             tvTitle.text = "Home"
             btnHome.setColorFilter(R.color.th)
             btnSearch.colorFilter = null
             btnColleceion.colorFilter = null
             btnBack.visibility = View.INVISIBLE
-            currentfragment = th
+            currentfragment = this@HomeFragment
         }
     }
 
@@ -44,7 +41,7 @@ class HomeFragment : Fragment() {
             {
                 (activity as MainActivity).replaceFragment(
                     ListerRecyclerFragment().initFile(
-                        "/Music"
+                        "/"
                     )
                 )
             },

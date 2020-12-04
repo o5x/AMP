@@ -168,7 +168,7 @@ class SyncMusicController : Application() {
         db.addIdToListId(music_id, list_id)
     }
 
-    private fun removeIdFromList(music_id: Int, list_id: Int) {
+    fun removeIdFromList(music_id: Int, list_id: Int) {
         db.removeIdFromListId(music_id, list_id)
     }
 

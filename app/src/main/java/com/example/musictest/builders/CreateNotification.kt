@@ -62,7 +62,7 @@ object CreateNotification {
 
         // Create notification
         notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.appiconrot)
+            .setSmallIcon(R.drawable.appicon)
             .setContentTitle(track.title)
             .setSubText(HtmlCompat.fromHtml("Playing <b>${smc.playingFrom}</b>", HtmlCompat.FROM_HTML_MODE_LEGACY))
             .setContentText(track.artist)

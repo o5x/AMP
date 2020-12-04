@@ -305,34 +305,37 @@ class MusicDB(private val context: Context) {
     private fun updateRecentList() {
         clearListId(ListId.ID_MUSIC_RECENT_LISTS)
         database.execSQL(
-            "INSERT INTO LINKS (list_id,target_id) " +
-                    "SELECT ${ListId.ID_MUSIC_RECENT_LISTS} ,id" +
-                    "\t\tFROM LISTS " +
-                    "\tWHERE played_count > 0" +
-                    "\tAND id != ${ListId.ID_MUSIC_QUEUE}" +
-                    "\tORDER BY played_last DESC"
+            "INSERT INTO ${DBHelper.TABLE_LINK} " +
+                    "(${DBHelper.LINK_LIST_ID},${DBHelper.LINK_TARGET_ID}) " +
+                    "SELECT ${ListId.ID_MUSIC_RECENT_LISTS} ,${DBHelper.LINK_ID}" +
+                    " FROM ${DBHelper.TABLE_LIST} " +
+                    " WHERE ${DBHelper.LIST_PLAYED_COUNT} > 0" +
+                    " AND ${DBHelper.LIST_ID} != ${ListId.ID_MUSIC_QUEUE}" +
+                    " ORDER BY ${DBHelper.LIST_PLAYED_LAST} DESC"
         )
     }
 
     private fun updateRecentMusics() {
         clearListId(ListId.ID_MUSIC_RECENT_MUSICS)
         database.execSQL(
-            "INSERT INTO LINKS (list_id,target_id) \n" +
-                    "SELECT ${ListId.ID_MUSIC_RECENT_MUSICS} ,music_id\n" +
-                    "\t\tFROM STATS \n" +
-                    "\tWHERE played_last is not null\n" +
-                    "\tORDER BY played_last DESC"
+            "INSERT INTO ${DBHelper.TABLE_LINK} " +
+                    "(${DBHelper.LINK_LIST_ID},${DBHelper.LINK_TARGET_ID}) " +
+                    "SELECT ${ListId.ID_MUSIC_RECENT_MUSICS} ,${DBHelper.STAT_MUSIC_ID}" +
+                    " FROM ${DBHelper.TABLE_STAT}" +
+                    " WHERE ${DBHelper.STAT_PLAYED_LAST} is not null" +
+                    " ORDER BY ${DBHelper.STAT_PLAYED_LAST} DESC"
         )
     }
 
     private fun updateMostMusics() {
         clearListId(ListId.ID_MUSIC_MOST)
         database.execSQL(
-            "INSERT INTO LINKS (list_id,target_id) \n" +
-                    "SELECT ${ListId.ID_MUSIC_MOST} ,music_id\n" +
-                    "\t\tFROM STATS \n" +
-                    "\tWHERE played_time > 0\n" +
-                    "\tORDER BY played_time DESC"
+            "INSERT INTO ${DBHelper.TABLE_LINK} " +
+                    "(${DBHelper.LINK_LIST_ID},${DBHelper.LINK_TARGET_ID}) " +
+                    "SELECT ${ListId.ID_MUSIC_MOST} ,${DBHelper.STAT_MUSIC_ID}" +
+                    " FROM ${DBHelper.TABLE_STAT}" +
+                    " WHERE ${DBHelper.STAT_PLAYED_TIME} > 0" +
+                    " ORDER BY ${DBHelper.STAT_PLAYED_TIME} DESC"
         )
     }
 
@@ -367,10 +370,8 @@ class MusicDB(private val context: Context) {
 
         val listName = cursorList.getString(0)
         val listContent = ListContent.valueOf(cursorList.getString(1))
-        val listType = ListType.valueOf(cursorList.getString(2))
+        //val listType = ListType.valueOf(cursorList.getString(2))
         val imgId = cursorList.getInt(3)
-
-
 
         if (imgId > 0 && smc.images[imgId] == null) {
             val columns2 = arrayOf(DBHelper.IMAGE_DATA)
@@ -392,13 +393,16 @@ class MusicDB(private val context: Context) {
             cursor2.close()
         }
 
-        // SPLITTED CODE
+        // SPITTED CODE
         if(listContent == ListContent.ListOfLists)
         {
             // get content from links
 
-            val request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN LISTS on target_id = LISTS.id" +
-                    " WHERE list_id = $list_id"
+            val request = "SELECT ${DBHelper.LINK_TARGET_ID},${DBHelper.LINK_ADD_TIME},${DBHelper.TABLE_LINK}." +
+                    "${DBHelper.LINK_ID}," + " ${DBHelper.STAT_PLAYED_COUNT} FROM ${DBHelper.TABLE_LINK} " +
+                    "JOIN ${DBHelper.TABLE_LIST} on ${DBHelper.LINK_TARGET_ID} = ${DBHelper.TABLE_LIST}.${DBHelper
+                        .LIST_ID}" +
+                    " WHERE ${DBHelper.LINK_LIST_ID} = $list_id"
 
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
@@ -413,8 +417,11 @@ class MusicDB(private val context: Context) {
         }
         else if(listContent == ListContent.ListOfMusics)
         {
-            val request = "SELECT target_id,date,LINKS.id, played_count FROM LINKS JOIN STATS on target_id = STATS" +
-                    ".music_id WHERE list_id = $list_id"
+            val request = "SELECT ${DBHelper.LINK_TARGET_ID},${DBHelper.LINK_ADD_TIME},${DBHelper.TABLE_LINK}." +
+                    "${DBHelper.LINK_ID}," + " ${DBHelper.STAT_PLAYED_COUNT} FROM ${DBHelper.TABLE_LINK} " +
+                    "JOIN ${DBHelper.TABLE_STAT} on ${DBHelper.LINK_TARGET_ID} = ${DBHelper.TABLE_STAT}.${DBHelper
+                        .STAT_MUSIC_ID}" +
+                    " WHERE ${DBHelper.LINK_LIST_ID} = $list_id"
 
             val cursor = database.rawQuery(request,null)
             cursor.moveToFirst()
