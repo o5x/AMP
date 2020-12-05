@@ -1,6 +1,12 @@
-# AMP - Arrol Music Player
 
-![ShadowHandCoppeliaPreview](docs/arrolPlay.png)
+<div>
+    <img style="vertical-align:middle" src="docs/arrolPlay.png" height="50px" width="50px">
+    <span style="font-size: 30px;vertical-align: middle;">Arrol Music Player (AMP)</span>
+  
+</div>
+<a href="https://play.google.com/store" id="bottle" >
+    <img src="https://cdn.rawgit.com/steverichey/google-play-badge-svg/master/img/en_get.svg" width="25%">
+</a>
 
 ## What's AMP
 
