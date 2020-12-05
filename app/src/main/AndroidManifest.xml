@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.musictest">
+    package="com.arrol.amp">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -20,7 +20,7 @@
         android:theme="@style/MusicTest.TransparentTheme"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".activities.SplashScreen"
+            android:name="com.arrol.amp.activities.SplashScreen"
             android:configChanges="keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,26 +28,26 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activities.QueueActivity"
+            android:name="com.arrol.amp.activities.QueueActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity
-            android:name=".activities.MusicControllerActivity"
+            android:name="com.arrol.amp.activities.MusicControllerActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity
-            android:name=".activities.MainActivity"
+            android:name="com.arrol.amp.activities.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize" />
 
-        <receiver android:name=".services.RemoteControlService">
+        <receiver android:name="com.arrol.amp.services.RemoteControlService">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
                 <action android:name="android.media.AUDIO_BECOMING_NOISY" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".services.NotificationActionService" />
+        <receiver android:name="com.arrol.amp.services.NotificationActionService" />
 
-        <service android:name=".services.OnClearFromRecentService" />
+        <service android:name="com.arrol.amp.services.OnClearFromRecentService" />
         <service
-            android:name=".services.MediaPlaybackService"
+            android:name="com.arrol.amp.services.MediaPlaybackService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />

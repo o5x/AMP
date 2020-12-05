@@ -12,7 +12,7 @@
 
     <fragment
         android:id="@+id/fragment"
-        android:name="com.example.musictest.fragments.BlankFragment"
+        android:name="com.arrol.amp.fragments.BlankFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1" />
