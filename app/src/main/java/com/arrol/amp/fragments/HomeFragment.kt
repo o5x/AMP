@@ -21,7 +21,7 @@ class HomeFragment : Fragment() {
         (activity as MainActivity).apply {
             btnHome.setColorFilter(R.color.th)
             btnSearch.colorFilter = null
-            btnColleceion.colorFilter = null
+            btnCollection.colorFilter = null
             currentfragment = this@HomeFragment
         }
     }

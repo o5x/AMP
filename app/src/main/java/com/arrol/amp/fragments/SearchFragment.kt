@@ -93,7 +93,7 @@ class SearchFragment : Fragment() {
         (activity as MainActivity).apply {
             btnHome.colorFilter = null
             btnSearch.setColorFilter(R.color.th)
-            btnColleceion.colorFilter = null
+            btnCollection.colorFilter = null
         }
     }
 }

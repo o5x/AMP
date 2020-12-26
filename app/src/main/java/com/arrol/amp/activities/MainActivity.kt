@@ -71,12 +71,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var mBuilder: NotificationCompat.Builder
     lateinit var mNotifyManager: NotificationManagerCompat
 
-    /*lateinit var btnBack: ImageButton
-    lateinit var btnSettings: ImageButton
-    lateinit var tvTitle: TextView*/
-
     lateinit var btnHome: ImageButton
-    lateinit var btnColleceion: ImageButton
+    lateinit var btnCollection: ImageButton
     lateinit var btnSearch: ImageButton
 
     var currentfragment: Fragment? = null
@@ -156,12 +152,9 @@ class MainActivity : AppCompatActivity() {
 
         startService(Intent(this@MainActivity, MediaPlaybackService::class.java))
 
-        /* tvTitle = Apptitle
-         btnBack = imageButtonBack
-         btnSettings = imageButtonSettings*/
         btnHome = imageButtonHome
         btnSearch = imageButtonSearch
-        btnColleceion = imageButtonCollection
+        btnCollection = imageButtonCollection
 
         Thread.currentThread().uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ ->
             object : Thread() {
@@ -260,7 +253,6 @@ class MainActivity : AppCompatActivity() {
                 addToBackStack(null)
             }
             currentfragment = newfragment
-
         }
     }
 

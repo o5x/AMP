@@ -147,7 +147,7 @@ class CollectionFragment : Fragment() {
         (activity as MainActivity).apply {
             btnHome.colorFilter = null
             btnSearch.colorFilter = null
-            btnColleceion.setColorFilter(R.color.th)
+            btnCollection.setColorFilter(R.color.th)
         }
     }
 
