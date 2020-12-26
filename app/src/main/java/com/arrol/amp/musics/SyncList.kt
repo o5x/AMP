@@ -91,11 +91,12 @@ class SyncList {
         valid = true
     }
 
-    constructor(name_: String, listContent_: ListContent, imid: Int) {
+    constructor(name_: String, listContent_: ListContent, listType_: ListType, imid: Int) {
         list = ArrayList()
         listOrigin = list
         name = name_
         listContent = listContent_
+        listType = listType_
         imgId = imid
         valid = true
     }

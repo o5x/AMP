@@ -370,7 +370,7 @@ class MusicDB(private val context: Context) {
 
         val listName = cursorList.getString(0)
         val listContent = ListContent.valueOf(cursorList.getString(1))
-        //val listType = ListType.valueOf(cursorList.getString(2))
+        val listType = ListType.valueOf(cursorList.getString(2))
         val imgId = cursorList.getInt(3)
 
         if (imgId > 0 && smc.images[imgId] == null) {
@@ -415,7 +415,7 @@ class MusicDB(private val context: Context) {
             }
             cursor.close()
             cursorList.close()
-            return SyncList(listName, listContent, imgId)
+            return SyncList(listName, listContent, listType, imgId)
         } else if (listContent == ListContent.ListOfMusics) {
             val request = "SELECT ${DBHelper.LINK_TARGET_ID},${DBHelper.LINK_ADD_TIME},${DBHelper.TABLE_LINK}." +
                     "${DBHelper.LINK_ID}," + " ${DBHelper.STAT_PLAYED_COUNT} FROM ${DBHelper.TABLE_LINK} " +
@@ -435,7 +435,7 @@ class MusicDB(private val context: Context) {
                 return list
             }
         }
-        return SyncList(listName, listContent, imgId)
+        return SyncList(listName, listContent,listType , imgId)
     }
 
     // adders
@@ -563,7 +563,7 @@ class MusicDB(private val context: Context) {
                 deletable = false,
                 sortMode = SortMode.Date,
                 sortLocked = false,
-                artistId
+                authorId = artistId
             )
 
 
