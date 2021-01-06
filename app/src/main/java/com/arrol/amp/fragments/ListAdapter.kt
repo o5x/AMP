@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.arrol.amp.R
 import com.arrol.amp.activities.smc
 import com.arrol.amp.musics.ListContent
+import com.arrol.amp.musics.ListId
 import com.arrol.amp.musics.ListType
 import com.arrol.amp.musics.SyncMusicController.Companion.isMusicFile
 import com.arrol.amp.musics.SyncMusicController.Companion.isVideoFile
@@ -109,6 +110,9 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
 
                     mCheckBox?.isEnabled = true
 
+                    if(adapterPosition >= lrf.syncList!!.list.size)
+                        return
+
                     val musicId = lrf.syncList!!.list[adapterPosition]
                     val music = smc.getMusic(musicId)
 
@@ -139,7 +143,7 @@ class MovieViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
                         return@setOnLongClickListener false
                     }
 
-                    if (musicId == smc.currentMusicId && lrf.syncListId == smc.playingFromId) {
+                    if (musicId == smc.currentMusicId && (lrf.syncListId == smc.playingFromId || lrf.syncListId == ListId.ID_MUSIC_QUEUE)) {
                         mTitleView?.setTextColor(Color.parseColor("#FFBB86FC"))
                         //mTitleView?.paintFlags = mTitleView?.paintFlags!! or Paint.UNDERLINE_TEXT_FLAG
                         //mTitleView?.isSelected = true

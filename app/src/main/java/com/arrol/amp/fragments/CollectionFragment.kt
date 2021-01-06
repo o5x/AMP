@@ -16,6 +16,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.arrol.amp.R
 import com.arrol.amp.activities.MainActivity
+import com.arrol.amp.musics.ListId.Companion.ID_MUSIC_ALBUMS
+import com.arrol.amp.musics.ListId.Companion.ID_MUSIC_ARTISTS
 import com.arrol.amp.musics.ListId.Companion.ID_MUSIC_USER_PLAYLISTS
 import kotlinx.android.synthetic.main.fragment_collection.*
 
@@ -102,11 +104,11 @@ class CollectionFragment : Fragment() {
         ListerRecyclerFragment().addItem(fm, R.id.tab1)
             .initSyncListById(ID_MUSIC_USER_PLAYLISTS, false)
 
-        /*ListerRecyclerFragment().addItem(fm, R.id.tab2)
+        ListerRecyclerFragment().addItem(fm, R.id.tab2)
             .initSyncListById(ID_MUSIC_ARTISTS, false)
 
         ListerRecyclerFragment().addItem(fm, R.id.tab3)
-            .initSyncListById(ID_MUSIC_ALBUMS, false)*/
+            .initSyncListById(ID_MUSIC_ALBUMS, false)
 
     }
 

@@ -77,7 +77,7 @@ object CreateNotification {
             .addAction(R.drawable.ic_next, "Next", pendingIntentNext)
             .addAction(R.drawable.ic_close, "Stop", pendingIntentStop)
             .setStyle(mediaStyle)
-            .setOngoing(true)
+            .setOngoing(false)
             .setDeleteIntent(pendingIntentStop)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .build()

@@ -410,7 +410,7 @@ class SyncMusicController : Application() {
                 }
                 sharedPref.edit().putInt("currentQueueId", currentQueueId).apply()
                 isQueuePlaying = false
-                isNotificationShown = false
+                isNotificationShown = true
 
                 val metaRetriever = MediaMetadataRetriever()
                 metaRetriever.setDataSource(currentMusic.path)
@@ -607,7 +607,8 @@ class SyncMusicController : Application() {
 
 
     fun setQueue(ids: ArrayList<Int>, from: Int?, idToPlay: Int, playNow: Boolean) {
-        playingFrom = if (from != null) {
+        playingFrom = if (from == ListId.ID_MUSIC_QUEUE) playingFrom
+            else if (from != null) {
             playingFromId = from
             addListPlayed(from)
             getList(from).name
@@ -752,4 +753,8 @@ class SyncMusicController : Application() {
         helper.release()
         db.close()
     }
+
+
+
+
 }

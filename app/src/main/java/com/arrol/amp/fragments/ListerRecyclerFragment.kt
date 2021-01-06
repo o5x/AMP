@@ -20,10 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.arrol.amp.R
 import com.arrol.amp.activities.MainActivity
 import com.arrol.amp.activities.smc
-import com.arrol.amp.musics.ListContent
-import com.arrol.amp.musics.ListType
-import com.arrol.amp.musics.SortMode
-import com.arrol.amp.musics.SyncList
+import com.arrol.amp.musics.*
 import kotlinx.android.synthetic.main.fragment_lister_recycler.*
 import java.io.File
 
@@ -43,7 +40,6 @@ class ListerRecyclerFragment : Fragment() {
     var files: ArrayList<File> = ArrayList()
 
     var callbackCheckBox: (id: Int) -> Unit = {}
-    //var clickCallback: (id: Int) -> Unit = {}
 
     var childSelected: ArrayList<Boolean> = ArrayList()
     var checkboxVisibility = View.GONE
@@ -283,6 +279,8 @@ class ListerRecyclerFragment : Fragment() {
 
                         ll_options.visibility = if (syncList?.list!!.isNotEmpty()) View.VISIBLE else View.GONE
 
+                        if(syncListId == ListId.ID_MUSIC_QUEUE) ll_options.visibility = View.GONE;
+
                         ll_header.visibility = View.VISIBLE
                         iv_list.setImageBitmap(syncList!!.image)
                         tv_title.text = syncList!!.name
@@ -348,13 +346,16 @@ class ListerRecyclerFragment : Fragment() {
                                 ListContent.ListOfMusics -> size.toString() + " Music" + if (size == 1) "" else "s"
                                 ListContent.None -> "Not valid"
                             }
-                        btn_playall.visibility = View.VISIBLE
 
+
+                        btn_playall.visibility = View.VISIBLE
                     }
 
                     if (syncList!!.listContent == ListContent.ListOfLists) {
                         btn_playall.visibility = View.GONE
                     }
+
+
 
                     childSelected.clear()
                     for (i in 0 until syncList!!.list.size) childSelected.add(false)

@@ -13,6 +13,7 @@ import com.arrol.amp.activities.smc
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.security.MessageDigest
+import kotlin.jvm.Throws
 
 //data/data/com.example.musictest/databases/musics.db
 

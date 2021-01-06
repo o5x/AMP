@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.fragment.app.commit
+import androidx.preference.PreferenceManager
 import com.arrol.amp.R
 import com.arrol.amp.builders.CreateNotification
 import com.arrol.amp.fragments.*
@@ -28,24 +29,23 @@ import com.arrol.amp.musics.SyncMusicController.Companion.isMusicFile
 import com.arrol.amp.services.MediaPlaybackService
 import com.arrol.amp.services.OnClearFromRecentService
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_settings.*
 import java.io.File
 
 /*
 todo bug fixes :
-- nothing
-
-todo add :
-- make db updatable ?
+- fix wrong playlist playing when playing from search
 
 todo optional (or almost done) :
 - in artists, put albums instead of musics ? or both ?
-- make visualizer facilitative ?
+- make visualizer optionnal ?
 - change search screen to have albums / artist s
 - image lazy load
 - manage multi selection files
 - add date to music (last played) + added + play count + time spent on this music ? - music stats table ?
 - manage file removed skip ? (is it managed ?)
 - playlist show time, songs count, year, artist
+- make db updatable ?
 
 todo done (and / or improvable):
 - update interface on lists changed (remove liked live with scroll top)
@@ -53,7 +53,6 @@ todo done (and / or improvable):
 - add go to album artist on track
 - remove musics / playlists from lists
 - improve sort by name, date, songs count
-
 */
 
 // global MusicController
@@ -77,12 +76,11 @@ class MainActivity : AppCompatActivity() {
 
     var currentfragment: Fragment? = null
 
-    private fun scanMusics() {
+    fun scanMusics() {
 
         createNotificationChannel(CHANNEL_ID, "Music Scan")
 
         // Setup notification progress
-        mNotifyManager = NotificationManagerCompat.from(this)
         mBuilder = NotificationCompat.Builder(this, this.CHANNEL_ID)
         mBuilder.setContentTitle("Music Scan")
             .setContentText("Scan starting")
@@ -140,6 +138,8 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
+        mNotifyManager = NotificationManagerCompat.from(this)
+
         setContentView(R.layout.activity_main)
 
         // enable auto text scroll
@@ -148,7 +148,13 @@ class MainActivity : AppCompatActivity() {
 
         // init context
         smc.init(this)
-        scanMusics()
+
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+
+        if(sharedPref.getBoolean("scanOnStart", true))
+        {
+            scanMusics()
+        }
 
         startService(Intent(this@MainActivity, MediaPlaybackService::class.java))
 
@@ -191,12 +197,12 @@ class MainActivity : AppCompatActivity() {
         if (textView_artist.text != smc.currentMusic.artist)
             textView_artist.text = smc.currentMusic.artist
 
-        if (smc.isQueuePlaying && smc.isNotificationShown)
+        if (smc.isNotificationShown) //smc.isQueuePlaying &&
             CreateNotification.createNotification(this)
         else
             CreateNotification.cancelNotification(this)
 
-        if (smc.isQueuePlaying && smc.currentMusic.valid)
+        if (smc.currentMusic.valid) //smc.isQueuePlaying &&
             linearLayoutControl.visibility = View.VISIBLE
         else
             linearLayoutControl.visibility = View.GONE
@@ -235,6 +241,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager!!.cancelAll()
+        }
+
+        mNotifyManager.cancel(CHANNEL_NID)
+        unregisterReceiver(broadcastReceiver)
+
+    }
+
+    override fun finish() {
+        super.finish()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationManager!!.cancelAll()
         }
