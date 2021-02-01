@@ -3,7 +3,7 @@
 <div>
     <img style="vertical-align:middle" src="docs/arrolPlay.png" height="50px" width="50px"> AMP
 </div>
-<a href="https://play.google.com/store" id="bottle" >
+<a href="https://play.google.com/store/apps/details?id=com.arrol.amp&hl=fr&gl=US" id="bottle" >
     <img src="https://cdn.rawgit.com/steverichey/google-play-badge-svg/master/img/en_get.svg" width="25%">
 </a>
 
